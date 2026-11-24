@@ -19,6 +19,8 @@
 
 这个 APK 用仓库里的调试密钥签名（`keystores/debug.keystore`，别名 `androiddebugkey`，口令 `android`）。Release 变体关闭了混淆和资源压缩，方便自建环境安装和排查。这不是应用商店签名，也不能拿去覆盖以后用正式密钥签的包。换密钥之前要先卸载。
 
+当前构建产物是 `app/build/outputs/apk/standard/release/com.minxiangnan.bitwarden.zh.apk`，SHA-256 为 `6d8c2355789bc4ee46f69dafe54b6a2d5944baa4275f98fc70108ef619983344`。
+
 ## 能做什么
 
 - 底部有「验证器」页。可以扫二维码、从图片读二维码、粘贴 `otpauth://`，或手填密钥。支持 TOTP、HOTP 和 Steam。
