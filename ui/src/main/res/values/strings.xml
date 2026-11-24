@@ -1473,6 +1473,11 @@ Do you want to switch to this account?</string>
     <string name="zh_authenticator_hotp">计数型（HOTP）</string>
     <string name="zh_server_address">服务器地址</string>
     <string name="zh_server_address_hint">https://vault.example.com</string>
+    <string name="zh_invited_create_account">收到邀请？创建账户</string>
+    <string name="zh_invited_create_body">公开注册是关闭的。只有管理员邀请过的邮箱可以在这里创建账户。</string>
+    <string name="zh_invite_rejected">这个邮箱没有收到邀请，或已经注册过了。请让管理员先邀请这个地址，并核对邮箱是否一致。</string>
+    <string name="zh_password_too_short">主密码至少 12 位。</string>
+    <string name="zh_password_mismatch">两次输入的主密码不一致。</string>
     <string name="zh_logout_unsynced">如果还有没同步完的更改，退出后会丢失。</string>
     <string name="zh_never_save_site">此网站永不</string>
     <string name="zh_never_save_site_body">以后不再询问是否保存这个网站的登录。</string>

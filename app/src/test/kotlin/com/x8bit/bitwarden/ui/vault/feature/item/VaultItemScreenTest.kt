@@ -1323,11 +1323,12 @@ class VaultItemScreenTest : BitwardenComposeTest() {
 
         composeTestRule
             .onAllNodesWithText("Delete")
-            .filterToOne(hasAnyAncestor(isDialog()))
+            .filter(hasAnyAncestor(isDialog()))[0]
             .assertIsDisplayed()
 
         composeTestRule
-            .onNodeWithText(text = "Okay")
+            .onAllNodesWithText("Delete")
+            .filter(hasAnyAncestor(isDialog()))[1]
             .performClick()
 
         verify {
@@ -1347,7 +1348,7 @@ class VaultItemScreenTest : BitwardenComposeTest() {
 
         composeTestRule
             .onAllNodesWithText("Delete")
-            .filterToOne(hasAnyAncestor(isDialog()))
+            .filter(hasAnyAncestor(isDialog()))[0]
             .assertIsDisplayed()
 
         mutableStateFlow.update {

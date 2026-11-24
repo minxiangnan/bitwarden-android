@@ -66,7 +66,7 @@ class CookieAcquisitionViewModelTest : BaseViewModelTest() {
                     CookieAcquisitionEvent.LaunchBrowser(
                         uri = "https://$DEFAULT_HOSTNAME/proxy-cookie-redirect-connector.html",
                         authTabData = AuthTabData.CustomScheme(
-                            callbackUrl = "bitwarden://sso-cookie-vendor",
+                            callbackUrl = "bwzh://sso-cookie-vendor",
                         ),
                     ),
                     awaitItem(),

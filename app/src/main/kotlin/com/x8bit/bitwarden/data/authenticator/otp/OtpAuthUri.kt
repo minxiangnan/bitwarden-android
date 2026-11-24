@@ -83,7 +83,7 @@ fun parseOtpAuthUri(value: String): ParsedOtpAuth? {
     val secret = normalizeTotpSecret(params["secret"].orEmpty())
     if (!isValidTotpSecret(secret)) return null
     val label = runCatching {
-        URLDecoder.decode(uri.rawPath?.removePrefix("/").orEmpty(), Charsets.UTF_8)
+        URLDecoder.decode(uri.rawPath?.removePrefix("/").orEmpty(), "UTF-8")
     }.getOrNull() ?: return null
     val separator = label.indexOf(':')
     val issuerFromLabel = if (separator >= 0) label.substring(0, separator) else ""
@@ -140,14 +140,14 @@ private fun queryParams(query: String): Map<String, String> {
     return query.split('&').mapNotNull { part ->
         val index = part.indexOf('=')
         if (index < 0) return@mapNotNull null
-        val key = URLDecoder.decode(part.substring(0, index), Charsets.UTF_8)
-        val value = URLDecoder.decode(part.substring(index + 1), Charsets.UTF_8)
+        val key = URLDecoder.decode(part.substring(0, index), "UTF-8")
+        val value = URLDecoder.decode(part.substring(index + 1), "UTF-8")
         key to value
     }.toMap()
 }
 
 private fun urlEncode(value: String): String =
-    URLEncoder.encode(value, Charsets.UTF_8).replace("+", "%20")
+    URLEncoder.encode(value, "UTF-8").replace("+", "%20")
 
 private fun boundedInt(raw: String?, fallback: Int, min: Int, max: Int): Int? {
     if (raw.isNullOrBlank()) return fallback

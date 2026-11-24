@@ -63,6 +63,14 @@ sealed class AuthGraph : NavKey {
     ) : AuthGraph()
 
     /**
+     * Creates an account for an email that an administrator has invited.
+     */
+    @Serializable
+    data class InvitedRegistrationRoute(
+        val emailAddress: String,
+    ) : AuthGraph()
+
+    /**
      * The type-safe route for the login with device screen.
      */
     @Serializable

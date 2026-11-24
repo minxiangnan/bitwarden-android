@@ -20,6 +20,7 @@ fun EntryProviderScope<AuthGraph>.landingDestination(
     onNavigateToEnvironment: () -> Unit,
     onNavigateToStartRegistration: () -> Unit,
     onNavigateToPreAuthSettings: () -> Unit,
+    onNavigateToInvitedRegistration: (emailAddress: String) -> Unit,
 ) {
     stayEntry<AuthGraph.LandingRoute> {
         LandingScreen(
@@ -27,6 +28,7 @@ fun EntryProviderScope<AuthGraph>.landingDestination(
             onNavigateToEnvironment = onNavigateToEnvironment,
             onNavigateToStartRegistration = onNavigateToStartRegistration,
             onNavigateToPreAuthSettings = onNavigateToPreAuthSettings,
+            onNavigateToInvitedRegistration = onNavigateToInvitedRegistration,
         )
     }
 }

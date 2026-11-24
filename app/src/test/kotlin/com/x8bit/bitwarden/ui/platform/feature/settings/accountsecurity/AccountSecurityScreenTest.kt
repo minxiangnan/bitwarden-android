@@ -7,6 +7,7 @@ import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.filter
 import androidx.compose.ui.test.filterToOne
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasTextExactly
@@ -1472,15 +1473,15 @@ class AccountSecurityScreenTest : BitwardenComposeTest() {
         composeTestRule.onNode(isDialog()).assertDoesNotExist()
         mutableStateFlow.update { it.copy(dialog = AccountSecurityDialog.ConfirmLogout) }
         composeTestRule
-            .onNodeWithText("Yes")
-            .assert(hasAnyAncestor(isDialog()))
+            .onAllNodesWithText("Log out")
+            .filter(hasAnyAncestor(isDialog()))[0]
             .assertIsDisplayed()
         composeTestRule
             .onNodeWithText("Cancel")
             .assert(hasAnyAncestor(isDialog()))
             .assertIsDisplayed()
         composeTestRule
-            .onNodeWithText("Are you sure you want to log out?")
+            .onNodeWithText("Are you sure you want to log out?", substring = true)
             .assert(hasAnyAncestor(isDialog()))
             .assertIsDisplayed()
     }
@@ -1489,8 +1490,8 @@ class AccountSecurityScreenTest : BitwardenComposeTest() {
     fun `on confirm logout click should send ConfirmLogoutClick`() {
         mutableStateFlow.update { it.copy(dialog = AccountSecurityDialog.ConfirmLogout) }
         composeTestRule
-            .onNodeWithText("Yes")
-            .assert(hasAnyAncestor(isDialog()))
+            .onAllNodesWithText("Log out")
+            .filter(hasAnyAncestor(isDialog()))[1]
             .performClick()
         verify { viewModel.trySendAction(AccountSecurityAction.ConfirmLogoutClick) }
     }

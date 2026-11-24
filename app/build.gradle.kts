@@ -1,6 +1,5 @@
 import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.variant.impl.VariantOutputImpl
-import com.android.utils.cxx.io.removeExtensionIfPresent
 import com.google.firebase.crashlytics.buildtools.gradle.tasks.InjectMappingFileIdTask
 import com.google.firebase.crashlytics.buildtools.gradle.tasks.UploadMappingFileTask
 import com.google.gms.googleservices.GoogleServicesTask
@@ -43,6 +42,18 @@ val ciProperties = Properties().apply {
     }
 }
 
+/**
+ * Release signing values. Read from the environment or from `gradle.properties` /
+ * `user.properties`. Nothing here is committed.
+ */
+fun zhSigningProperty(name: String): String? = listOf(
+    userProperties.getProperty(name),
+    providers.gradleProperty(name).orNull,
+    System.getenv(name),
+).firstOrNull { !it.isNullOrBlank() }
+
+val zhKeystorePath = zhSigningProperty("ZH_KEYSTORE_PATH")
+
 base {
     // Set the base archive name for publishing purposes. This is used to derive the
     // APK and AAB artifact names when uploading to Firebase and Play Store.
@@ -73,6 +84,9 @@ configure<ApplicationExtension> {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // Each instrumented test starts from a freshly cleared app (requires the orchestrator).
         testInstrumentationRunnerArguments["clearPackageData"] = "true"
+        ndk {
+            abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+        }
 
         buildConfigField(
             type = "String",
@@ -97,6 +111,14 @@ configure<ApplicationExtension> {
             keyPassword = "android"
             storeFile = file("../keystores/debug.keystore")
             storePassword = "android"
+        }
+        if (!zhKeystorePath.isNullOrBlank()) {
+            create("zhRelease") {
+                storeFile = file(zhKeystorePath)
+                storePassword = zhSigningProperty("ZH_KEYSTORE_PASSWORD")
+                keyAlias = zhSigningProperty("ZH_KEY_ALIAS")
+                keyPassword = zhSigningProperty("ZH_KEY_PASSWORD")
+            }
         }
     }
 
@@ -128,9 +150,11 @@ configure<ApplicationExtension> {
         }
         release {
             isDebuggable = false
-            signingConfig = signingConfigs.getByName("debug")
-            isMinifyEnabled = false
-            isShrinkResources = false
+            if (!zhKeystorePath.isNullOrBlank()) {
+                signingConfig = signingConfigs.getByName("zhRelease")
+            }
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
@@ -138,6 +162,15 @@ configure<ApplicationExtension> {
 
             buildConfigField(type = "boolean", name = "HAS_DEBUG_MENU", value = "false")
             buildConfigField(type = "boolean", name = "HAS_LOGS_ENABLED", value = "false")
+        }
+    }
+
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+            isUniversalApk = true
         }
     }
 
@@ -161,6 +194,10 @@ configure<ApplicationExtension> {
         compose = true
     }
     packaging {
+        jniLibs {
+            useLegacyPackaging = true
+            excludes += setOf("lib/mips/**", "lib/mips64/**", "lib/armeabi/**")
+        }
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
@@ -188,37 +225,35 @@ androidComponents {
         val flavorName = appVariant.flavorName
         val variantName = appVariant.name
         val buildType = appVariant.buildType
+        val fileNameWithoutExtension = when (flavorName) {
+            "fdroid" -> "$applicationId-$flavorName"
+            else -> applicationId
+        }
         appVariant
             .outputs
             .mapNotNull { it as? VariantOutputImpl }
             .forEach { output ->
-                val fileNameWithoutExtension = when (flavorName) {
-                    "fdroid" -> "$applicationId-$flavorName"
-                    "standard" -> applicationId
-                    else -> output.outputFileName.get().removeExtensionIfPresent(".apk")
-                }
-
-                // Set the APK output filename.
-                output.outputFileName.set("$fileNameWithoutExtension.apk")
-
-                val renameTaskName = "rename${variantName.uppercaseFirstChar()}AabFiles"
-                tasks.register(renameTaskName) {
-                    group = "build"
-                    description = "Renames the bundle files for $variantName variant"
-                    doLast {
-                        val namespace = appVariant.namespace.get()
-                        renameFile(
-                            "$bundlesDir/$variantName/$namespace-$flavorName-$buildType.aab",
-                            "$fileNameWithoutExtension.aab",
-                        )
-                    }
-                }
-                // Force renaming task to execute after the variant is built.
-                val bundleTaskName = "bundle${variantName.uppercaseFirstChar()}"
-                tasks
-                    .named { it == bundleTaskName }
-                    .configureEach { finalizedBy(renameTaskName) }
+                val abiSuffix = output.filters
+                    .joinToString(separator = "") { filter -> "-${filter.identifier}" }
+                output.outputFileName.set("$fileNameWithoutExtension$abiSuffix.apk")
             }
+
+        val renameTaskName = "rename${variantName.uppercaseFirstChar()}AabFiles"
+        tasks.register(renameTaskName) {
+            group = "build"
+            description = "Renames the bundle files for $variantName variant"
+            doLast {
+                val namespace = appVariant.namespace.get()
+                renameFile(
+                    "$bundlesDir/$variantName/$namespace-$flavorName-$buildType.aab",
+                    "$fileNameWithoutExtension.aab",
+                )
+            }
+        }
+        val bundleTaskName = "bundle${variantName.uppercaseFirstChar()}"
+        tasks
+            .named { it == bundleTaskName }
+            .configureEach { finalizedBy(renameTaskName) }
     }
 }
 
@@ -341,6 +376,8 @@ afterEvaluate {
     fdroidTasksToDisable
         .filter { it.name.contains("Fdroid") }
         .forEach { it.enabled = false }
+    // The packaged Firebase app id is only enough to compile. Do not upload mappings.
+    tasks.withType<UploadMappingFileTask>().configureEach { enabled = false }
 }
 
 private fun renameFile(path: String, newName: String) {

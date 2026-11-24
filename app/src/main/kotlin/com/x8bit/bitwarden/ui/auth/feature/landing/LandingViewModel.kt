@@ -157,6 +157,7 @@ class LandingViewModel @Inject constructor(
             }
 
             is LandingAction.ContinueButtonClick -> handleContinueButtonClicked()
+            LandingAction.InvitedRegistrationClick -> handleInvitedRegistrationClicked()
             LandingAction.CreateAccountClick -> handleCreateAccountClicked()
             is LandingAction.DialogDismiss -> handleDialogDismiss()
             is LandingAction.RememberMeToggle -> handleRememberMeToggled(action)
@@ -238,11 +239,7 @@ class LandingViewModel @Inject constructor(
                 }
                 return
             }
-            is ServerUrlResult.Accepted -> {
-                environmentRepository.environment = Environment.SelfHosted(
-                    environmentUrlData = EnvironmentUrlDataJson(base = server.url),
-                )
-            }
+            is ServerUrlResult.Accepted -> acceptServer(server.url)
         }
         if (!state.emailInput.isValidEmail(useStrictValidation = false)) {
             mutableStateFlow.update {
@@ -273,6 +270,48 @@ class LandingViewModel @Inject constructor(
         authRepository.rememberedEmailAddress = email.takeUnless { !isRememberMeEnabled }
 
         sendEvent(LandingEvent.NavigateToLogin(email))
+    }
+
+    private fun acceptServer(url: String) {
+        val hosted = Environment.SelfHosted(
+            environmentUrlData = EnvironmentUrlDataJson(base = url),
+        )
+        environmentRepository.environment = hosted
+        mutableStateFlow.update {
+            it.copy(
+                selectedEnvironmentType = hosted.type,
+                selectedEnvironmentLabel = hosted.label,
+                isSelectedEnvironmentFedRamp = hosted.isFedRamp,
+            )
+        }
+    }
+
+    private fun handleInvitedRegistrationClicked() {
+        when (val server = normalizeServerUrl(state.serverUrlInput)) {
+            is ServerUrlResult.Rejected -> {
+                mutableStateFlow.update {
+                    it.copy(
+                        dialog = LandingState.DialogState.Error(
+                            message = server.message.asText(),
+                        ),
+                    )
+                }
+                return
+            }
+
+            is ServerUrlResult.Accepted -> acceptServer(server.url)
+        }
+        if (!state.emailInput.isValidEmail(useStrictValidation = false)) {
+            mutableStateFlow.update {
+                it.copy(
+                    dialog = LandingState.DialogState.Error(
+                        message = BitwardenString.invalid_email.asText(),
+                    ),
+                )
+            }
+            return
+        }
+        sendEvent(LandingEvent.NavigateToInvitedRegistration(state.emailInput))
     }
 
     private fun handleCreateAccountClicked() {
@@ -435,6 +474,13 @@ sealed class LandingEvent {
     ) : LandingEvent()
 
     /**
+     * Opens the invited-account form for [emailAddress].
+     */
+    data class NavigateToInvitedRegistration(
+        val emailAddress: String,
+    ) : LandingEvent()
+
+    /**
      * Navigates to the self-hosted/custom environment screen.
      */
     data object NavigateToEnvironment : LandingEvent()
@@ -496,6 +542,11 @@ sealed class LandingAction {
      * Indicates that the Create Account text was clicked.
      */
     data object CreateAccountClick : LandingAction()
+
+    /**
+     * The user wants to create an account for an invited email.
+     */
+    data object InvitedRegistrationClick : LandingAction()
 
     /**
      * Indicates that a dialog is attempting to be dismissed.

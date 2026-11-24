@@ -695,7 +695,10 @@ class VaultItemViewModelTest : BaseViewModelTest() {
                 val expected = DEFAULT_STATE.copy(
                     viewState = DEFAULT_VIEW_STATE,
                     dialog = VaultItemState.DialogState.DeleteConfirmationPrompt(
-                        BitwardenString.do_you_really_want_to_soft_delete_cipher.asText(),
+                        message = BitwardenString
+                            .do_you_really_want_to_soft_delete_cipher
+                            .asText(),
+                        itemName = "login cipher",
                     ),
                 )
 
@@ -739,7 +742,10 @@ class VaultItemViewModelTest : BaseViewModelTest() {
             val expected = DEFAULT_STATE.copy(
                 viewState = loginState,
                 dialog = VaultItemState.DialogState.DeleteConfirmationPrompt(
-                    BitwardenString.do_you_really_want_to_permanently_delete_cipher.asText(),
+                    message = BitwardenString
+                        .do_you_really_want_to_permanently_delete_cipher
+                        .asText(),
+                    itemName = "login cipher",
                 ),
             )
 

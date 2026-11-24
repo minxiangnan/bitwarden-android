@@ -7,6 +7,7 @@ import com.x8bit.bitwarden.data.autofill.manager.browser.BrowserThirdPartyAutofi
 import com.x8bit.bitwarden.data.autofill.model.browser.BrowserPackage
 import com.x8bit.bitwarden.data.autofill.model.browser.BrowserThirdPartyAutoFillData
 import com.x8bit.bitwarden.data.autofill.model.browser.BrowserThirdPartyAutofillStatus
+import com.bitwarden.ui.platform.base.MainDispatcherExtension
 import com.x8bit.bitwarden.data.platform.manager.FirstTimeActionManager
 import com.x8bit.bitwarden.ui.platform.feature.settings.autofill.browser.model.BrowserAutofillSettingsOption
 import io.mockk.every
@@ -21,7 +22,9 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 
+@ExtendWith(MainDispatcherExtension::class)
 class SetupBrowserAutofillViewModelTest {
     private val authRepository: AuthRepository = mockk {
         every { goToNextStep() } just runs
@@ -242,7 +245,7 @@ class SetupBrowserAutofillViewModelTest {
     }
 
     @Test
-    fun `ContinueClick should call goToNextStep when initial setup`() {
+    fun `ContinueClick should call goToNextStep when initial setup`() = runTest {
         val viewModel = createViewModel()
         viewModel.trySendAction(SetupBrowserAutofillAction.ContinueClick)
         verify(exactly = 1) {

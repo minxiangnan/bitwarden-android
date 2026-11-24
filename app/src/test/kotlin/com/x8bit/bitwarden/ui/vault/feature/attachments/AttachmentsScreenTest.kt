@@ -214,7 +214,7 @@ class AttachmentsScreenTest : BitwardenComposeTest() {
 
         // Title
         composeTestRule
-            .onAllNodesWithText("Delete")
+            .onAllNodesWithText("cool_file.png")
             .filterToOne(!hasClickAction())
             .assert(hasAnyAncestor(isDialog()))
             .assertIsDisplayed()
