@@ -1,6 +1,7 @@
 package com.x8bit.bitwarden.ui.platform.feature.vaultunlockednavbar
 
 import com.bitwarden.ui.platform.navigation.util.navigationControllerOf
+import com.x8bit.bitwarden.ui.authenticator.AuthenticatorGraph
 import com.x8bit.bitwarden.ui.platform.feature.settings.SettingsGraph
 import com.x8bit.bitwarden.ui.tools.feature.generator.GeneratorGraph
 import com.x8bit.bitwarden.ui.tools.feature.send.SendGraph
@@ -15,6 +16,7 @@ class VaultUnlockedNavBarNavigationControllersTest {
     private val navigationControllers = VaultUnlockedNavBarNavigationControllers(
         root = navigationControllerOf(VaultUnlockedNavBarGraph.Vault),
         vault = navigationControllerOf(VaultGraph.VaultRoute),
+        authenticator = navigationControllerOf(AuthenticatorGraph.ListRoute),
         send = navigationControllerOf(SendGraph.SendRoute),
         generator = navigationControllerOf(GeneratorGraph.GeneratorRoute),
         settings = navigationControllerOf(SettingsGraph.SettingsRoute),

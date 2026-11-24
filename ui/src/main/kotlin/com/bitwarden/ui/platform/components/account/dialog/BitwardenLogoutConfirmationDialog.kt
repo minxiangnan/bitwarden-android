@@ -21,13 +21,15 @@ fun BitwardenLogoutConfirmationDialog(
     accountSummary: AccountSummary? = null,
 ) {
     val baseConfirmationMessage = stringResource(id = BitwardenString.logout_confirmation)
+    val unsynced = stringResource(id = BitwardenString.zh_logout_unsynced)
     val message = accountSummary
-        ?.let { "$baseConfirmationMessage\n\n${it.email}\n${it.environmentLabel}" }
-        ?: baseConfirmationMessage
+        ?.let { "$baseConfirmationMessage\n\n${it.email}\n${it.environmentLabel}\n\n$unsynced" }
+        ?: "$baseConfirmationMessage\n\n$unsynced"
     BitwardenTwoButtonDialog(
-        title = stringResource(id = BitwardenString.log_out),
+        title = accountSummary?.email ?: stringResource(id = BitwardenString.log_out),
         message = message,
-        confirmButtonText = stringResource(id = BitwardenString.yes),
+        confirmButtonText = stringResource(id = BitwardenString.log_out),
+        confirmTextColor = com.bitwarden.ui.platform.theme.BitwardenTheme.colorScheme.status.error,
         onConfirmClick = onConfirmClick,
         dismissButtonText = stringResource(id = BitwardenString.cancel),
         onDismissClick = onDismissRequest,

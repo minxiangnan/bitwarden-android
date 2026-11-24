@@ -34,6 +34,7 @@ import com.x8bit.bitwarden.data.auth.repository.model.UserState
 import com.x8bit.bitwarden.data.auth.repository.model.ValidatePasswordResult
 import com.x8bit.bitwarden.data.auth.repository.model.ValidatePinResult
 import com.x8bit.bitwarden.data.autofill.util.isActiveWithFido2Credentials
+import com.x8bit.bitwarden.data.autofill.util.login
 import com.x8bit.bitwarden.data.billing.manager.PremiumStateManager
 import com.x8bit.bitwarden.data.credentials.manager.BitwardenCredentialManager
 import com.x8bit.bitwarden.data.credentials.model.CreateCredentialRequest
@@ -184,14 +185,7 @@ class VaultAddEditViewModel @AssistedInject constructor(
             val shouldExitOnSave = autofillSaveItem != null ||
                 providerCreateCredentialRequest != null
 
-            val dialogState = if (!settingsRepository.initialAutofillDialogShown &&
-                vaultAddEditType is VaultAddEditType.AddItem &&
-                autofillSelectionData == null
-            ) {
-                VaultAddEditState.DialogState.InitialAutofillPrompt
-            } else {
-                null
-            }
+            val dialogState = null
 
             VaultAddEditState(
                 isCardScannerEnabled = featureFlagManager
@@ -235,6 +229,8 @@ class VaultAddEditViewModel @AssistedInject constructor(
                 shouldClearSpecialCircumstance = autofillSelectionData == null,
                 defaultUriMatchType = settingsRepository.defaultUriMatchType,
                 hasPremium = authRepository.userStateFlow.value?.activeAccount?.isPremium == true,
+                isAutofillLoginSave = autofillSaveItem is
+                    com.x8bit.bitwarden.data.autofill.model.AutofillSaveItem.Login,
             )
         },
 ) {
@@ -321,6 +317,56 @@ class VaultAddEditViewModel @AssistedInject constructor(
             .map { VaultAddEditAction.Internal.SnackbarDataReceived(it) }
             .onEach(::sendAction)
             .launchIn(viewModelScope)
+
+        viewModelScope.launch { resolveAutofillLoginSave() }
+    }
+
+    private suspend fun resolveAutofillLoginSave() {
+        val login = (specialCircumstanceManager.specialCircumstance as?
+            com.x8bit.bitwarden.data.platform.manager.model.SpecialCircumstance.AutofillSave)
+            ?.autofillSaveItem as? com.x8bit.bitwarden.data.autofill.model.AutofillSaveItem.Login
+            ?: return
+        val vault = vaultRepository.vaultDataStateFlow.first { it !is DataState.Loading }
+        val host = login.uri?.let {
+            com.x8bit.bitwarden.data.authenticator.match.pageHostname(it)
+        }
+        val snapshots = vault.data
+            ?.decryptCipherListResult
+            ?.successes
+            .orEmpty()
+            .mapNotNull { cipher ->
+            val listLogin = cipher.login ?: return@mapNotNull null
+            val sameHost = host == null || listLogin.uris.orEmpty().any { uri ->
+                com.x8bit.bitwarden.data.authenticator.match.pageHostname(uri.uri.orEmpty()) == host
+            }
+            if (!sameHost || listLogin.username.orEmpty() != login.username.orEmpty()) {
+                return@mapNotNull null
+            }
+            val full = vaultRepository.getCipher(cipher.id.orEmpty())
+            val password = (full as? GetCipherResult.Success)?.cipherView?.login?.password
+                ?: return@mapNotNull null
+            com.x8bit.bitwarden.data.authenticator.save.ExistingLoginSnapshot(
+                id = cipher.id.orEmpty(),
+                username = listLogin.username.orEmpty(),
+                password = password,
+                host = host.orEmpty(),
+            )
+        }
+        sendAction(
+            VaultAddEditAction.Internal.AutofillLoginDecisionReceive(
+                decision = com.x8bit.bitwarden.data.authenticator.save.decideAutofillLoginSave(
+                    username = login.username,
+                    password = login.password,
+                    uri = login.uri,
+                    existing = snapshots,
+                ),
+                cipherId = com.x8bit.bitwarden.data.authenticator.save.loginIdToUpdate(
+                    username = login.username,
+                    uri = login.uri,
+                    existing = snapshots,
+                ),
+            ),
+        )
     }
 
     override fun handleAction(action: VaultAddEditAction) {
@@ -379,6 +425,7 @@ class VaultAddEditViewModel @AssistedInject constructor(
             }
 
             is VaultAddEditAction.Common.SaveClick -> handleSaveClick()
+            VaultAddEditAction.Common.ConfirmNeverSaveClick -> handleConfirmNeverSave()
             is VaultAddEditAction.Common.AddNewCustomFieldClick -> {
                 handleAddNewCustomFieldClick(action)
             }
@@ -469,6 +516,23 @@ class VaultAddEditViewModel @AssistedInject constructor(
     }
 
     @Suppress("LongMethod")
+    private var autofillLoginDecision:
+        com.x8bit.bitwarden.data.authenticator.save.AutofillLoginDecision? =
+        null
+    private var autofillLoginUpdateId: String? = null
+
+    private fun handleConfirmNeverSave() {
+        val login = (specialCircumstanceManager.specialCircumstance as?
+            com.x8bit.bitwarden.data.platform.manager.model.SpecialCircumstance.AutofillSave)
+            ?.autofillSaveItem as? com.x8bit.bitwarden.data.autofill.model.AutofillSaveItem.Login
+        val uri = login?.uri
+        if (!uri.isNullOrBlank()) {
+            settingsRepository.blockedAutofillUris =
+                (settingsRepository.blockedAutofillUris + uri).distinct()
+        }
+        sendEvent(VaultAddEditEvent.NavigateBack)
+    }
+
     private fun handleSaveClick() = onContent { content ->
         if (hasValidationErrors(content)) return@onContent
 
@@ -496,6 +560,29 @@ class VaultAddEditViewModel @AssistedInject constructor(
         }
 
         viewModelScope.launch {
+            val updateId = autofillLoginUpdateId
+            val loginContent = content.type as?
+                VaultAddEditState.ViewState.Content.ItemType.Login
+            if (
+                autofillLoginDecision ==
+                com.x8bit.bitwarden.data.authenticator.save.AutofillLoginDecision.UPDATE_PASSWORD &&
+                updateId != null &&
+                loginContent != null
+            ) {
+                val existing = vaultRepository.getCipher(updateId)
+                if (existing is GetCipherResult.Success && existing.cipherView.login != null) {
+                    val updated = existing.cipherView.copy(
+                        login = existing.cipherView.login?.copy(password = loginContent.password),
+                        revisionDate = clock.instant(),
+                    )
+                    val result = vaultRepository.updateCipher(
+                        cipherId = updateId,
+                        cipherView = updated,
+                    )
+                    sendAction(VaultAddEditAction.Internal.UpdateCipherResultReceive(result))
+                    return@launch
+                }
+            }
             when (val vaultAddEditType = state.vaultAddEditType) {
                 is VaultAddEditType.AddItem -> {
                     val result = content.createCipherForAddAndCloneItemStates()
@@ -1954,6 +2041,17 @@ class VaultAddEditViewModel @AssistedInject constructor(
             is VaultAddEditAction.Internal.SnackbarDataReceived -> {
                 handleSnackbarDataReceived(action)
             }
+
+            is VaultAddEditAction.Internal.AutofillLoginDecisionReceive -> {
+                autofillLoginDecision = action.decision
+                autofillLoginUpdateId = action.cipherId
+                if (
+                    action.decision ==
+                    com.x8bit.bitwarden.data.authenticator.save.AutofillLoginDecision.IGNORE
+                ) {
+                    sendEvent(VaultAddEditEvent.NavigateBack)
+                }
+            }
         }
     }
 
@@ -2772,6 +2870,7 @@ data class VaultAddEditState(
     val defaultUriMatchType: UriMatchType,
     private val shouldShowCoachMarkTour: Boolean,
     val isCardScannerEnabled: Boolean,
+    val isAutofillLoginSave: Boolean = false,
 ) : Parcelable {
 
     /**
@@ -3636,6 +3735,11 @@ sealed class VaultAddEditAction {
          * Represents the action when the save button is clicked.
          */
         data object SaveClick : Common()
+
+        /**
+         * The user confirmed that this site should never be saved.
+         */
+        data object ConfirmNeverSaveClick : Common()
 
         /**
          * User clicked close.
@@ -4535,6 +4639,14 @@ sealed class VaultAddEditAction {
          */
         data class CardScanResultReceive(
             val cardScanResult: CardScanResult,
+        ) : Internal()
+
+        /**
+         * The autofill save prompt decided whether to save, update, or stay quiet.
+         */
+        data class AutofillLoginDecisionReceive(
+            val decision: com.x8bit.bitwarden.data.authenticator.save.AutofillLoginDecision,
+            val cipherId: String?,
         ) : Internal()
     }
 }

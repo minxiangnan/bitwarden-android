@@ -269,6 +269,7 @@ fun VaultAddEditScreen(
     }
 
     var pendingDeleteCipher by rememberSaveable { mutableStateOf(false) }
+    var showNeverSave by rememberSaveable { mutableStateOf(false) }
 
     VaultAddEditItemDialogs(
         dialogState = state.dialog,
@@ -317,6 +318,22 @@ fun VaultAddEditScreen(
         },
     )
 
+    if (showNeverSave) {
+        BitwardenTwoButtonDialog(
+            title = stringResource(id = BitwardenString.zh_never_save_site),
+            message = stringResource(id = BitwardenString.zh_never_save_site_body),
+            confirmButtonText = stringResource(id = BitwardenString.zh_never_save_site),
+            dismissButtonText = stringResource(id = BitwardenString.cancel),
+            confirmTextColor = BitwardenTheme.colorScheme.status.error,
+            onConfirmClick = {
+                showNeverSave = false
+                viewModel.trySendAction(VaultAddEditAction.Common.ConfirmNeverSaveClick)
+            },
+            onDismissClick = { showNeverSave = false },
+            onDismissRequest = { showNeverSave = false },
+        )
+    }
+
     if (pendingDeleteCipher) {
         BitwardenTwoButtonDialog(
             title = stringResource(id = BitwardenString.delete),
@@ -363,6 +380,12 @@ fun VaultAddEditScreen(
                         .takeIf { state.shouldShowCloseButton },
                     scrollBehavior = scrollBehavior,
                     actions = {
+                        if (state.isAutofillLoginSave) {
+                            BitwardenTextButton(
+                                label = stringResource(id = BitwardenString.zh_never_save_site),
+                                onClick = { showNeverSave = true },
+                            )
+                        }
                         BitwardenTextButton(
                             label = stringResource(id = BitwardenString.save),
                             onClick = {

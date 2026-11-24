@@ -74,4 +74,10 @@ sealed class SettingsGraph : NavKey {
      */
     @Serializable
     data object PlanRoute : SettingsGraph()
+
+    /**
+     * MCP access token for authenticator entries.
+     */
+    @Serializable
+    data object McpRoute : SettingsGraph()
 }

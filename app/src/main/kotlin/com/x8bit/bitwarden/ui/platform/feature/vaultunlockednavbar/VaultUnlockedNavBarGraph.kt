@@ -1,6 +1,7 @@
 package com.x8bit.bitwarden.ui.platform.feature.vaultunlockednavbar
 
 import androidx.navigation3.runtime.NavKey
+import com.x8bit.bitwarden.ui.authenticator.AuthenticatorGraph
 import com.x8bit.bitwarden.ui.platform.feature.settings.SettingsGraph
 import com.x8bit.bitwarden.ui.tools.feature.generator.GeneratorGraph
 import com.x8bit.bitwarden.ui.tools.feature.send.SendGraph
@@ -25,6 +26,12 @@ sealed class VaultUnlockedNavBarGraph : NavKey {
      */
     @Serializable
     data object Send : VaultUnlockedNavBarGraph()
+
+    /**
+     * The type-safe route for the authenticator tab, which hosts the [AuthenticatorGraph].
+     */
+    @Serializable
+    data object Authenticator : VaultUnlockedNavBarGraph()
 
     /**
      * The type-safe route for the generator tab, which hosts the [GeneratorGraph].

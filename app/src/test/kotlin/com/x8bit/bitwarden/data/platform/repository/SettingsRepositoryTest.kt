@@ -115,10 +115,7 @@ class SettingsRepositoryTest {
         settingsRepository.setDefaultsIfNecessary(userId = USER_ID)
 
         // Calling once sets values
-        assertEquals(
-            15,
-            fakeSettingsDiskSource.getVaultTimeoutInMinutes(userId = USER_ID),
-        )
+        assertNull(fakeSettingsDiskSource.getVaultTimeoutInMinutes(userId = USER_ID))
         assertEquals(
             VaultTimeoutAction.LOCK,
             fakeSettingsDiskSource.getVaultTimeoutAction(userId = USER_ID),
@@ -167,7 +164,7 @@ class SettingsRepositoryTest {
         settingsRepository.setDefaultsIfNecessary(userId = USER_ID)
 
         // Calling once sets values
-        assertEquals(15, fakeSettingsDiskSource.getVaultTimeoutInMinutes(userId = USER_ID))
+        assertNull(fakeSettingsDiskSource.getVaultTimeoutInMinutes(userId = USER_ID))
         assertEquals(
             VaultTimeoutAction.LOCK,
             fakeSettingsDiskSource.getVaultTimeoutAction(userId = USER_ID),
@@ -203,7 +200,7 @@ class SettingsRepositoryTest {
         settingsRepository.setDefaultsIfNecessary(userId = USER_ID)
 
         // Calling once sets values
-        assertEquals(15, fakeSettingsDiskSource.getVaultTimeoutInMinutes(userId = USER_ID))
+        assertNull(fakeSettingsDiskSource.getVaultTimeoutInMinutes(userId = USER_ID))
         assertEquals(
             VaultTimeoutAction.LOGOUT,
             fakeSettingsDiskSource.getVaultTimeoutAction(userId = USER_ID),
@@ -243,7 +240,7 @@ class SettingsRepositoryTest {
         settingsRepository.setDefaultsIfNecessary(userId = USER_ID)
 
         // Calling once sets values
-        assertEquals(15, fakeSettingsDiskSource.getVaultTimeoutInMinutes(userId = USER_ID))
+        assertNull(fakeSettingsDiskSource.getVaultTimeoutInMinutes(userId = USER_ID))
         assertEquals(
             VaultTimeoutAction.LOGOUT,
             fakeSettingsDiskSource.getVaultTimeoutAction(userId = USER_ID),
@@ -264,7 +261,7 @@ class SettingsRepositoryTest {
         // This will reset the setting because the user does not have a method to unlock the vault
         // so you cannot use the "lock" timeout action, it must be "logout".
         settingsRepository.setDefaultsIfNecessary(userId = USER_ID)
-        assertEquals(15, fakeSettingsDiskSource.getVaultTimeoutInMinutes(userId = USER_ID))
+        assertNull(fakeSettingsDiskSource.getVaultTimeoutInMinutes(userId = USER_ID))
         assertEquals(
             VaultTimeoutAction.LOGOUT,
             fakeSettingsDiskSource.getVaultTimeoutAction(userId = USER_ID),
@@ -274,7 +271,7 @@ class SettingsRepositoryTest {
     @Test
     fun `appLanguage should pull from and update SettingsDiskSource`() {
         assertEquals(
-            AppLanguage.DEFAULT,
+            AppLanguage.CHINESE_SIMPLIFIED,
             settingsRepository.appLanguage,
         )
 
@@ -296,7 +293,7 @@ class SettingsRepositoryTest {
     @Test
     fun `appLanguageStateFlow should react to changes in SettingsDiskSource`() = runTest {
         settingsRepository.appLanguageStateFlow.test {
-            assertEquals(AppLanguage.DEFAULT, awaitItem())
+            assertEquals(AppLanguage.CHINESE_SIMPLIFIED, awaitItem())
             fakeSettingsDiskSource.appLanguage = AppLanguage.DUTCH
             assertEquals(AppLanguage.DUTCH, awaitItem())
         }
@@ -608,7 +605,7 @@ class SettingsRepositoryTest {
     fun `defaultUriMatchType should pull from and update SettingsDiskSource`() {
         fakeAuthDiskSource.userState = null
         assertEquals(
-            UriMatchType.DOMAIN,
+            UriMatchType.HOST,
             settingsRepository.defaultUriMatchType,
         )
 

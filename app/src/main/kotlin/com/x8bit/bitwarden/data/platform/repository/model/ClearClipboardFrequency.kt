@@ -7,7 +7,7 @@ package com.x8bit.bitwarden.data.platform.repository.model
 enum class ClearClipboardFrequency(
     val frequencySeconds: Int?,
 ) {
-    NEVER(null),
+    NEVER(-1),
     TEN_SECONDS(10),
     TWENTY_SECONDS(20),
     THIRTY_SECONDS(30),

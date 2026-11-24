@@ -8,6 +8,7 @@ import com.bitwarden.network.provider.CookieProvider
 import com.bitwarden.network.provider.RefreshTokenProvider
 import com.bitwarden.network.provider.TokenProvider
 import com.bitwarden.network.service.AccountsService
+import com.bitwarden.network.service.AuthenticatorService
 import com.bitwarden.network.service.AuthRequestsService
 import com.bitwarden.network.service.BillingService
 import com.bitwarden.network.service.CiphersService
@@ -152,6 +153,11 @@ interface BitwardenServiceClient {
      * Provides access to the Sends service.
      */
     val sendsService: SendsService
+
+    /**
+     * Provides access to authenticator entries and MCP opt-in.
+     */
+    val authenticatorService: AuthenticatorService
 
     /**
      * Sets the [refreshTokenProvider] to be used for refreshing access tokens.

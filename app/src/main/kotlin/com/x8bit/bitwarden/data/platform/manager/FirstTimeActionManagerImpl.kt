@@ -20,7 +20,6 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
@@ -38,6 +37,11 @@ class FirstTimeActionManagerImpl @Inject constructor(
 ) : FirstTimeActionManager {
 
     private val unconfinedScope = CoroutineScope(dispatcherManager.unconfined)
+    private val noVaultBadge = kotlinx.coroutines.flow.MutableStateFlow(0)
+    private val noCoachMarks = kotlinx.coroutines.flow.MutableStateFlow(false)
+    private val emptyFirstTime = kotlinx.coroutines.flow.MutableStateFlow(
+        FirstTimeState(showImportLoginsCard = false),
+    )
 
     override val allSettingsBadgeCountFlow: StateFlow<Int>
         get() = combine(
@@ -100,85 +104,27 @@ class FirstTimeActionManagerImpl @Inject constructor(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override val allVaultSettingsBadgeCountFlow: StateFlow<Int>
-        get() = authDiskSource
-            .activeUserIdChangesFlow
-            .filterNotNull()
-            .flatMapLatest {
-                getShowImportLoginsSettingBadgeFlowInternal(userId = it)
-                    .map { showImportLogins -> listOf(showImportLogins) }
-                    .map { list -> list.count { showImportLogins -> showImportLogins } }
-            }
-            .stateIn(
-                scope = unconfinedScope,
-                started = SharingStarted.Lazily,
-                initialValue = 0,
-            )
+        get() = noVaultBadge
 
     /**
      * Returns a [Flow] that emits every time the active user's first time state is changed.
      */
     @OptIn(ExperimentalCoroutinesApi::class)
     override val firstTimeStateFlow: Flow<FirstTimeState>
-        get() = authDiskSource
-            .activeUserIdChangesFlow
-            .filterNotNull()
-            .flatMapLatest { activeUserId ->
-                combine(
-                    listOf(
-                        getShowImportLoginsFlowInternal(userId = activeUserId),
-                        settingsDiskSource.getShowUnlockSettingBadgeFlow(userId = activeUserId),
-                        getShowAutofillSettingBadgeFlowInternal(userId = activeUserId),
-                        getShowImportLoginsSettingBadgeFlowInternal(userId = activeUserId),
-                        getShowBrowserAutofillSettingBadgeFlowInternal(userId = activeUserId),
-                    ),
-                ) {
-                    FirstTimeState(
-                        showImportLoginsCard = it[0],
-                        showSetupUnlockCard = it[1],
-                        showSetupAutofillCard = it[2],
-                        showImportLoginsCardInSettings = it[3],
-                        showSetupBrowserAutofillCard = it[4],
-                    )
-                }
-            }
-            .onStart { emit(currentOrDefaultUserFirstTimeState) }
-            .distinctUntilChanged()
+        get() = emptyFirstTime
 
     override val shouldShowAddLoginCoachMarkFlow: Flow<Boolean>
-        get() = settingsDiskSource
-            .getShouldShowAddLoginCoachMarkFlow()
-            .map { it != false }
-            .mapFalseIfAnyLoginCiphersAvailable()
-            .distinctUntilChanged()
+        get() = noCoachMarks
 
     override val shouldShowGeneratorCoachMarkFlow: Flow<Boolean>
-        get() = settingsDiskSource
-            .getShouldShowGeneratorCoachMarkFlow()
-            .map { it != false }
-            .mapFalseIfAnyLoginCiphersAvailable()
-            .distinctUntilChanged()
+        get() = noCoachMarks
 
     /**
      * Get the current [FirstTimeState] of the active user if available, otherwise return
      * a default configuration.
      */
     override val currentOrDefaultUserFirstTimeState: FirstTimeState
-        get() =
-            authDiskSource
-                .userState
-                ?.activeUserId
-                ?.let {
-                    FirstTimeState(
-                        showImportLoginsCard = authDiskSource.getShowImportLogins(it),
-                        showSetupUnlockCard = settingsDiskSource.getShowUnlockSettingBadge(it),
-                        showSetupAutofillCard = getShowAutofillSettingBadgeInternal(it),
-                        showImportLoginsCardInSettings = settingsDiskSource
-                            .getShowImportLoginsSettingBadge(it),
-                        showSetupBrowserAutofillCard = settingsDiskSource
-                            .getShowBrowserAutofillSettingBadge(it),
-                    )
-                }
-                ?: FirstTimeState()
+        get() = FirstTimeState(showImportLoginsCard = false)
 
     override fun storeShowUnlockSettingBadge(showBadge: Boolean) {
         val activeUserId = authDiskSource.userState?.activeUserId ?: return

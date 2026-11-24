@@ -25,16 +25,18 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        maven {
-            name = "GitHubPackages (Bitwarden)"
-            url = uri("https://maven.pkg.github.com/bitwarden/sdk")
-            credentials {
-                username = ""
-                password = userProperties["gitHubToken"] as String? ?: System.getenv("GITHUB_TOKEN")
-            }
-        }
         if ((userProperties["localSdk"] as String?).toBoolean()) {
             mavenLocal()
+        } else {
+            maven {
+                name = "GitHubPackages (Bitwarden)"
+                url = uri("https://maven.pkg.github.com/bitwarden/sdk")
+                credentials {
+                    username = ""
+                    password = userProperties["gitHubToken"] as String?
+                        ?: System.getenv("GITHUB_TOKEN")
+                }
+            }
         }
     }
 }

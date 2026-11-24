@@ -5,6 +5,7 @@ import com.bitwarden.ui.util.Text
 import com.bitwarden.ui.util.asText
 import com.bitwarden.vault.CipherView
 import com.bitwarden.vault.LoginView
+import com.x8bit.bitwarden.data.authenticator.repository.AuthenticatorRepository
 import com.x8bit.bitwarden.data.auth.repository.AuthRepository
 import com.x8bit.bitwarden.data.auth.repository.model.UserState
 import com.x8bit.bitwarden.data.platform.manager.clipboard.BitwardenClipboardManager
@@ -26,7 +27,10 @@ import java.time.Instant
 import java.time.ZoneOffset
 
 class AutofillTotpManagerTest {
-    private val loginView: LoginView = mockk()
+    private val loginView: LoginView = mockk {
+        every { totp } returns null
+        every { uris } returns null
+    }
     private val cipherView: CipherView = mockk {
         every { id } returns "cipherId"
         every { login } returns loginView
@@ -40,13 +44,16 @@ class AutofillTotpManagerTest {
     }
     private val settingsRepository: SettingsRepository = mockk()
     private val vaultRepository: VaultRepository = mockk()
+    private val authenticatorRepository: AuthenticatorRepository = mockk {
+        every { codeForUrl(any(), any()) } returns null
+    }
 
     private val autofillTotpManager: AutofillTotpManager = AutofillTotpManagerImpl(
         clock = FIXED_CLOCK,
         clipboardManager = clipboardManager,
-        authRepository = authRepository,
         settingsRepository = settingsRepository,
         vaultRepository = vaultRepository,
+        authenticatorRepository = authenticatorRepository,
     )
 
     @Test

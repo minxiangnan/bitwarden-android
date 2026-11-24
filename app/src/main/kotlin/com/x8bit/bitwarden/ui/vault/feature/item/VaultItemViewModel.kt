@@ -386,6 +386,7 @@ class VaultItemViewModel @AssistedInject constructor(
         updateDialogState(
             dialog = VaultItemState.DialogState.DeleteConfirmationPrompt(
                 message = state.deletionConfirmationText,
+                itemName = state.viewState.asContentOrNull()?.common?.name.orEmpty(),
             ),
         )
     }
@@ -2450,6 +2451,7 @@ data class VaultItemState(
         @Parcelize
         data class DeleteConfirmationPrompt(
             val message: Text,
+            val itemName: String = "",
         ) : DialogState()
 
         /**

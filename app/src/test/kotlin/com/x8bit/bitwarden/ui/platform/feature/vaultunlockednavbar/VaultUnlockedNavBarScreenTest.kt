@@ -9,6 +9,7 @@ import com.bitwarden.core.data.repository.util.bufferedMutableSharedFlow
 import com.bitwarden.ui.platform.navigation.util.navigationControllerOf
 import com.bitwarden.ui.platform.resource.BitwardenString
 import com.x8bit.bitwarden.ui.platform.base.BitwardenComposeTest
+import com.x8bit.bitwarden.ui.authenticator.AuthenticatorGraph
 import com.x8bit.bitwarden.ui.platform.feature.settings.SettingsGraph
 import com.x8bit.bitwarden.ui.tools.feature.generator.GeneratorGraph
 import com.x8bit.bitwarden.ui.tools.feature.send.SendGraph
@@ -33,6 +34,7 @@ class VaultUnlockedNavBarScreenTest : BitwardenComposeTest() {
     private val tabNavigationControllers = VaultUnlockedNavBarNavigationControllers(
         root = navigationControllerOf(routes = arrayOf(VaultUnlockedNavBarGraph.Vault)),
         vault = navigationControllerOf(routes = arrayOf(VaultGraph.VaultRoute)),
+        authenticator = navigationControllerOf(routes = arrayOf(AuthenticatorGraph.ListRoute)),
         send = navigationControllerOf(routes = arrayOf(SendGraph.SendRoute)),
         generator = navigationControllerOf(routes = arrayOf(GeneratorGraph.GeneratorRoute)),
         settings = navigationControllerOf(routes = arrayOf(SettingsGraph.SettingsRoute)),

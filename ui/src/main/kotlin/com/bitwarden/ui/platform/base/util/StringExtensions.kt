@@ -178,7 +178,7 @@ fun String.hexToColor(): Color {
         Color(colorString.toColorInt())
     } catch (e: IllegalArgumentException) {
         Timber.e(e, "Failed to parse color: $this")
-        Color.Black
+        Color(color = 0xFF4A3728)
     }
 }
 

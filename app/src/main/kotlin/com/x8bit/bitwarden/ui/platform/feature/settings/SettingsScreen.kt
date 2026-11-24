@@ -54,6 +54,7 @@ fun SettingsScreen(
     onNavigateToOther: () -> Unit,
     onNavigateToVault: () -> Unit,
     onNavigateToPlan: () -> Unit,
+    onNavigateToMcp: () -> Unit = {},
     viewModel: SettingsViewModel,
     intentManager: IntentManager = LocalIntentManager.current,
 ) {
@@ -69,6 +70,7 @@ fun SettingsScreen(
             SettingsEvent.NavigateVault -> onNavigateToVault()
             SettingsEvent.NavigateAccountSecurityShortcut -> onNavigateToAccountSecurity()
             SettingsEvent.NavigatePlan -> onNavigateToPlan()
+            SettingsEvent.NavigateMcp -> onNavigateToMcp()
             is SettingsEvent.NavigateToUrl -> intentManager.launchUri(event.url.toUri())
         }
     }

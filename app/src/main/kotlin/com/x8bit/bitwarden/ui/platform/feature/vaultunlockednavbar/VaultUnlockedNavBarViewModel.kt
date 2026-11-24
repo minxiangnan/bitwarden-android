@@ -32,9 +32,9 @@ class VaultUnlockedNavBarViewModel @Inject constructor(
     initialState = VaultUnlockedNavBarState(
         vaultNavBarLabelRes = BitwardenString.my_vault,
         notificationState = VaultUnlockedNavBarNotificationState(
-            settingsTabNotificationCount = firstTimeActionManager.allSettingsBadgeCountFlow.value,
+            settingsTabNotificationCount = 0,
         ),
-        areSendsDisabled = policyManager.getEffectiveSendPolicy().disableSend,
+        areSendsDisabled = true,
     ),
 ) {
     init {
@@ -104,6 +104,7 @@ class VaultUnlockedNavBarViewModel @Inject constructor(
 
     override fun handleAction(action: VaultUnlockedNavBarAction) {
         when (action) {
+            VaultUnlockedNavBarAction.AuthenticatorTabClick -> handleAuthenticatorTabClicked()
             VaultUnlockedNavBarAction.GeneratorTabClick -> handleGeneratorTabClicked()
             VaultUnlockedNavBarAction.SendTabClick -> handleSendTabClicked()
             VaultUnlockedNavBarAction.SettingsTabClick -> handleSettingsTabClicked()
@@ -181,10 +182,11 @@ class VaultUnlockedNavBarViewModel @Inject constructor(
     private fun handleSettingsNotificationCountUpdate(
         action: VaultUnlockedNavBarAction.Internal.SettingsNotificationCountUpdate,
     ) {
+        action.count
         mutableStateFlow.update {
             it.copy(
                 notificationState = it.notificationState.copy(
-                    settingsTabNotificationCount = action.count,
+                    settingsTabNotificationCount = 0,
                 ),
             )
         }
@@ -193,7 +195,12 @@ class VaultUnlockedNavBarViewModel @Inject constructor(
     private fun handleSendPolicyUpdateReceive(
         action: VaultUnlockedNavBarAction.Internal.SendPolicyUpdateReceive,
     ) {
-        mutableStateFlow.update { it.copy(areSendsDisabled = action.hasPolicy) }
+        action.hasPolicy
+        mutableStateFlow.update { it.copy(areSendsDisabled = true) }
+    }
+
+    private fun handleAuthenticatorTabClicked() {
+        sendEvent(VaultUnlockedNavBarEvent.NavigateToAuthenticatorScreen)
     }
     // #endregion BottomTabViewModel Action Handlers
 }
@@ -218,6 +225,11 @@ data class VaultUnlockedNavBarNotificationState(
  * Models actions for the bottom tab of the vault unlocked portion of the app.
  */
 sealed class VaultUnlockedNavBarAction {
+    /**
+     * Click the authenticator tab.
+     */
+    data object AuthenticatorTabClick : VaultUnlockedNavBarAction()
+
     /**
      * Click Generator tab.
      */
@@ -268,6 +280,13 @@ sealed class VaultUnlockedNavBarEvent {
      * The [VaultUnlockedNavBarTab] to be associated with the event.
      */
     abstract val tab: VaultUnlockedNavBarTab
+
+    /**
+     * Navigate to the authenticator screen.
+     */
+    data object NavigateToAuthenticatorScreen : VaultUnlockedNavBarEvent() {
+        override val tab: VaultUnlockedNavBarTab = VaultUnlockedNavBarTab.Authenticator
+    }
 
     /**
      * Navigate to the Generator screen.

@@ -116,16 +116,17 @@ object AutofillModule {
     fun providesAutofillTotpManager(
         clock: Clock,
         clipboardManager: BitwardenClipboardManager,
-        authRepository: AuthRepository,
         settingsRepository: SettingsRepository,
         vaultRepository: VaultRepository,
+        authenticatorRepository:
+            com.x8bit.bitwarden.data.authenticator.repository.AuthenticatorRepository,
     ): AutofillTotpManager =
         AutofillTotpManagerImpl(
             clock = clock,
             clipboardManager = clipboardManager,
-            authRepository = authRepository,
             settingsRepository = settingsRepository,
             vaultRepository = vaultRepository,
+            authenticatorRepository = authenticatorRepository,
         )
 
     @Singleton

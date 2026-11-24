@@ -6442,9 +6442,9 @@ class AuthRepositoryTest {
 
     @Suppress("MaxLineLength")
     @Test
-    fun `showWelcomeCarousel should return value from settings repository`() {
+    fun `showWelcomeCarousel should stay off`() {
         every { settingsRepository.hasUserLoggedInOrCreatedAccount } returns false
-        assertTrue(repository.showWelcomeCarousel)
+        assertFalse(repository.showWelcomeCarousel)
 
         every { settingsRepository.hasUserLoggedInOrCreatedAccount } returns true
         assertFalse(repository.showWelcomeCarousel)
