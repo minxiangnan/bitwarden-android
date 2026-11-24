@@ -65,7 +65,7 @@ fun FolderAddEditScreen(
 
     if (shouldShowConfirmationDialog) {
         BitwardenTwoButtonDialog(
-            title = null,
+            title = state.screenDisplayName.invoke(),
             message = stringResource(id = BitwardenString.do_you_really_want_to_delete),
             dismissButtonText = stringResource(id = BitwardenString.cancel),
             confirmButtonText = stringResource(id = BitwardenString.delete),

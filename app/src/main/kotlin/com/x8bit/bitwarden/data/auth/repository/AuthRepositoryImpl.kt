@@ -261,7 +261,7 @@ internal class AuthRepositoryImpl(
         }
 
     override val showWelcomeCarousel: Boolean
-        get() = !settingsRepository.hasUserLoggedInOrCreatedAccount
+        get() = false
 
     init {
         combine(

@@ -36,7 +36,6 @@ import com.bitwarden.ui.platform.components.appbar.BitwardenTopAppBar
 import com.bitwarden.ui.platform.components.appbar.action.BitwardenOverflowActionItem
 import com.bitwarden.ui.platform.components.appbar.model.OverflowMenuItemData
 import com.bitwarden.ui.platform.components.button.BitwardenFilledButton
-import com.bitwarden.ui.platform.components.button.BitwardenOutlinedButton
 import com.bitwarden.ui.platform.components.dialog.BitwardenBasicDialog
 import com.bitwarden.ui.platform.components.dialog.BitwardenLoadingDialog
 import com.bitwarden.ui.platform.components.field.BitwardenPasswordField
@@ -214,18 +213,7 @@ private fun LoginScreenContent(
             label = stringResource(id = BitwardenString.master_password),
             showPasswordTestTag = "PasswordVisibilityToggle",
             supportingContentPadding = PaddingValues(),
-            supportingContent = {
-                BitwardenClickableText(
-                    label = stringResource(id = BitwardenString.get_master_passwordword_hint),
-                    onClick = onMasterPasswordClick,
-                    style = BitwardenTheme.typography.labelMedium,
-                    innerPadding = PaddingValues(all = 16.dp),
-                    shape = BitwardenTheme.shapes.contentBottom,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag(tag = "GetMasterPasswordHintLabel"),
-                )
-            },
+            supportingContent = null,
             passwordFieldTestTag = "MasterPasswordEntry",
             cardStyle = CardStyle.Full,
             modifier = Modifier
@@ -247,29 +235,9 @@ private fun LoginScreenContent(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        if (state.shouldShowLoginWithDevice) {
-            BitwardenOutlinedButton(
-                label = stringResource(id = BitwardenString.log_in_with_device),
-                icon = rememberVectorPainter(id = BitwardenDrawable.ic_mobile_small),
-                onClick = onLoginWithDeviceClick,
-                modifier = Modifier
-                    .testTag("LogInWithAnotherDeviceButton")
-                    .standardHorizontalMargin()
-                    .fillMaxWidth(),
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-        }
-
-        BitwardenOutlinedButton(
-            label = stringResource(id = BitwardenString.log_in_sso),
-            icon = rememberVectorPainter(id = BitwardenDrawable.ic_enterprise_small),
-            onClick = onSingleSignOnClick,
-            modifier = Modifier
-                .testTag("LogInWithSsoButton")
-                .standardHorizontalMargin()
-                .fillMaxWidth(),
-        )
+        onMasterPasswordClick
+        onLoginWithDeviceClick
+        onSingleSignOnClick
 
         Spacer(modifier = Modifier.height(24.dp))
 

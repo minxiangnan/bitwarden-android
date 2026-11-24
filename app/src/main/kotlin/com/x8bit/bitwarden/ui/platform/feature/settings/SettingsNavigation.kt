@@ -9,6 +9,7 @@ import androidx.navigation3.runtime.entryProvider
 import com.bitwarden.annotation.OmitFromCoverage
 import com.bitwarden.ui.platform.navigation.NavigationController
 import com.bitwarden.ui.platform.navigation.components.BitwardenNavDisplay
+import com.bitwarden.ui.platform.navigation.util.pushEntry
 import com.bitwarden.ui.platform.navigation.util.rememberNavigationController
 import com.bitwarden.ui.platform.navigation.util.rootPushEntry
 import com.bitwarden.ui.platform.navigation.util.slideUpEntry
@@ -76,6 +77,12 @@ fun EntryProviderScope<SettingsGraph>.settingsDestinations(
             onNavigateToOther = { navigationController.navigateToOther() },
             onNavigateToVault = { navigationController.navigateToVaultSettings() },
             onNavigateToPlan = { navigationController.navigateToPlan() },
+            onNavigateToMcp = { navigationController.navigate(SettingsGraph.McpRoute) },
+        )
+    }
+    pushEntry<SettingsGraph.McpRoute> {
+        com.x8bit.bitwarden.ui.authenticator.AuthenticatorMcpScreen(
+            onBack = { navigationController.navigateBack() },
         )
     }
     aboutDestination(

@@ -34,6 +34,18 @@ sealed class VaultUnlockedNavBarTab : NavigationItem, Parcelable {
     }
 
     /**
+     * Show the authenticator screen.
+     */
+    @Parcelize
+    data object Authenticator : VaultUnlockedNavBarTab() {
+        override val iconRes get() = BitwardenDrawable.ic_verification_codes
+        override val labelRes get() = BitwardenString.zh_authenticator_title
+        override val rootRoute get() = VaultUnlockedNavBarGraph.Authenticator
+        override val testTag get() = "AuthenticatorTab"
+        override val notificationCount get() = 0
+    }
+
+    /**
      * Show the Send screen.
      */
     @Parcelize

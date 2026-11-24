@@ -14,6 +14,8 @@ import com.bitwarden.ui.platform.navigation.util.popUpTo
 import com.bitwarden.ui.platform.navigation.util.rememberNavKeyEntries
 import com.bitwarden.ui.platform.navigation.util.rememberNavigationController
 import com.bitwarden.ui.platform.navigation.util.stayEntry
+import com.x8bit.bitwarden.ui.authenticator.AuthenticatorGraph
+import com.x8bit.bitwarden.ui.authenticator.authenticatorDestinations
 import com.x8bit.bitwarden.ui.auth.feature.accountsetup.navigateToSetupAutoFillScreen
 import com.x8bit.bitwarden.ui.auth.feature.accountsetup.navigateToSetupBrowserAutofillScreen
 import com.x8bit.bitwarden.ui.auth.feature.accountsetup.navigateToSetupUnlockScreen
@@ -95,6 +97,9 @@ private fun VaultUnlockedNavBarNavigationControllers.rememberTabNavEntries(
     vaultUnlockedNavigationController: NavigationController<VaultUnlockedGraph>,
     onDimNavBarRequest: (shouldDim: Boolean) -> Unit,
 ): Map<VaultUnlockedNavBarGraph, List<NavEntry<NavKey>>> = mapOf(
+    VaultUnlockedNavBarGraph.Authenticator to authenticator.rememberNavKeyEntries(
+        entryProvider = authenticatorEntryProvider(),
+    ),
     VaultUnlockedNavBarGraph.Vault to vault.rememberNavKeyEntries(
         entryProvider = vaultEntryProvider(
             vaultUnlockedNavigationController = vaultUnlockedNavigationController,
@@ -159,6 +164,11 @@ private fun VaultUnlockedNavBarNavigationControllers.vaultEntryProvider(
         },
         onNavigateToPlan = { vaultUnlockedNavigationController.navigateToPlanModal() },
     )
+}
+
+private fun VaultUnlockedNavBarNavigationControllers.authenticatorEntryProvider():
+    (key: AuthenticatorGraph) -> NavEntry<AuthenticatorGraph> = entryProvider {
+    authenticatorDestinations(navigationController = authenticator)
 }
 
 private fun VaultUnlockedNavBarNavigationControllers.sendEntryProvider(

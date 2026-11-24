@@ -5,6 +5,7 @@ import androidx.navigation3.runtime.NavKey
 import com.bitwarden.ui.platform.navigation.BottomNavigationController
 import com.bitwarden.ui.platform.navigation.NavigationController
 import com.bitwarden.ui.platform.navigation.util.rememberNavigationController
+import com.x8bit.bitwarden.ui.authenticator.AuthenticatorGraph
 import com.x8bit.bitwarden.ui.platform.feature.settings.SettingsGraph
 import com.x8bit.bitwarden.ui.tools.feature.generator.GeneratorGraph
 import com.x8bit.bitwarden.ui.tools.feature.send.SendGraph
@@ -17,6 +18,7 @@ import com.x8bit.bitwarden.ui.vault.feature.vault.VaultGraph
 data class VaultUnlockedNavBarNavigationControllers(
     override val root: NavigationController<VaultUnlockedNavBarGraph>,
     val vault: NavigationController<VaultGraph>,
+    val authenticator: NavigationController<AuthenticatorGraph>,
     val send: NavigationController<SendGraph>,
     val generator: NavigationController<GeneratorGraph>,
     val settings: NavigationController<SettingsGraph>,
@@ -25,6 +27,7 @@ data class VaultUnlockedNavBarNavigationControllers(
         get() = listOf(
             root.backStack.toList(),
             vault.backStack.toList(),
+            authenticator.backStack.toList(),
             send.backStack.toList(),
             generator.backStack.toList(),
             settings.backStack.toList(),
@@ -33,6 +36,7 @@ data class VaultUnlockedNavBarNavigationControllers(
     override fun navigateToTabOrPopToRoot(route: VaultUnlockedNavBarGraph) {
         if (root.backStack.last() == route) {
             when (route) {
+                VaultUnlockedNavBarGraph.Authenticator -> authenticator.popToRoot()
                 VaultUnlockedNavBarGraph.Generator -> generator.popToRoot()
                 VaultUnlockedNavBarGraph.Send -> send.popToRoot()
                 VaultUnlockedNavBarGraph.Settings -> settings.popToRoot()
@@ -45,6 +49,7 @@ data class VaultUnlockedNavBarNavigationControllers(
 
     override fun navigateBack(): Boolean {
         val isHandledByTab = when (root.backStack.last()) {
+            VaultUnlockedNavBarGraph.Authenticator -> authenticator.navigateBack()
             VaultUnlockedNavBarGraph.Generator -> generator.navigateBack()
             VaultUnlockedNavBarGraph.Send -> send.navigateBack()
             VaultUnlockedNavBarGraph.Settings -> settings.navigateBack()
@@ -62,6 +67,9 @@ fun rememberVaultUnlockedNavBarNavigationControllers(
     navBarNavigationController: NavigationController<VaultUnlockedNavBarGraph>,
 ): VaultUnlockedNavBarNavigationControllers {
     val vault = rememberNavigationController<VaultGraph>(routes = arrayOf(VaultGraph.VaultRoute))
+    val authenticator = rememberNavigationController<AuthenticatorGraph>(
+        routes = arrayOf(AuthenticatorGraph.ListRoute),
+    )
     val send = rememberNavigationController<SendGraph>(routes = arrayOf(SendGraph.SendRoute))
     val generator = rememberNavigationController<GeneratorGraph>(
         routes = arrayOf(GeneratorGraph.GeneratorRoute),
@@ -72,6 +80,7 @@ fun rememberVaultUnlockedNavBarNavigationControllers(
     return VaultUnlockedNavBarNavigationControllers(
         root = navBarNavigationController,
         vault = vault,
+        authenticator = authenticator,
         send = send,
         generator = generator,
         settings = settings,

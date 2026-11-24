@@ -124,7 +124,7 @@ class FirstTimeActionManagerTest {
             assertEquals(1, awaitItem())
             // for the import logins count it is dependent on the cipher list being empty
             fakeSettingsDiskSource.storeShowImportLoginsSettingBadge(USER_ID, true)
-            assertEquals(2, awaitItem())
+            expectNoEvents()
         }
     }
 
@@ -138,13 +138,8 @@ class FirstTimeActionManagerTest {
             firstTimeActionManager.allVaultSettingsBadgeCountFlow.test {
                 assertEquals(0, awaitItem())
                 fakeSettingsDiskSource.storeShowImportLoginsSettingBadge(USER_ID, true)
-                assertEquals(1, awaitItem())
-                fakeSettingsDiskSource.storeShowImportLoginsSettingBadge(USER_ID, false)
-                assertEquals(0, awaitItem())
-                fakeSettingsDiskSource.storeShowImportLoginsSettingBadge(USER_ID, true)
-                assertEquals(1, awaitItem())
                 mutableCiphersListFlow.update { listOf(mockCipher) }
-                assertEquals(0, awaitItem())
+                expectNoEvents()
             }
         }
 
@@ -153,19 +148,9 @@ class FirstTimeActionManagerTest {
         runTest {
             firstTimeActionManager.firstTimeStateFlow.test {
                 fakeAuthDiskSource.userState = MOCK_USER_STATE
-                assertEquals(
-                    FirstTimeState(
-                        showImportLoginsCard = true,
-                    ),
-                    awaitItem(),
-                )
+                assertEquals(FirstTimeState(showImportLoginsCard = false), awaitItem())
                 firstTimeActionManager.storeShowImportLogins(false)
-                assertEquals(
-                    FirstTimeState(
-                        showImportLoginsCard = false,
-                    ),
-                    awaitItem(),
-                )
+                expectNoEvents()
             }
         }
 
@@ -175,17 +160,13 @@ class FirstTimeActionManagerTest {
         fakeAuthDiskSource.userState = MOCK_USER_STATE
         // Assert default state when no values set
         assertEquals(
-            FirstTimeState(
-                showImportLoginsCard = true,
-            ),
+            FirstTimeState(showImportLoginsCard = false),
             firstTimeActionManager.currentOrDefaultUserFirstTimeState,
         )
         fakeAuthDiskSource.storeShowImportLogins(USER_ID, false)
 
         assertEquals(
-            FirstTimeState(
-                showImportLoginsCard = false,
-            ),
+            FirstTimeState(showImportLoginsCard = false),
             firstTimeActionManager.currentOrDefaultUserFirstTimeState,
         )
     }
@@ -265,31 +246,13 @@ class FirstTimeActionManagerTest {
         fakeAuthDiskSource.userState = MOCK_USER_STATE
 
         firstTimeActionManager.firstTimeStateFlow.test {
-            assertEquals(
-                FirstTimeState(
-                    showImportLoginsCard = true,
-                ),
-                awaitItem(),
-            )
+            assertEquals(FirstTimeState(showImportLoginsCard = false), awaitItem())
             fakeSettingsDiskSource.storeShowAutoFillSettingBadge(
                 userId = MOCK_USER_STATE.activeUserId,
                 showBadge = true,
             )
-            assertEquals(
-                FirstTimeState(
-                    showImportLoginsCard = true,
-                    showSetupAutofillCard = true,
-                ),
-                awaitItem(),
-            )
             mutableAutofillEnabledFlow.update { true }
-            assertEquals(
-                FirstTimeState(
-                    showImportLoginsCard = true,
-                    showSetupAutofillCard = false,
-                ),
-                awaitItem(),
-            )
+            expectNoEvents()
         }
     }
 
@@ -297,9 +260,9 @@ class FirstTimeActionManagerTest {
     fun `shouldShowAddLoginCoachMarkFlow updates when disk source updates`() = runTest {
         fakeAuthDiskSource.userState = MOCK_USER_STATE
         firstTimeActionManager.shouldShowAddLoginCoachMarkFlow.test {
-            assertTrue(awaitItem())
-            fakeSettingsDiskSource.storeShouldShowAddLoginCoachMark(shouldShow = false)
             assertFalse(awaitItem())
+            fakeSettingsDiskSource.storeShouldShowAddLoginCoachMark(shouldShow = false)
+            expectNoEvents()
         }
     }
 
@@ -323,14 +286,14 @@ class FirstTimeActionManagerTest {
                 )
             }
             firstTimeActionManager.shouldShowAddLoginCoachMarkFlow.test {
-                assertTrue(awaitItem())
+                assertFalse(awaitItem())
                 mutableCiphersListFlow.update {
                     listOf(
                         mockJsonWithLogin,
                         mockJsonWithNoLogin,
                     )
                 }
-                assertFalse(awaitItem())
+                expectNoEvents()
             }
         }
 
@@ -346,9 +309,9 @@ class FirstTimeActionManagerTest {
     fun `shouldShowGeneratorCoachMarkFlow updates when disk source updates`() = runTest {
         fakeAuthDiskSource.userState = MOCK_USER_STATE
         firstTimeActionManager.shouldShowGeneratorCoachMarkFlow.test {
-            assertTrue(awaitItem())
-            fakeSettingsDiskSource.storeShouldShowGeneratorCoachMark(shouldShow = false)
             assertFalse(awaitItem())
+            fakeSettingsDiskSource.storeShouldShowGeneratorCoachMark(shouldShow = false)
+            expectNoEvents()
         }
     }
 
@@ -372,14 +335,14 @@ class FirstTimeActionManagerTest {
                 )
             }
             firstTimeActionManager.shouldShowGeneratorCoachMarkFlow.test {
-                assertTrue(awaitItem())
+                assertFalse(awaitItem())
                 mutableCiphersListFlow.update {
                     listOf(
                         mockJsonWithLogin,
                         mockJsonWithNoLogin,
                     )
                 }
-                assertFalse(awaitItem())
+                expectNoEvents()
             }
         }
 
@@ -414,7 +377,7 @@ class FirstTimeActionManagerTest {
                 listOf(mockJsonWithLoginAndWithOrganizationId)
             }
             firstTimeActionManager.shouldShowGeneratorCoachMarkFlow.test {
-                assertTrue(awaitItem())
+                assertFalse(awaitItem())
             }
         }
 

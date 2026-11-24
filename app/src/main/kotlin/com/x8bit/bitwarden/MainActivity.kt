@@ -120,6 +120,12 @@ class MainActivity : AppCompatActivity() {
         // OS, but we need to ensure we properly set the values when upgrading from older versions
         // that handle this differently or when the activity restarts.
         AppCompatDelegate.setDefaultNightMode(settingsRepository.appTheme.osValue)
+        val appLocales = LocaleListCompat.forLanguageTags(
+            settingsRepository.appLanguage.localeName,
+        )
+        if (AppCompatDelegate.getApplicationLocales() != appLocales) {
+            AppCompatDelegate.setApplicationLocales(appLocales)
+        }
         setupEdgeToEdge(appThemeFlow = mainViewModel.stateFlow.map { it.theme })
         setContent {
             val navigationController = rememberNavigationController<MainGraph>(

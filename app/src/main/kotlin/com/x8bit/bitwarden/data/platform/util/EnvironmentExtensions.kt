@@ -51,7 +51,7 @@ private fun Environment.authTabData(
             )
         } else {
             AuthTabData.CustomScheme(
-                callbackUrl = "bitwarden://$kind-callback",
+                callbackUrl = "bwzh://$kind-callback",
             )
         }
     }

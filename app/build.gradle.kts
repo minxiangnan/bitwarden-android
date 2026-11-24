@@ -60,7 +60,7 @@ configure<ApplicationExtension> {
     }
 
     defaultConfig {
-        applicationId = "com.x8bit.bitwarden"
+        applicationId = "com.minxiangnan.bitwarden.zh"
         minSdk {
             version = release(libs.versions.minSdk.get().toInt())
         }
@@ -128,8 +128,9 @@ configure<ApplicationExtension> {
         }
         release {
             isDebuggable = false
-            isMinifyEnabled = true
-            isShrinkResources = true
+            signingConfig = signingConfigs.getByName("debug")
+            isMinifyEnabled = false
+            isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
@@ -249,6 +250,7 @@ dependencies {
     implementation(project(":data"))
     implementation(project(":network"))
     implementation(project(":ui"))
+    implementation(libs.zxing.zxing.core)
 
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.appcompat)

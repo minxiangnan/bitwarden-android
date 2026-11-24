@@ -39,6 +39,9 @@ fun VaultUnlockedNavBarScreen(
             viewModel.trySendAction(VaultUnlockedNavBarAction.GeneratorTabClick)
         },
         sendTabClickedAction = { viewModel.trySendAction(VaultUnlockedNavBarAction.SendTabClick) },
+        authenticatorTabClickedAction = {
+            viewModel.trySendAction(VaultUnlockedNavBarAction.AuthenticatorTabClick)
+        },
         vaultTabClickedAction = {
             viewModel.trySendAction(VaultUnlockedNavBarAction.VaultTabClick)
         },
@@ -58,6 +61,7 @@ private fun VaultUnlockedNavBarScaffold(
     selectedTab: VaultUnlockedNavBarGraph,
     vaultTabClickedAction: () -> Unit,
     sendTabClickedAction: () -> Unit,
+    authenticatorTabClickedAction: () -> Unit,
     generatorTabClickedAction: () -> Unit,
     settingsTabClickedAction: () -> Unit,
     content: @Composable (onDimNavBarRequest: (shouldDim: Boolean) -> Unit) -> Unit,
@@ -68,6 +72,7 @@ private fun VaultUnlockedNavBarScaffold(
     // We need to ignore the all insets here and let the content screens handle it themselves.
     val navigationItems = persistentListOfNotNull<NavigationItem>(
         VaultUnlockedNavBarTab.Vault(labelRes = state.vaultNavBarLabelRes),
+        VaultUnlockedNavBarTab.Authenticator,
         VaultUnlockedNavBarTab.Send.takeUnless { state.areSendsDisabled },
         VaultUnlockedNavBarTab.Generator,
         VaultUnlockedNavBarTab.Settings(state.notificationState.settingsTabNotificationCount),
@@ -79,6 +84,7 @@ private fun VaultUnlockedNavBarScaffold(
             selectedNavigationItem = navigationItems.find { it.rootRoute == selectedTab },
             onNavigationClick = { navigationItem ->
                 when (navigationItem) {
+                    VaultUnlockedNavBarTab.Authenticator -> authenticatorTabClickedAction()
                     VaultUnlockedNavBarTab.Generator -> generatorTabClickedAction()
                     VaultUnlockedNavBarTab.Send -> sendTabClickedAction()
                     is VaultUnlockedNavBarTab.Settings -> settingsTabClickedAction()

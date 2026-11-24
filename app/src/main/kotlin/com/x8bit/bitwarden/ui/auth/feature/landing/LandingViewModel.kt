@@ -4,6 +4,7 @@ import android.os.Parcelable
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.bitwarden.core.data.manager.model.FlagKey
+import com.bitwarden.data.datasource.disk.model.EnvironmentUrlDataJson
 import com.bitwarden.data.datasource.disk.model.ServerConfig
 import com.bitwarden.data.repository.ServerConfigRepository
 import com.bitwarden.data.repository.model.Environment
@@ -16,6 +17,8 @@ import com.bitwarden.ui.platform.manager.snackbar.SnackbarRelayManager
 import com.bitwarden.ui.platform.resource.BitwardenString
 import com.bitwarden.ui.util.Text
 import com.bitwarden.ui.util.asText
+import com.x8bit.bitwarden.data.authenticator.server.ServerUrlResult
+import com.x8bit.bitwarden.data.authenticator.server.normalizeServerUrl
 import com.x8bit.bitwarden.data.auth.repository.AuthRepository
 import com.x8bit.bitwarden.data.auth.repository.model.LogoutReason
 import com.x8bit.bitwarden.data.auth.repository.model.UserState
@@ -55,6 +58,10 @@ class LandingViewModel @Inject constructor(
         val rememberedEmailAddress = authRepository.rememberedEmailAddress
         LandingState(
             emailInput = rememberedEmailAddress.orEmpty(),
+            serverUrlInput = (environment as? Environment.SelfHosted)
+                ?.environmentUrlData
+                ?.base
+                .orEmpty(),
             isContinueButtonEnabled = rememberedEmailAddress != null,
             isRememberEmailEnabled = rememberedEmailAddress != null,
             selectedEnvironmentType = environment.type,
@@ -154,6 +161,7 @@ class LandingViewModel @Inject constructor(
             is LandingAction.DialogDismiss -> handleDialogDismiss()
             is LandingAction.RememberMeToggle -> handleRememberMeToggled(action)
             is LandingAction.EmailInputChanged -> handleEmailInputChanged(action)
+            is LandingAction.ServerUrlInputChanged -> handleServerUrlInputChanged(action)
             is LandingAction.EnvironmentTypeSelect -> handleEnvironmentTypeSelect(action)
             is LandingAction.Internal -> handleInternalActions(action)
         }
@@ -214,7 +222,28 @@ class LandingViewModel @Inject constructor(
         }
     }
 
+    private fun handleServerUrlInputChanged(action: LandingAction.ServerUrlInputChanged) {
+        mutableStateFlow.update { it.copy(serverUrlInput = action.input) }
+    }
+
     private fun handleContinueButtonClicked() {
+        when (val server = normalizeServerUrl(state.serverUrlInput)) {
+            is ServerUrlResult.Rejected -> {
+                mutableStateFlow.update {
+                    it.copy(
+                        dialog = LandingState.DialogState.Error(
+                            message = server.message.asText(),
+                        ),
+                    )
+                }
+                return
+            }
+            is ServerUrlResult.Accepted -> {
+                environmentRepository.environment = Environment.SelfHosted(
+                    environmentUrlData = EnvironmentUrlDataJson(base = server.url),
+                )
+            }
+        }
         if (!state.emailInput.isValidEmail(useStrictValidation = false)) {
             mutableStateFlow.update {
                 it.copy(
@@ -338,6 +367,7 @@ data class LandingState(
     val accountSummaries: ImmutableList<AccountSummary>,
     val isFedRampEnabled: Boolean,
     val disableCreateAccount: Boolean,
+    val serverUrlInput: String = "",
 ) : Parcelable {
     /**
      * The selectable environments.
@@ -483,6 +513,13 @@ sealed class LandingAction {
      * Indicates that the input on the email field has changed.
      */
     data class EmailInputChanged(
+        val input: String,
+    ) : LandingAction()
+
+    /**
+     * The server URL field changed.
+     */
+    data class ServerUrlInputChanged(
         val input: String,
     ) : LandingAction()
 

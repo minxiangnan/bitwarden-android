@@ -40,6 +40,7 @@ import com.bitwarden.ui.platform.composition.LocalIntentManager
 import com.bitwarden.ui.platform.manager.IntentManager
 import com.bitwarden.ui.platform.resource.BitwardenDrawable
 import com.bitwarden.ui.platform.resource.BitwardenString
+import com.bitwarden.ui.platform.theme.BitwardenTheme
 import com.bitwarden.ui.util.asText
 import com.x8bit.bitwarden.ui.platform.feature.vaultunlocked.VaultUnlockedGraph
 import com.x8bit.bitwarden.ui.vault.feature.item.handlers.VaultBankAccountItemTypeHandlers
@@ -332,10 +333,11 @@ private fun VaultItemDialogs(
 
         is VaultItemState.DialogState.DeleteConfirmationPrompt -> {
             BitwardenTwoButtonDialog(
-                title = stringResource(id = BitwardenString.delete),
+                title = dialog.itemName.ifBlank { stringResource(id = BitwardenString.delete) },
                 message = dialog.message.invoke(),
-                confirmButtonText = stringResource(id = BitwardenString.okay),
+                confirmButtonText = stringResource(id = BitwardenString.delete),
                 dismissButtonText = stringResource(id = BitwardenString.cancel),
+                confirmTextColor = BitwardenTheme.colorScheme.status.error,
                 onConfirmClick = onConfirmDeleteClick,
                 onDismissClick = onDismissRequest,
                 onDismissRequest = onDismissRequest,

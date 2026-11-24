@@ -134,7 +134,7 @@ class VaultUnlockedNavBarViewModelTest : BaseViewModelTest() {
         val expectedWithOrganizations = VaultUnlockedNavBarState(
             vaultNavBarLabelRes = BitwardenString.vaults,
             notificationState = DEFAULT_NOTIFICATION_STATE,
-            areSendsDisabled = false,
+            areSendsDisabled = true,
         )
         val accountWithoutOrganizations: UserState.Account = mockk {
             every { userId } returns activeUserId
@@ -143,7 +143,7 @@ class VaultUnlockedNavBarViewModelTest : BaseViewModelTest() {
         val expectedWithoutOrganizations = VaultUnlockedNavBarState(
             vaultNavBarLabelRes = BitwardenString.my_vault,
             notificationState = DEFAULT_NOTIFICATION_STATE,
-            areSendsDisabled = false,
+            areSendsDisabled = true,
         )
 
         val viewModel = createViewModel()
@@ -227,27 +227,15 @@ class VaultUnlockedNavBarViewModelTest : BaseViewModelTest() {
                 expectedCount,
             ),
         )
-        assertEquals(
-            DEFAULT_STATE.copy(
-                notificationState = DEFAULT_NOTIFICATION_STATE.copy(
-                    settingsTabNotificationCount = expectedCount,
-                ),
-            ),
-            viewModel.stateFlow.value,
-        )
+        assertEquals(DEFAULT_STATE, viewModel.stateFlow.value)
     }
 
     @Test
     fun `On initialization settings count should be updated from settings repository`() {
-        val expectedCount = 5
-        mutableSettingsBadgeCountFlow.value = expectedCount
+        mutableSettingsBadgeCountFlow.value = 5
         val viewModel = createViewModel()
         assertEquals(
-            DEFAULT_STATE.copy(
-                notificationState = DEFAULT_NOTIFICATION_STATE.copy(
-                    settingsTabNotificationCount = expectedCount,
-                ),
-            ),
+            DEFAULT_STATE,
             viewModel.stateFlow.value,
         )
     }
@@ -325,15 +313,13 @@ class VaultUnlockedNavBarViewModelTest : BaseViewModelTest() {
         runTest {
             val viewModel = createViewModel()
             viewModel.stateFlow.test {
-                assertEquals(DEFAULT_STATE.copy(areSendsDisabled = false), awaitItem())
+                assertEquals(DEFAULT_STATE, awaitItem())
 
                 mutableEffectiveSendPolicyFlow.emit(
                     DEFAULT_EFFECTIVE_SEND_POLICY.copy(disableSend = true),
                 )
-                assertEquals(DEFAULT_STATE.copy(areSendsDisabled = true), awaitItem())
-
                 mutableEffectiveSendPolicyFlow.emit(DEFAULT_EFFECTIVE_SEND_POLICY)
-                assertEquals(DEFAULT_STATE.copy(areSendsDisabled = false), awaitItem())
+                expectNoEvents()
             }
         }
 
@@ -353,7 +339,7 @@ private val DEFAULT_NOTIFICATION_STATE = VaultUnlockedNavBarNotificationState(
 private val DEFAULT_STATE = VaultUnlockedNavBarState(
     vaultNavBarLabelRes = BitwardenString.my_vault,
     notificationState = DEFAULT_NOTIFICATION_STATE,
-    areSendsDisabled = false,
+    areSendsDisabled = true,
 )
 
 private val DEFAULT_EFFECTIVE_SEND_POLICY = EffectiveSendPolicy(

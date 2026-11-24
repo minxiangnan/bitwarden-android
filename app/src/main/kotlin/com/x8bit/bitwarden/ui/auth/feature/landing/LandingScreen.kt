@@ -1,11 +1,7 @@
 package com.x8bit.bitwarden.ui.auth.feature.landing
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -34,14 +30,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.bitwarden.data.repository.model.Environment
 import com.bitwarden.ui.platform.base.util.EventsEffect
 import com.bitwarden.ui.platform.base.util.standardHorizontalMargin
 import com.bitwarden.ui.platform.components.account.BitwardenAccountSwitcher
 import com.bitwarden.ui.platform.components.account.BitwardenPlaceholderAccountActionItem
 import com.bitwarden.ui.platform.components.appbar.BitwardenTopAppBar
 import com.bitwarden.ui.platform.components.button.BitwardenFilledButton
-import com.bitwarden.ui.platform.components.button.BitwardenTextButton
 import com.bitwarden.ui.platform.components.dialog.BitwardenBasicDialog
 import com.bitwarden.ui.platform.components.dialog.BitwardenTwoButtonDialog
 import com.bitwarden.ui.platform.components.field.BitwardenTextField
@@ -49,12 +43,10 @@ import com.bitwarden.ui.platform.components.model.CardStyle
 import com.bitwarden.ui.platform.components.scaffold.BitwardenScaffold
 import com.bitwarden.ui.platform.components.snackbar.BitwardenSnackbarHost
 import com.bitwarden.ui.platform.components.snackbar.model.rememberBitwardenSnackbarHostState
-import com.bitwarden.ui.platform.components.toggle.BitwardenSwitch
 import com.bitwarden.ui.platform.components.util.rememberVectorPainter
 import com.bitwarden.ui.platform.resource.BitwardenDrawable
 import com.bitwarden.ui.platform.resource.BitwardenString
 import com.bitwarden.ui.platform.theme.BitwardenTheme
-import com.x8bit.bitwarden.ui.platform.components.dropdown.EnvironmentSelector
 
 /**
  * The top level composable for the Landing screen.
@@ -163,14 +155,11 @@ fun LandingScreen(
     ) {
         LandingScreenContent(
             state = state,
-            onEmailInputChange = { viewModel.trySendAction(LandingAction.EmailInputChanged(it)) },
-            onEnvironmentTypeSelect = {
-                viewModel.trySendAction(LandingAction.EnvironmentTypeSelect(it))
+            onServerUrlInputChange = {
+                viewModel.trySendAction(LandingAction.ServerUrlInputChanged(it))
             },
-            onRememberMeToggle = { viewModel.trySendAction(LandingAction.RememberMeToggle(it)) },
+            onEmailInputChange = { viewModel.trySendAction(LandingAction.EmailInputChanged(it)) },
             onContinueClick = { viewModel.trySendAction(LandingAction.ContinueButtonClick) },
-            onCreateAccountClick = { viewModel.trySendAction(LandingAction.CreateAccountClick) },
-            onAppSettingsClick = { viewModel.trySendAction(LandingAction.AppSettingsClick) },
         )
     }
 }
@@ -179,12 +168,9 @@ fun LandingScreen(
 @Composable
 private fun LandingScreenContent(
     state: LandingState,
+    onServerUrlInputChange: (String) -> Unit,
     onEmailInputChange: (String) -> Unit,
-    onEnvironmentTypeSelect: (Environment.Type) -> Unit,
-    onRememberMeToggle: (Boolean) -> Unit,
     onContinueClick: () -> Unit,
-    onCreateAccountClick: () -> Unit,
-    onAppSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -224,40 +210,27 @@ private fun LandingScreenContent(
             modifier = Modifier
                 .standardHorizontalMargin()
                 .fillMaxWidth(),
+            value = state.serverUrlInput,
+            onValueChange = onServerUrlInputChange,
+            label = stringResource(id = BitwardenString.zh_server_address),
+            placeholder = stringResource(id = BitwardenString.zh_server_address_hint),
+            keyboardType = KeyboardType.Uri,
+            textFieldTestTag = "ServerUrlEntry",
+            cardStyle = CardStyle.Full,
+        )
+
+        Spacer(modifier = Modifier.height(height = 8.dp))
+
+        BitwardenTextField(
+            modifier = Modifier
+                .standardHorizontalMargin()
+                .fillMaxWidth(),
             value = state.emailInput,
             onValueChange = onEmailInputChange,
             label = stringResource(id = BitwardenString.email_address),
             keyboardType = KeyboardType.Email,
             textFieldTestTag = "EmailAddressEntry",
             cardStyle = CardStyle.Full,
-            supportingContentPadding = PaddingValues(),
-            supportingContent = {
-                EnvironmentSelector(
-                    labelText = stringResource(id = BitwardenString.logging_in_on_with_colon),
-                    dialogTitle = stringResource(id = BitwardenString.logging_in_on),
-                    options = state.environmentTypeOptions,
-                    selectedOption = state.selectedEnvironmentType,
-                    onOptionSelected = onEnvironmentTypeSelect,
-                    isHelpEnabled = false,
-                    onHelpClick = {},
-                    modifier = Modifier
-                        .testTag("RegionSelectorDropdown")
-                        .fillMaxWidth(),
-                )
-            },
-        )
-
-        Spacer(modifier = Modifier.height(height = 8.dp))
-
-        BitwardenSwitch(
-            label = stringResource(id = BitwardenString.remember_email),
-            isChecked = state.isRememberEmailEnabled,
-            onCheckedChange = onRememberMeToggle,
-            cardStyle = CardStyle.Full,
-            modifier = Modifier
-                .testTag("RememberMeSwitch")
-                .standardHorizontalMargin()
-                .fillMaxWidth(),
         )
 
         Spacer(modifier = Modifier.height(height = 24.dp))
@@ -273,45 +246,6 @@ private fun LandingScreenContent(
         )
 
         Spacer(modifier = Modifier.height(height = 24.dp))
-
-        AnimatedVisibility(
-            visible = state.allowCreateAccount,
-            label = "CreateAccountAnimatedVisibility",
-        ) {
-            Column {
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .standardHorizontalMargin()
-                        .fillMaxWidth()
-                        .wrapContentHeight(),
-                ) {
-                    Text(
-                        text = stringResource(id = BitwardenString.new_to_bitwarden),
-                        style = BitwardenTheme.typography.bodyMedium,
-                        color = BitwardenTheme.colorScheme.text.secondary,
-                    )
-
-                    BitwardenTextButton(
-                        label = stringResource(id = BitwardenString.create_an_account),
-                        onClick = onCreateAccountClick,
-                        modifier = Modifier
-                            .testTag("CreateAccountLabel"),
-                    )
-                }
-                Spacer(modifier = Modifier.height(height = 8.dp))
-            }
-        }
-        BitwardenTextButton(
-            label = stringResource(id = BitwardenString.app_settings),
-            onClick = onAppSettingsClick,
-            icon = rememberVectorPainter(id = BitwardenDrawable.ic_cog),
-            modifier = Modifier
-                .standardHorizontalMargin()
-                .fillMaxWidth(),
-        )
-
         Spacer(modifier = Modifier.height(height = 12.dp))
         Spacer(modifier = Modifier.navigationBarsPadding())
     }

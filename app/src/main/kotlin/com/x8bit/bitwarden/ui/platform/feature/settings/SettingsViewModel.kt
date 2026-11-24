@@ -205,6 +205,10 @@ class SettingsViewModel @AssistedInject constructor(
             Settings.ABOUT -> {
                 sendEvent(SettingsEvent.NavigateAbout)
             }
+
+            Settings.MCP -> {
+                sendEvent(SettingsEvent.NavigateMcp)
+            }
         }
     }
 }
@@ -250,16 +254,12 @@ data class SettingsState(
                 Settings.PLAN -> shouldShowPlanRow
                 Settings.OTHER -> true
                 Settings.ABOUT -> true
+                Settings.MCP -> !isPreAuth
             }
         }
         .toImmutableList()
 
-    val notificationBadgeCountMap: Map<Settings, Int> = mapOf(
-        Settings.ACCOUNT_SECURITY to securityCount,
-        Settings.AUTO_FILL to autoFillCount,
-        Settings.VAULT to vaultCount,
-        Settings.PLAN to if (showPlanBadge) 1 else 0,
-    )
+    val notificationBadgeCountMap: Map<Settings, Int> = emptyMap()
 }
 
 /**
@@ -275,6 +275,11 @@ sealed class SettingsEvent {
      * Navigate to the about screen.
      */
     data object NavigateAbout : SettingsEvent()
+
+    /**
+     * Navigate to MCP access token settings.
+     */
+    data object NavigateMcp : SettingsEvent()
 
     /**
      * Navigate to the account security screen.
@@ -428,5 +433,10 @@ enum class Settings(
         text = BitwardenString.about.asText(),
         vectorIconRes = BitwardenDrawable.ic_info_circle,
         testTag = "AboutSettingsButton",
+    ),
+    MCP(
+        text = BitwardenString.zh_authenticator_mcp.asText(),
+        vectorIconRes = BitwardenDrawable.ic_verification_codes,
+        testTag = "McpSettingsButton",
     ),
 }

@@ -288,8 +288,9 @@ private fun AttachmentListEntry(
     var shouldShowDeleteDialog by rememberSaveable { mutableStateOf(false) }
     if (shouldShowDeleteDialog) {
         BitwardenTwoButtonDialog(
-            title = stringResource(id = BitwardenString.delete),
+            title = attachmentItem.title,
             message = stringResource(id = BitwardenString.do_you_really_want_to_delete),
+            confirmTextColor = BitwardenTheme.colorScheme.status.error,
             confirmButtonText = stringResource(id = BitwardenString.delete),
             dismissButtonText = stringResource(id = BitwardenString.cancel),
             onConfirmClick = {

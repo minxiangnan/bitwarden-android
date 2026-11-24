@@ -8,9 +8,67 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1093287226212:android:6ec272cee7c1c17a4b2871",
+        "mobilesdk_app_id": "1:1093287226212:android:zhauthenticator0000",
         "android_client_info": {
-          "package_name": "com.x8bit.bitwarden.dev"
+          "package_name": "com.minxiangnan.bitwarden.zh.dev"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1093287226212-m4mv8ho387tdgosc9lsltnmruul7ouo0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA4Xkn0do7Ky_OLff2L_7MXeNK6s-JVgXg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1093287226212-m4mv8ho387tdgosc9lsltnmruul7ouo0.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1093287226212:android:zhauthenticator0001",
+        "android_client_info": {
+          "package_name": "com.minxiangnan.bitwarden.zh"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1093287226212-m4mv8ho387tdgosc9lsltnmruul7ouo0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA4Xkn0do7Ky_OLff2L_7MXeNK6s-JVgXg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1093287226212-m4mv8ho387tdgosc9lsltnmruul7ouo0.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1093287226212:android:zhauthenticator0002",
+        "android_client_info": {
+          "package_name": "com.minxiangnan.bitwarden.zh.beta"
         }
       },
       "oauth_client": [

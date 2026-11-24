@@ -1,4 +1,4 @@
 <resources>
     <!--Common-->
-    <string name="app_name" translatable="false">Bitwarden</string>
+    <string name="app_name" translatable="false">Bitwarden 验证器版</string>
 </resources>

@@ -14,6 +14,8 @@ import com.bitwarden.network.provider.TokenProvider
 import com.bitwarden.network.retrofit.Retrofits
 import com.bitwarden.network.retrofit.RetrofitsImpl
 import com.bitwarden.network.service.AccountsServiceImpl
+import com.bitwarden.network.service.AuthenticatorService
+import com.bitwarden.network.service.AuthenticatorServiceImpl
 import com.bitwarden.network.service.AuthRequestsService
 import com.bitwarden.network.service.AuthRequestsServiceImpl
 import com.bitwarden.network.service.BillingService
@@ -199,6 +201,10 @@ internal class BitwardenServiceClientImpl(
             pushApi = retrofits.authenticatedApiRetrofit.create(),
             appId = bitwardenServiceClientConfig.appIdProvider.uniqueAppId,
         )
+    }
+
+    override val authenticatorService: AuthenticatorService by lazy {
+        AuthenticatorServiceImpl(api = retrofits.authenticatedApiRetrofit.create())
     }
 
     override val sendsService by lazy {

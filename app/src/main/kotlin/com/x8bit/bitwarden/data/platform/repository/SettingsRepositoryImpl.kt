@@ -9,7 +9,6 @@ import com.bitwarden.policies.Policy
 import com.bitwarden.policies.PolicyType
 import com.bitwarden.ui.platform.feature.settings.appearance.model.AppLanguage
 import com.bitwarden.ui.platform.feature.settings.appearance.model.AppTheme
-import com.x8bit.bitwarden.BuildConfig
 import com.x8bit.bitwarden.data.auth.datasource.disk.AuthDiskSource
 import com.x8bit.bitwarden.data.auth.repository.model.PolicyInformation
 import com.x8bit.bitwarden.data.auth.repository.model.UserFingerprintResult
@@ -43,7 +42,7 @@ import java.security.GeneralSecurityException
 import java.time.Instant
 import javax.crypto.Cipher
 
-private val DEFAULT_IS_SCREEN_CAPTURE_ALLOWED = BuildConfig.DEBUG
+private const val DEFAULT_IS_SCREEN_CAPTURE_ALLOWED = false
 
 /**
  * Primary implementation of [SettingsRepository].
@@ -67,7 +66,7 @@ class SettingsRepositoryImpl(
     private val unconfinedScope = CoroutineScope(dispatcherManager.unconfined)
 
     override var appLanguage: AppLanguage
-        get() = settingsDiskSource.appLanguage ?: AppLanguage.DEFAULT
+        get() = settingsDiskSource.appLanguage ?: AppLanguage.CHINESE_SIMPLIFIED
         set(value) {
             settingsDiskSource.appLanguage = value
         }
@@ -75,7 +74,7 @@ class SettingsRepositoryImpl(
     override val appLanguageStateFlow: StateFlow<AppLanguage>
         get() = settingsDiskSource
             .appLanguageFlow
-            .map { it ?: AppLanguage.DEFAULT }
+            .map { it ?: AppLanguage.CHINESE_SIMPLIFIED }
             .stateIn(
                 scope = unconfinedScope,
                 started = SharingStarted.Eagerly,
@@ -193,7 +192,7 @@ class SettingsRepositoryImpl(
                     .getClearClipboardFrequencySeconds(userId)
                     .toClearClipboardFrequency()
             }
-            ?: ClearClipboardFrequency.NEVER
+            ?: ClearClipboardFrequency.THIRTY_SECONDS
         set(value) {
             val userId = activeUserId ?: return
             settingsDiskSource.storeClearClipboardFrequencySeconds(userId, value.frequencySeconds)
@@ -264,7 +263,7 @@ class SettingsRepositoryImpl(
             ?.let {
                 settingsDiskSource.getDefaultUriMatchType(userId = it)
             }
-            ?: UriMatchType.DOMAIN
+            ?: UriMatchType.HOST
         set(value) {
             val userId = activeUserId ?: return
             settingsDiskSource.storeDefaultUriMatchType(
@@ -463,7 +462,7 @@ class SettingsRepositoryImpl(
             !hasBiometrics &&
             !hasMasterPassword
         if (!isVaultTimeoutActionSet(userId = userId) || hasInvalidTimeoutAction) {
-            storeVaultTimeout(userId, VaultTimeout.FifteenMinutes)
+            storeVaultTimeout(userId, VaultTimeout.Never)
             storeVaultTimeoutAction(
                 userId = userId,
                 vaultTimeoutAction = if (!hasMasterPassword) {
@@ -823,7 +822,7 @@ private fun Int?.toVaultTimeout(): VaultTimeout =
  */
 private fun Int?.toClearClipboardFrequency(): ClearClipboardFrequency =
     ClearClipboardFrequency.entries.firstOrNull { it.frequencySeconds == this }
-        ?: ClearClipboardFrequency.NEVER
+        ?: ClearClipboardFrequency.THIRTY_SECONDS
 
 /**
  * Returns the given [VaultTimeoutAction] or a default value if `null`.
