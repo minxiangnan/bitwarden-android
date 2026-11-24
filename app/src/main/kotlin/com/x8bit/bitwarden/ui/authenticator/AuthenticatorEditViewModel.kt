@@ -179,6 +179,12 @@ class AuthenticatorEditViewModel @AssistedInject constructor(
                     sendAction(AuthenticatorEditAction.ShowMessage(error.message ?: "MCP 没有更新"))
                     return@launch
                 }
+                // The create notification can arrive before the alias is stored. Touch the entry
+                // afterwards so other devices reload and see the alias.
+                repository.save(id, draft).onFailure { error ->
+                    sendAction(AuthenticatorEditAction.ShowMessage(error.message ?: "没有保存"))
+                    return@launch
+                }
             }
             sendEvent(AuthenticatorEditEvent.Saved)
         }

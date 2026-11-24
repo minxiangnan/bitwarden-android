@@ -7,6 +7,7 @@ import coil3.SingletonImageLoader
 import com.bitwarden.annotation.OmitFromCoverage
 import com.bitwarden.data.manager.flightrecorder.FlightRecorderManager
 import com.x8bit.bitwarden.data.auth.manager.AuthRequestNotificationManager
+import com.x8bit.bitwarden.data.authenticator.sync.AuthenticatorLiveSync
 import com.x8bit.bitwarden.data.autofill.manager.FillAssistManager
 import com.x8bit.bitwarden.data.platform.datasource.disk.legacy.DiskSourceMigrationLogger
 import com.x8bit.bitwarden.data.platform.manager.LogsManager
@@ -47,6 +48,9 @@ class BitwardenApplication : Application(), SingletonImageLoader.Factory {
 
     @Inject
     lateinit var organizationEventManager: OrganizationEventManager
+
+    @Inject
+    lateinit var authenticatorLiveSync: AuthenticatorLiveSync
 
     @Inject
     lateinit var restrictionManager: RestrictionManager
