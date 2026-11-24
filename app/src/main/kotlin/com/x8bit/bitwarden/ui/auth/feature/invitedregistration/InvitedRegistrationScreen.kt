@@ -6,18 +6,24 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -101,9 +107,12 @@ private fun InvitedRegistrationContent(
 ) {
     var showPassword by rememberSaveable { mutableStateOf(false) }
     var showConfirm by rememberSaveable { mutableStateOf(false) }
+    val passwordFocus = remember { FocusRequester() }
+    val confirmFocus = remember { FocusRequester() }
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .imePadding()
             .verticalScroll(rememberScrollState()),
     ) {
         Spacer(modifier = Modifier.height(16.dp))
@@ -129,6 +138,8 @@ private fun InvitedRegistrationContent(
             label = stringResource(BitwardenString.name),
             value = state.name,
             onValueChange = onNameChange,
+            imeAction = ImeAction.Next,
+            keyboardActions = KeyboardActions(onNext = { passwordFocus.requestFocus() }),
             cardStyle = CardStyle.Full,
             modifier = Modifier
                 .standardHorizontalMargin()
@@ -142,8 +153,11 @@ private fun InvitedRegistrationContent(
             showPasswordChange = { showPassword = it },
             onValueChange = onPasswordChange,
             supportingContent = null,
+            imeAction = ImeAction.Next,
+            keyboardActions = KeyboardActions(onNext = { confirmFocus.requestFocus() }),
             cardStyle = CardStyle.Full,
             modifier = Modifier
+                .focusRequester(passwordFocus)
                 .standardHorizontalMargin()
                 .fillMaxWidth(),
         )
@@ -155,8 +169,11 @@ private fun InvitedRegistrationContent(
             showPasswordChange = { showConfirm = it },
             onValueChange = onConfirmChange,
             supportingContent = null,
+            imeAction = ImeAction.Done,
+            keyboardActions = KeyboardActions(onDone = { onSubmit() }),
             cardStyle = CardStyle.Full,
             modifier = Modifier
+                .focusRequester(confirmFocus)
                 .standardHorizontalMargin()
                 .fillMaxWidth(),
         )

@@ -324,6 +324,15 @@ fun VaultUnlockScreen(
                     modifier = Modifier.standardHorizontalMargin(),
                 )
                 Spacer(modifier = Modifier.height(12.dp))
+            } else if (biometricsManager.isBiometricsSupported) {
+                Text(
+                    text = stringResource(BitwardenString.zh_biometric_offer),
+                    textAlign = TextAlign.Start,
+                    style = BitwardenTheme.typography.bodySmall,
+                    color = BitwardenTheme.colorScheme.text.secondary,
+                    modifier = Modifier.standardHorizontalMargin(),
+                )
+                Spacer(modifier = Modifier.height(12.dp))
             }
             if (!state.hideInput) {
                 BitwardenFilledButton(

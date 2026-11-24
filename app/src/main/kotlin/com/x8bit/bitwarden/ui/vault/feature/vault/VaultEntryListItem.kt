@@ -1,8 +1,16 @@
 package com.x8bit.bitwarden.ui.vault.feature.vault
 
+import android.view.HapticFeedbackConstants
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.tooling.preview.Preview
+import com.bitwarden.ui.platform.components.button.BitwardenTextButton
 import com.bitwarden.ui.platform.components.icon.model.IconData
 import com.bitwarden.ui.platform.components.model.CardStyle
 import com.bitwarden.ui.platform.resource.BitwardenDrawable
@@ -41,8 +49,13 @@ fun VaultEntryListItem(
     trailingLabelIcons: ImmutableList<IconData> = persistentListOf(),
     supportingLabel: String? = null,
 ) {
-    BitwardenListItem(
-        modifier = modifier,
+    val copyActions = overflowOptions.filter { option ->
+        option is ListingItemOverflowAction.VaultAction.CopyUsernameClick ||
+            option is ListingItemOverflowAction.VaultAction.CopyPasswordClick ||
+            option is ListingItemOverflowAction.VaultAction.CopyTotpClick
+    }
+    Column(modifier = modifier) {
+        BitwardenListItem(
         label = label,
         supportingLabel = supportingLabel,
         startIcon = startIcon,
@@ -59,7 +72,27 @@ fun VaultEntryListItem(
             }
             .toImmutableList(),
         cardStyle = cardStyle,
-    )
+        modifier = Modifier.fillMaxWidth(),
+        )
+        if (copyActions.isNotEmpty()) {
+            val view = LocalView.current
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+            ) {
+                copyActions.forEach { action ->
+                    BitwardenTextButton(
+                        label = action.title(),
+                        onClick = {
+                            view.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
+                            onOverflowOptionClick(action)
+                        },
+                    )
+                }
+            }
+        }
+    }
 }
 
 @Preview

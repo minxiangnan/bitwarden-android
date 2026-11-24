@@ -59,7 +59,7 @@ class AuthenticatorListViewModel @AssistedInject constructor(
      */
     fun applySnapshot(incoming: AuthenticatorSnapshot) {
         snapshot = incoming
-        rebuild()
+        rebuild(finishedRefresh = true)
     }
 
     init {
@@ -96,6 +96,15 @@ class AuthenticatorListViewModel @AssistedInject constructor(
                 rebuild()
             }
             is AuthenticatorListAction.CopyClick -> copy(action.id)
+            is AuthenticatorListAction.FavoriteClick -> {
+                viewModelScope.launch {
+                    repository.setFavorite(action.id, !action.favorite).onFailure { error ->
+                        sendAction(
+                            AuthenticatorListAction.ShowMessage(error.message ?: "没有更新收藏"),
+                        )
+                    }
+                }
+            }
             is AuthenticatorListAction.TrashClick -> {
                 mutableStateFlow.update {
                     it.copy(
@@ -124,11 +133,10 @@ class AuthenticatorListViewModel @AssistedInject constructor(
                 mutableStateFlow.update { it.copy(dialog = null) }
             }
             is AuthenticatorListAction.ShowMessage -> {
-                mutableStateFlow.update {
-                    it.copy(dialog = AuthenticatorListState.Dialog.Message(action.text))
-                }
+                sendEvent(AuthenticatorListEvent.Notice(action.text))
             }
             AuthenticatorListAction.Refresh -> {
+                mutableStateFlow.update { it.copy(refreshing = true) }
                 viewModelScope.launch { repository.refresh() }
             }
             is AuthenticatorListAction.Internal.Snapshot -> {
@@ -141,7 +149,7 @@ class AuthenticatorListViewModel @AssistedInject constructor(
 
     private var snapshot: AuthenticatorSnapshot = AuthenticatorSnapshot()
 
-    private fun rebuild() {
+    private fun rebuild(finishedRefresh: Boolean = false) {
         val now = clock.millis()
         val source = if (trash) {
             snapshot.entries.filter { it.deletedAt != null }
@@ -170,6 +178,8 @@ class AuthenticatorListViewModel @AssistedInject constructor(
                 rows = rows,
                 groups = groups,
                 recentIds = snapshot.recentIds,
+                refreshing = if (finishedRefresh) false else it.refreshing,
+                syncedAtMillis = snapshot.syncedAtMillis ?: it.syncedAtMillis,
             )
         }
     }
@@ -178,7 +188,7 @@ class AuthenticatorListViewModel @AssistedInject constructor(
         viewModelScope.launch {
             val code = repository.consumeCode(id, clock.millis()) ?: return@launch
             clipboardManager.setText(text = code, toastDescriptorOverride = "验证码")
-            sendEvent(AuthenticatorListEvent.Copied)
+            sendEvent(AuthenticatorListEvent.Copied(formatAuthenticatorCode(code)))
         }
     }
 
@@ -234,6 +244,7 @@ class AuthenticatorListViewModel @AssistedInject constructor(
                 nextTotpCode(this, now)?.let(::formatAuthenticatorCode)
             },
             seconds = if (kind == AuthenticatorKind.HOTP) 0 else secondsRemaining(now, period),
+            period = period.coerceAtLeast(1),
             favorite = favorite,
             alias = alias,
             kindLabel = when (kind) {
@@ -259,6 +270,7 @@ data class AuthenticatorRow(
     val code: String,
     val nextCode: String?,
     val seconds: Int,
+    val period: Int,
     val favorite: Boolean,
     val alias: String?,
     val kindLabel: String,
@@ -279,6 +291,8 @@ data class AuthenticatorListState(
     val rows: List<AuthenticatorRow> = emptyList(),
     val groups: List<String> = emptyList(),
     val recentIds: List<String> = emptyList(),
+    val refreshing: Boolean = false,
+    val syncedAtMillis: Long? = null,
     val dialog: Dialog? = null,
 ) {
     /**
@@ -307,9 +321,14 @@ data class AuthenticatorListState(
  */
 sealed class AuthenticatorListEvent {
     /**
-     * A code was copied.
+     * A code was copied. [formatted] is grouped for display, not the clipboard text.
      */
-    data object Copied : AuthenticatorListEvent()
+    data class Copied(val formatted: String) : AuthenticatorListEvent()
+
+    /**
+     * A short result that should not block the list.
+     */
+    data class Notice(val text: String) : AuthenticatorListEvent()
 }
 
 /**
@@ -340,6 +359,11 @@ sealed class AuthenticatorListAction {
      * Copy the code for [id].
      */
     data class CopyClick(val id: String) : AuthenticatorListAction()
+
+    /**
+     * Toggle favorite for [id]. [favorite] is the current value.
+     */
+    data class FavoriteClick(val id: String, val favorite: Boolean) : AuthenticatorListAction()
 
     /**
      * Ask to trash [name].

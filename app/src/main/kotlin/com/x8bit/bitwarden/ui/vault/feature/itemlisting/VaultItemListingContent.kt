@@ -1,8 +1,12 @@
 package com.x8bit.bitwarden.ui.vault.feature.itemlisting
 
+import android.view.HapticFeedbackConstants
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,11 +18,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.bitwarden.ui.platform.base.util.standardHorizontalMargin
 import com.bitwarden.ui.platform.base.util.toListItemCardStyle
+import com.bitwarden.ui.platform.components.button.BitwardenTextButton
 import com.bitwarden.ui.platform.components.button.model.BitwardenButtonData
 import com.bitwarden.ui.platform.components.card.BitwardenActionCard
 import com.bitwarden.ui.platform.components.card.BitwardenInfoCalloutCard
@@ -291,6 +297,40 @@ fun VaultItemListingContent(
                         .standardHorizontalMargin()
                         .testTag("VaultItemCell"),
                 )
+                val copyActions = it.overflowOptions.filter { option ->
+                    option is ListingItemOverflowAction.VaultAction.CopyUsernameClick ||
+                        option is ListingItemOverflowAction.VaultAction.CopyPasswordClick ||
+                        option is ListingItemOverflowAction.VaultAction.CopyTotpClick
+                }
+                if (copyActions.isNotEmpty()) {
+                    val view = LocalView.current
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState())
+                            .standardHorizontalMargin(),
+                    ) {
+                        copyActions.forEach { option ->
+                            val action = option as ListingItemOverflowAction.VaultAction
+                            BitwardenTextButton(
+                                label = action.title(),
+                                onClick = {
+                                    view.performHapticFeedback(
+                                        HapticFeedbackConstants.CONTEXT_CLICK,
+                                    )
+                                    if (action.requiresPasswordReprompt &&
+                                        it.shouldShowMasterPasswordReprompt
+                                    ) {
+                                        masterPasswordRepromptData =
+                                            MasterPasswordRepromptData.OverflowItem(action = action)
+                                    } else {
+                                        vaultItemListingHandlers.overflowItemClick(action)
+                                    }
+                                },
+                            )
+                        }
+                    }
+                }
             }
         }
 

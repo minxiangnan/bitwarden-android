@@ -125,7 +125,7 @@ internal class AutofillParserImpl(
     /**
      * Parse the [AssistStructure] into an [AutofillRequest].
      */
-    @Suppress("LongMethod")
+    @Suppress("LongMethod", "CyclomaticComplexMethod")
     private fun parseInternal(
         assistStructure: AssistStructure,
         autofillAppInfo: AutofillAppInfo,
@@ -166,6 +166,8 @@ internal class AutofillParserImpl(
             } else {
                 null
             }
+            // A save request arrives after the form has already lost focus.
+            ?: autofillViews.firstOrNull()?.takeIf { fillRequest == null }
             ?: return AutofillRequest.Unfillable
 
         val packageName = traversalDataList.buildPackageNameOrNull(
@@ -191,6 +193,7 @@ internal class AutofillParserImpl(
         }
 
         val effectiveFocusedView = effectiveViews.firstFocusedOrNull()
+            ?: effectiveViews.firstOrNull()?.takeIf { fillRequest == null }
             ?: return AutofillRequest.Unfillable
 
         // Choose the first focused partition of data for fulfillment.

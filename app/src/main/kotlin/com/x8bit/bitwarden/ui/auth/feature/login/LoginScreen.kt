@@ -6,8 +6,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
@@ -21,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
@@ -203,6 +206,7 @@ private fun LoginScreenContent(
 ) {
     Column(
         modifier = modifier
+            .imePadding()
             .verticalScroll(rememberScrollState()),
     ) {
         Spacer(modifier = Modifier.height(height = 12.dp))
@@ -214,6 +218,8 @@ private fun LoginScreenContent(
             showPasswordTestTag = "PasswordVisibilityToggle",
             supportingContentPadding = PaddingValues(),
             supportingContent = null,
+            imeAction = ImeAction.Done,
+            keyboardActions = KeyboardActions(onDone = { onLoginButtonClick() }),
             passwordFieldTestTag = "MasterPasswordEntry",
             cardStyle = CardStyle.Full,
             modifier = Modifier
