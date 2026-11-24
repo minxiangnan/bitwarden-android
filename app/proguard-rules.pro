@@ -21,6 +21,12 @@
 # Keep all enums
 -keepclassmembers enum * { *; }
 
+# Authenticator and MCP models live in the network module and are decoded by reflection.
+-keep class com.bitwarden.network.model.** { *; }
+-keepclassmembers class com.bitwarden.network.model.** {
+    *** Companion;
+}
+
 ################################################################################
 # Firebase Crashlytics
 ################################################################################

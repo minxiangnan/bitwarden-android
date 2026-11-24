@@ -32,6 +32,8 @@ import com.x8bit.bitwarden.ui.auth.feature.preventaccountlockout.navigateToPreve
 import com.x8bit.bitwarden.ui.auth.feature.preventaccountlockout.preventAccountLockoutDestination
 import com.x8bit.bitwarden.ui.auth.feature.setpassword.navigateToSetPassword
 import com.x8bit.bitwarden.ui.auth.feature.setpassword.setPasswordDestination
+import com.x8bit.bitwarden.ui.auth.feature.invitedregistration.invitedRegistrationDestination
+import com.x8bit.bitwarden.ui.auth.feature.invitedregistration.navigateToInvitedRegistration
 import com.x8bit.bitwarden.ui.auth.feature.startregistration.navigateToStartRegistration
 import com.x8bit.bitwarden.ui.auth.feature.startregistration.startRegistrationDestination
 import com.x8bit.bitwarden.ui.auth.feature.trusteddevice.trustedDeviceDestination
@@ -116,6 +118,15 @@ private fun EntryProviderScope<AuthGraph>.authDestinations(
         onNavigateToEnvironment = { navigationController.navigateToEnvironment() },
         onNavigateToStartRegistration = { navigationController.navigateToStartRegistration() },
         onNavigateToPreAuthSettings = { navigationController.navigateToPreAuthSettings() },
+        onNavigateToInvitedRegistration = { emailAddress ->
+            navigationController.navigateToInvitedRegistration(emailAddress = emailAddress)
+        },
+    )
+    invitedRegistrationDestination(
+        onNavigateBack = { navigationController.navigateBack() },
+        onNavigateToLogin = { emailAddress ->
+            navigationController.navigateToLogin(emailAddress = emailAddress)
+        },
     )
     welcomeDestination(
         onNavigateToLogin = { navigationController.navigateToLanding() },

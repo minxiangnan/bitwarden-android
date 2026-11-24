@@ -434,9 +434,9 @@ private fun queryParams(query: String): Map<String, String> =
             null
         } else {
             part.substring(0, index) to java.net.URLDecoder.decode(
-            part.substring(index + 1),
-            Charsets.UTF_8,
-        )
+                part.substring(index + 1),
+                "UTF-8",
+            )
         }
     }.toMap()
 

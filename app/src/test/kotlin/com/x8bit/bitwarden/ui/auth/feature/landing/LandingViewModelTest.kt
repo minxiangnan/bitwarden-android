@@ -38,6 +38,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
+@Suppress("LargeClass")
 class LandingViewModelTest : BaseViewModelTest() {
 
     private val authRepository: AuthRepository = mockk(relaxed = true) {
@@ -242,6 +243,7 @@ class LandingViewModelTest : BaseViewModelTest() {
         val validEmail = "email@bitwarden.com"
         val viewModel = createViewModel()
         viewModel.trySendAction(LandingAction.EmailInputChanged(validEmail))
+        viewModel.trySendAction(LandingAction.ServerUrlInputChanged(SERVER_URL))
         viewModel.eventFlow.test {
             viewModel.trySendAction(LandingAction.ContinueButtonClick)
             assertEquals(
@@ -256,9 +258,11 @@ class LandingViewModelTest : BaseViewModelTest() {
         val invalidEmail = "bitwarden.com"
         val viewModel = createViewModel()
         viewModel.trySendAction(LandingAction.EmailInputChanged(invalidEmail))
+        viewModel.trySendAction(LandingAction.ServerUrlInputChanged(SERVER_URL))
         val initialState = DEFAULT_STATE.copy(
             emailInput = invalidEmail,
             isContinueButtonEnabled = true,
+            serverUrlInput = SERVER_URL,
         )
         viewModel.stateFlow.test {
             assertEquals(initialState, awaitItem())
@@ -266,6 +270,8 @@ class LandingViewModelTest : BaseViewModelTest() {
             viewModel.trySendAction(LandingAction.ContinueButtonClick)
             assertEquals(
                 initialState.copy(
+                    selectedEnvironmentType = Environment.Type.SELF_HOSTED,
+                    selectedEnvironmentLabel = "vault.example.com",
                     dialog = LandingState.DialogState.Error(
                         message = BitwardenString.invalid_email.asText(),
                     ),
@@ -287,13 +293,17 @@ class LandingViewModelTest : BaseViewModelTest() {
     @Suppress("MaxLineLength")
     @Test
     fun `ContinueButtonClick with an email input matching an existing account on same environment that is logged in should show the account already added dialog`() {
+        val hosted = Environment.SelfHosted(
+            com.bitwarden.data.datasource.disk.model.EnvironmentUrlDataJson(base = SERVER_URL),
+        )
+        fakeEnvironmentRepository.environment = hosted
         val rememberedEmail = "active@bitwarden.com"
         val activeAccount = UserState.Account(
             userId = "activeUserId",
             name = "name",
             email = rememberedEmail,
             avatarColorHex = "avatarColorHex",
-            environment = Environment.Prod.Us,
+            environment = hosted,
             isPremium = true,
             isPremiumFromSelf = true,
             isLoggedIn = true,
@@ -324,6 +334,9 @@ class LandingViewModelTest : BaseViewModelTest() {
             emailInput = rememberedEmail,
             isContinueButtonEnabled = true,
             isRememberEmailEnabled = true,
+            selectedEnvironmentType = Environment.Type.SELF_HOSTED,
+            selectedEnvironmentLabel = "vault.example.com",
+            serverUrlInput = SERVER_URL,
             accountSummaries = accountSummaries,
         )
         assertEquals(
@@ -331,16 +344,19 @@ class LandingViewModelTest : BaseViewModelTest() {
             viewModel.stateFlow.value,
         )
 
+        viewModel.trySendAction(LandingAction.ServerUrlInputChanged(SERVER_URL))
         viewModel.trySendAction(LandingAction.ContinueButtonClick)
 
         assertEquals(
             initialState.copy(
+                serverUrlInput = SERVER_URL,
                 dialog = LandingState.DialogState.AccountAlreadyAdded(
                     accountSummary = activeAccountSummary,
                 ),
             ),
             viewModel.stateFlow.value,
         )
+        fakeEnvironmentRepository.environment = Environment.Prod.Us
     }
 
     @Suppress("MaxLineLength")
@@ -391,16 +407,7 @@ class LandingViewModelTest : BaseViewModelTest() {
             )
 
             viewModel.eventFlow.test {
-                viewModel.trySendAction(
-                    LandingAction.EnvironmentTypeSelect(Environment.Prod.Eu.type),
-                )
-                assertEquals(
-                    initialState.copy(
-                        selectedEnvironmentLabel = Environment.Prod.Eu.label,
-                        selectedEnvironmentType = Environment.Prod.Eu.type,
-                    ),
-                    viewModel.stateFlow.value,
-                )
+                viewModel.trySendAction(LandingAction.ServerUrlInputChanged(SERVER_URL))
                 viewModel.trySendAction(LandingAction.ContinueButtonClick)
                 assertEquals(
                     LandingEvent.NavigateToLogin(rememberedEmail),
@@ -456,6 +463,7 @@ class LandingViewModelTest : BaseViewModelTest() {
                 viewModel.stateFlow.value,
             )
 
+            viewModel.trySendAction(LandingAction.ServerUrlInputChanged(SERVER_URL))
             viewModel.eventFlow.test {
                 viewModel.trySendAction(LandingAction.ContinueButtonClick)
                 assertEquals(
@@ -463,7 +471,11 @@ class LandingViewModelTest : BaseViewModelTest() {
                     awaitItem(),
                 )
                 assertEquals(
-                    initialState,
+                    initialState.copy(
+                        serverUrlInput = SERVER_URL,
+                        selectedEnvironmentType = Environment.Type.SELF_HOSTED,
+                        selectedEnvironmentLabel = "vault.example.com",
+                    ),
                     viewModel.stateFlow.value,
                 )
             }
@@ -688,6 +700,8 @@ class LandingViewModelTest : BaseViewModelTest() {
 
     //endregion Helper methods
 }
+
+private const val SERVER_URL = "https://vault.example.com"
 
 private val DEFAULT_STATE = LandingState(
     emailInput = "",

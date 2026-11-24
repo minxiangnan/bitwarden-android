@@ -6,6 +6,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.filter
 import androidx.compose.ui.test.filterToOne
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.isDialog
@@ -398,10 +399,10 @@ class VaultUnlockScreenTest : BitwardenComposeTest() {
             .assertIsDisplayed()
         composeTestRule
             .onAllNodesWithText("Log out")
-            .filterToOne(hasAnyAncestor(isDialog()))
+            .filter(hasAnyAncestor(isDialog()))[0]
             .assertIsDisplayed()
         composeTestRule
-            .onAllNodesWithText("Are you sure you want to log out?")
+            .onAllNodesWithText("Are you sure you want to log out?", substring = true)
             .filterToOne(hasAnyAncestor(isDialog()))
             .assertIsDisplayed()
     }
@@ -420,8 +421,8 @@ class VaultUnlockScreenTest : BitwardenComposeTest() {
 
         // Click on the Yes button in the dialog
         composeTestRule
-            .onAllNodesWithText("Yes")
-            .filterToOne(hasAnyAncestor(isDialog()))
+            .onAllNodesWithText("Log out")
+            .filter(hasAnyAncestor(isDialog()))[1]
             .performClick()
 
         verify { viewModel.trySendAction(VaultUnlockAction.ConfirmLogoutClick) }

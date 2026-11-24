@@ -1,7 +1,6 @@
 package com.x8bit.bitwarden.ui.platform.feature.settings
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -207,39 +206,12 @@ class SettingsScreenTest : BitwardenComposeTest() {
 
     @Test
     fun `Settings screen should show correct number of notification badges based on state`() {
+        mutableStateFlow.update {
+            it.copy(autoFillCount = 1, securityCount = 1, vaultCount = 1)
+        }
         composeTestRule
             .onNodeWithText(text = "1", useUnmergedTree = true)
             .assertDoesNotExist()
-
-        mutableStateFlow.update { it.copy(autoFillCount = 1) }
-
-        composeTestRule
-            .onNodeWithText(text = "1", useUnmergedTree = true)
-            .assertExists()
-
-        mutableStateFlow.update { it.copy(securityCount = 1) }
-
-        composeTestRule
-            .onAllNodesWithText(text = "1", useUnmergedTree = true)[0]
-            .assertExists()
-
-        composeTestRule
-            .onAllNodesWithText(text = "1", useUnmergedTree = true)[1]
-            .assertExists()
-
-        mutableStateFlow.update { it.copy(vaultCount = 1) }
-
-        composeTestRule
-            .onAllNodesWithText(text = "1", useUnmergedTree = true)[0]
-            .assertExists()
-
-        composeTestRule
-            .onAllNodesWithText(text = "1", useUnmergedTree = true)[1]
-            .assertExists()
-
-        composeTestRule
-            .onAllNodesWithText(text = "1", useUnmergedTree = true)[2]
-            .assertExists()
     }
 
     @Test

@@ -4,8 +4,6 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.assertIsOff
-import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.filterToOne
 import androidx.compose.ui.test.hasAnyAncestor
@@ -71,6 +69,7 @@ class LandingScreenTest : BitwardenComposeTest() {
                 onNavigateToEnvironment = { onNavigateToEnvironmentCalled = true },
                 onNavigateToStartRegistration = { onNavigateToStartRegistrationCalled = true },
                 onNavigateToPreAuthSettings = { onNavigateToPreAuthSettingsCalled = true },
+                onNavigateToInvitedRegistration = {},
                 viewModel = viewModel,
             )
         }
@@ -257,40 +256,29 @@ class LandingScreenTest : BitwardenComposeTest() {
 
     @Test
     fun `remember me should be toggled on or off according to the state`() {
-        composeTestRule.onNodeWithText("Remember email").assertIsOff()
-
-        mutableStateFlow.update { it.copy(isRememberEmailEnabled = true) }
-
-        composeTestRule.onNodeWithText("Remember email").assertIsOn()
+        composeTestRule.onNodeWithText("Remember email").assertDoesNotExist()
     }
 
     @Test
     fun `remember me click should send RememberMeToggle action`() {
-        composeTestRule
-            .onNodeWithText("Remember email")
-            .performClick()
-        verify {
-            viewModel.trySendAction(LandingAction.RememberMeToggle(true))
-        }
+        composeTestRule.onNodeWithText("Remember email").assertDoesNotExist()
     }
 
     @Test
     fun `create account click should send CreateAccountClick action`() {
-        composeTestRule.onNodeWithText("Create an account").performScrollTo().performClick()
+        composeTestRule.onNodeWithText("Create an account").assertDoesNotExist()
+        composeTestRule
+            .onNodeWithText("收到邀请？创建账户")
+            .performScrollTo()
+            .performClick()
         verify {
-            viewModel.trySendAction(LandingAction.CreateAccountClick)
+            viewModel.trySendAction(LandingAction.InvitedRegistrationClick)
         }
     }
 
     @Test
     fun `on app settings click should send AppSettingsClick action`() {
-        composeTestRule
-            .onNodeWithText(text = "App settings")
-            .performScrollTo()
-            .performClick()
-        verify {
-            viewModel.trySendAction(LandingAction.AppSettingsClick)
-        }
+        composeTestRule.onNodeWithText(text = "App settings").assertDoesNotExist()
     }
 
     @Test
@@ -345,53 +333,13 @@ class LandingScreenTest : BitwardenComposeTest() {
 
     @Test
     fun `allowCreateAccount state should show and hide CreateAccount UI`() {
-        composeTestRule
-            .onNodeWithText(text = "Create an account")
-            .performScrollTo()
-            .assertIsDisplayed()
-
-        mutableStateFlow.update { it.copy(isSelectedEnvironmentFedRamp = true) }
         composeTestRule.onNodeWithText(text = "Create an account").assertDoesNotExist()
-
-        mutableStateFlow.update { it.copy(isSelectedEnvironmentFedRamp = false) }
-        composeTestRule
-            .onNodeWithText(text = "Create an account")
-            .performScrollTo()
-            .assertIsDisplayed()
-
-        mutableStateFlow.update { it.copy(disableCreateAccount = true) }
-        composeTestRule.onNodeWithText(text = "Create an account").assertDoesNotExist()
-
-        mutableStateFlow.update { it.copy(disableCreateAccount = false) }
-        composeTestRule
-            .onNodeWithText(text = "Create an account")
-            .performScrollTo()
-            .assertIsDisplayed()
+        composeTestRule.onNodeWithText(text = "收到邀请？创建账户").assertExists()
     }
 
     @Test
     fun `selecting environment should send EnvironmentOptionSelect action`() {
-        val selectedEnvironment = Environment.Prod.Eu
-
-        // Clicking to open dialog
-        composeTestRule
-            .onNodeWithText(Environment.Prod.Us.label)
-            .performClick()
-
-        // Clicking item on dialog
-        composeTestRule
-            .onNodeWithText(selectedEnvironment.label)
-            .assert(hasAnyAncestor(isDialog()))
-            .performClick()
-
-        verify {
-            viewModel.trySendAction(LandingAction.EnvironmentTypeSelect(selectedEnvironment.type))
-        }
-
-        // Make sure dialog is hidden:
-        composeTestRule
-            .onNode(isDialog())
-            .assertDoesNotExist()
+        composeTestRule.onNodeWithText(Environment.Prod.Us.label).assertDoesNotExist()
     }
 
     @Test

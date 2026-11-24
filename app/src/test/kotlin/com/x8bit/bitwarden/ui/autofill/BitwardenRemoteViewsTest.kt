@@ -384,14 +384,14 @@ class BitwardenRemoteViewsTest {
 }
 
 private const val APP_NAME = "Bitwarden"
-private const val COLOR_DARK_BACKGROUND: Int = -15590873
-private const val COLOR_DARK_ICON_TINT: Int = -6904901
-private const val COLOR_DARK_TEXT_PRIMARY: Int = -788743
-private const val COLOR_DARK_TEXT_SECONDARY: Int = -6904901
-private const val COLOR_LIGHT_BACKGROUND: Int = -788743
-private const val COLOR_LIGHT_ICON_TINT: Int = -10850927
-private const val COLOR_LIGHT_TEXT_PRIMARY: Int = -14999511
-private const val COLOR_LIGHT_TEXT_SECONDARY: Int = -10850927
+private const val COLOR_DARK_BACKGROUND: Int = -13885156
+private const val COLOR_DARK_ICON_TINT: Int = -3890034
+private const val COLOR_DARK_TEXT_PRIMARY: Int = -264464
+private const val COLOR_DARK_TEXT_SECONDARY: Int = -3890034
+private const val COLOR_LIGHT_BACKGROUND: Int = -264464
+private const val COLOR_LIGHT_ICON_TINT: Int = -7706030
+private const val COLOR_LIGHT_TEXT_PRIMARY: Int = -11913432
+private const val COLOR_LIGHT_TEXT_SECONDARY: Int = -7706030
 private const val GO_TO_MY_VAULT = "Go to my vault"
 private const val ICON_RES: Int = 41421421
 private const val NAME: String = "NAME"

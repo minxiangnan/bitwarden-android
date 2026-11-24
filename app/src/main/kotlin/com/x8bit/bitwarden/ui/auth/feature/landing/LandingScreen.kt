@@ -36,6 +36,7 @@ import com.bitwarden.ui.platform.components.account.BitwardenAccountSwitcher
 import com.bitwarden.ui.platform.components.account.BitwardenPlaceholderAccountActionItem
 import com.bitwarden.ui.platform.components.appbar.BitwardenTopAppBar
 import com.bitwarden.ui.platform.components.button.BitwardenFilledButton
+import com.bitwarden.ui.platform.components.button.BitwardenTextButton
 import com.bitwarden.ui.platform.components.dialog.BitwardenBasicDialog
 import com.bitwarden.ui.platform.components.dialog.BitwardenTwoButtonDialog
 import com.bitwarden.ui.platform.components.field.BitwardenTextField
@@ -59,6 +60,7 @@ fun LandingScreen(
     onNavigateToEnvironment: () -> Unit,
     onNavigateToStartRegistration: () -> Unit,
     onNavigateToPreAuthSettings: () -> Unit,
+    onNavigateToInvitedRegistration: (emailAddress: String) -> Unit,
     viewModel: LandingViewModel = hiltViewModel(),
 ) {
     val state by viewModel.stateFlow.collectAsStateWithLifecycle()
@@ -68,6 +70,9 @@ fun LandingScreen(
             is LandingEvent.NavigateToLogin -> onNavigateToLogin(event.emailAddress)
             LandingEvent.NavigateToEnvironment -> onNavigateToEnvironment()
             LandingEvent.NavigateToStartRegistration -> onNavigateToStartRegistration()
+            is LandingEvent.NavigateToInvitedRegistration -> {
+                onNavigateToInvitedRegistration(event.emailAddress)
+            }
             LandingEvent.NavigateToSettings -> onNavigateToPreAuthSettings()
             is LandingEvent.ShowSnackbar -> snackbarHostState.showSnackbar(event.data)
         }
@@ -160,6 +165,9 @@ fun LandingScreen(
             },
             onEmailInputChange = { viewModel.trySendAction(LandingAction.EmailInputChanged(it)) },
             onContinueClick = { viewModel.trySendAction(LandingAction.ContinueButtonClick) },
+            onInvitedRegistrationClick = {
+                viewModel.trySendAction(LandingAction.InvitedRegistrationClick)
+            },
         )
     }
 }
@@ -171,6 +179,7 @@ private fun LandingScreenContent(
     onServerUrlInputChange: (String) -> Unit,
     onEmailInputChange: (String) -> Unit,
     onContinueClick: () -> Unit,
+    onInvitedRegistrationClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -245,7 +254,15 @@ private fun LandingScreenContent(
                 .fillMaxWidth(),
         )
 
-        Spacer(modifier = Modifier.height(height = 24.dp))
+        Spacer(modifier = Modifier.height(height = 8.dp))
+        BitwardenTextButton(
+            label = stringResource(id = BitwardenString.zh_invited_create_account),
+            onClick = onInvitedRegistrationClick,
+            modifier = Modifier
+                .testTag("InvitedRegistrationButton")
+                .standardHorizontalMargin()
+                .fillMaxWidth(),
+        )
         Spacer(modifier = Modifier.height(height = 12.dp))
         Spacer(modifier = Modifier.navigationBarsPadding())
     }

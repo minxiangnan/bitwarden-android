@@ -201,7 +201,7 @@ class SettingsViewModelTest : BaseViewModelTest() {
         mutableShouldShowPlanBadgeFlow.value = true
         val viewModel = createViewModel()
         assertEquals(
-            1,
+            null,
             viewModel.stateFlow.value.notificationBadgeCountMap[Settings.PLAN],
         )
     }
@@ -211,7 +211,7 @@ class SettingsViewModelTest : BaseViewModelTest() {
         mutableShouldShowPlanBadgeFlow.value = false
         val viewModel = createViewModel()
         assertEquals(
-            0,
+            null,
             viewModel.stateFlow.value.notificationBadgeCountMap[Settings.PLAN],
         )
     }

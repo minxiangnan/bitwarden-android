@@ -433,7 +433,7 @@ class VaultAddEditViewModelTest : BaseViewModelTest() {
             initState,
             viewModel.stateFlow.value,
         )
-        verify(exactly = 1) {
+        verify(exactly = 2) {
             vaultRepository.vaultDataStateFlow
         }
     }

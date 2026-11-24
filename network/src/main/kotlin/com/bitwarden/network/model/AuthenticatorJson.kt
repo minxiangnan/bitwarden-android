@@ -2,6 +2,7 @@ package com.bitwarden.network.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 
 /**
  * Ciphertext authenticator entry stored by the zh-authenticator server.
@@ -135,8 +136,12 @@ data class McpIssuedTokenJson(
     @SerialName("keySalt")
     val keySalt: String = "",
 
+    /**
+     * Server-defined. Vaultwarden 1.2.2 sends an array of entry ids; older responses used a
+     * boolean. The client does not branch on it.
+     */
     @SerialName("cleared")
-    val cleared: Boolean = false,
+    val cleared: JsonElement? = null,
 )
 
 /**

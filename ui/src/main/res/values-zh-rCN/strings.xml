@@ -78,7 +78,7 @@
     <string name="bitwarden_autofill_service">Bitwarden 自动填充服务</string>
     <string name="change_master_password">更改主密码</string>
     <string name="close">关闭</string>
-    <string name="close_app">关闭 App</string>
+    <string name="close_app">关闭应用</string>
     <string name="continue_text">继续</string>
     <string name="create_account">创建账户</string>
     <string name="create_an_account">创建账户</string>
@@ -621,12 +621,12 @@
     <string name="plus_addressed_email_description">使用您的电子邮箱提供商的子地址功能</string>
     <string name="catch_all_email_description">使用您的域名配置的 Catch-all 收件箱。</string>
     <string name="forwarded_email_description">使用外部转发服务生成电子邮箱别名。</string>
-    <string name="accessibility_service_disclosure">无障碍服务声明</string>
-    <string name="accessibility_disclosure_text">Bitwarden 使用无障碍服务在 App 和网站中搜索登录字段，当找到与 App 或网站相匹配的用户名 &amp; 密码时，建立适当的字段 ID 以输入它们。我们不会通过此服务存储提供给我们的任何信息，也不会尝试控制除凭据文本输入之外的任何屏幕元素。</string>
-    <string name="accessibility_disclosure_start_up_text_1">在 Bitwarden 提供基于无障碍的自动填充之前，必须先展示此声明。</string>
-    <string name="accessibility_disclosure_start_up_text_2">Bitwarden 提供一种可选的自动填充方式，即使用 Android 的无障碍服务来检测登录字段。启用后，当找到匹配字段时，Bitwarden 将识别相应的字段并填充您的凭据。</string>
-    <string name="accessibility_disclosure_start_up_text_3">在您使用无障碍服务时，我们不会存储屏幕上的任何信息，也不会控制除凭据输入之外的任何屏幕元素。</string>
-    <string name="i_understand">我明白</string>
+    <string name="accessibility_service_disclosure">无障碍服务说明</string>
+    <string name="accessibility_disclosure_text">应用使用无障碍服务在应用和网站里查找登录框，匹配到之后填入用户名和密码。我们不保存这项服务提供的内容，也不会控制除填写凭据以外的界面。</string>
+    <string name="accessibility_disclosure_start_up_text_1">在提供基于无障碍服务的自动填充之前，需要先让你看这段说明。</string>
+    <string name="accessibility_disclosure_start_up_text_2">这是一种可选的自动填充方式。打开后，应用会用 Android 的无障碍服务找到登录框，并在匹配到网站时填入用户名和密码。</string>
+    <string name="accessibility_disclosure_start_up_text_3">使用无障碍服务时，我们不保存屏幕上的内容，也不会控制除填写凭据以外的界面。</string>
+    <string name="i_understand">我知道了</string>
     <string name="accept">接受</string>
     <string name="decline">拒绝</string>
     <string name="access_request_has_already_expired">访问请求已过期。</string>
@@ -1462,6 +1462,11 @@
     <string name="zh_authenticator_hotp">计数型（HOTP）</string>
     <string name="zh_server_address">服务器地址</string>
     <string name="zh_server_address_hint">https://vault.example.com</string>
+    <string name="zh_invited_create_account">收到邀请？创建账户</string>
+    <string name="zh_invited_create_body">公开注册是关闭的。只有管理员邀请过的邮箱可以在这里创建账户。</string>
+    <string name="zh_invite_rejected">这个邮箱没有收到邀请，或已经注册过了。请让管理员先邀请这个地址，并核对邮箱是否一致。</string>
+    <string name="zh_password_too_short">主密码至少 12 位。</string>
+    <string name="zh_password_mismatch">两次输入的主密码不一致。</string>
     <string name="zh_logout_unsynced">如果还有没同步完的更改，退出后会丢失。</string>
     <string name="zh_never_save_site">此网站永不</string>
     <string name="zh_never_save_site_body">以后不再询问是否保存这个网站的登录。</string>
@@ -1469,4 +1474,8 @@
     <string name="zh_authenticator_advanced">更多选项</string>
     <string name="zh_authenticator_digits">位数</string>
     <string name="zh_authenticator_period">刷新间隔（秒）</string>
+    <string name="we_were_unable_to_automatically_open_the_autofill_settings">无法自动打开 Android 的自动填充设置。你可以在系统设置里自己找到自动填充。</string>
+    <string name="choose_autofill_using_another_service_in_your_browser">在浏览器里选择「使用其他服务自动填充」</string>
+    <string name="choose_autofill_using_another_service_in_your_browsers">在这些浏览器里选择「使用其他服务自动填充」</string>
+    <string name="youre_using_browsers_that_require_special_permissions_plural">你用的浏览器需要额外权限，Bitwarden 验证器版才能自动填充密码。请在下面打开你想用的方式。</string>
 </resources>

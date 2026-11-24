@@ -2,14 +2,14 @@
 
 这是官方 Bitwarden Android 客户端的一个并存分支。应用名是「Bitwarden 验证器版」，包名是 `com.minxiangnan.bitwarden.zh`。它可以和官方客户端装在同一台手机上。登录条目和验证器条目都放在同一台自建服务器上，和浏览器扩展用同一套接口、同一套用户密钥加密，所以手机和扩展看到的是同一份验证码。
 
-对应的扩展是 `v-zh-authenticator-1.1.1`，服务器是 Vaultwarden `v-zh-authenticator-1.2.1`。
+对应的扩展是 `v-zh-authenticator-1.1.1`，服务器是 Vaultwarden `v-zh-authenticator-1.2.2`。
 
 ## 安装
 
 1. 卸载旧的测试包（如果有）。本分支不会覆盖官方 Bitwarden。
-2. 安装发布包 `bitwarden-zh-authenticator-1.0.0.apk`。系统会提示未知来源，这是预期的。
+2. 安装 `arm64-v8a` 的发布包。系统会提示未知来源，这是预期的。如果手机上还装着 1.0.0 的调试签名包，要先卸载。
 3. 打开应用。服务器地址留空时会显示占位符。填入你的服务器，必须是 `https://` 开头。只填域名时会自动补上 `https://`。明文 `http://` 会被拒绝，并提示需要 HTTPS，自己安装的 CA 也可以。
-4. 填邮箱，点「继续」，再填主密码。没有注册、地区选择、单点登录和通行密钥入口。账户要先在服务器上建好。
+4. 填邮箱，点「继续」，再填主密码。没有公开注册、地区选择、单点登录和通行密钥入口。管理员邀请过的邮箱，用登录页下方的「收到邀请？创建账户」。
 5. 首次解锁后，保险箱超时默认是「从不」，超时动作是「锁定」。不会自动上锁，除非你自己改。URI 匹配默认是「主机完全一致」。这些设置会写进本地，重启和更新后还在。
 6. 系统设置里把「Bitwarden 验证器版」设为自动填充服务。名称和官方客户端不同。深链是 `bwzh://`，不会抢官方的 `bitwarden://`。
 
@@ -17,9 +17,44 @@
 
 ### 签名
 
-这个 APK 用仓库里的调试密钥签名（`keystores/debug.keystore`，别名 `androiddebugkey`，口令 `android`）。Release 变体关闭了混淆和资源压缩，方便自建环境安装和排查。这不是应用商店签名，也不能拿去覆盖以后用正式密钥签的包。换密钥之前要先卸载。
+1.0.0 用调试密钥签过。1.0.1 起用单独的发布密钥。Android 不允许用新密钥覆盖旧签名，所以从 1.0.0 升级必须先卸载再安装。卸载会清掉本机缓存；服务器上的条目还在。
 
-当前构建产物是 `app/build/outputs/apk/standard/release/com.minxiangnan.bitwarden.zh.apk`，SHA-256 为 `6d8c2355789bc4ee46f69dafe54b6a2d5944baa4275f98fc70108ef619983344`。
+密钥和口令不进仓库，也不进 GitHub Release。构建时从环境变量或 `user.properties` / `gradle.properties` 读取：
+
+| 名字 | 含义 |
+| --- | --- |
+| `ZH_KEYSTORE_PATH` | keystore 文件的绝对路径 |
+| `ZH_KEYSTORE_PASSWORD` | 库口令 |
+| `ZH_KEY_ALIAS` | 密钥别名 |
+| `ZH_KEY_PASSWORD` | 密钥口令 |
+
+本地重编：
+
+```bash
+export ZH_KEYSTORE_PATH=/安全的位置/zh-authenticator-release.keystore
+export ZH_KEYSTORE_PASSWORD='库口令'
+export ZH_KEY_ALIAS=zhauthenticator
+export ZH_KEY_PASSWORD='密钥口令'
+./gradlew :app:assembleStandardRelease
+```
+
+把 keystore 和口令放在仓库外面，单独备份。丢了就不能给已安装的用户发更新。
+
+GitHub Actions 在推送 `v-zh-authenticator-android-*` 标签时编发布包。仓库密钥要先加好，否则工作流会失败：
+
+| Secret | 内容 |
+| --- | --- |
+| `ZH_KEYSTORE_BASE64` | `base64 -w0 zh-authenticator-release.keystore` 的整段文本 |
+| `ZH_KEYSTORE_PASSWORD` | 库口令 |
+| `ZH_KEY_ALIAS` | `zhauthenticator` |
+| `ZH_KEY_PASSWORD` | 密钥口令 |
+| `BW_PACKAGES_TOKEN` | 能读取 `bitwarden/sdk` GitHub Packages 的个人访问令牌（`read:packages`）。Fork 自带的 `GITHUB_TOKEN` 读不了那个仓库。 |
+
+工作流文件是 `.github/workflows/zh-authenticator-release.yml`。产物是按 CPU 拆开的 APK，手机用 `arm64-v8a`。另有一个包含全部架构的 universal 包。Release 打开了 R8 和资源压缩，原生库在包里是压缩存放的。
+
+### 收到邀请后创建账户
+
+公开注册保持关闭。管理员在 `/admin` 邀请一个邮箱之后，登录页下方有「收到邀请？创建账户」。只填这个邮箱、名字和主密码。服务器拒绝其他邮箱时，应用显示「这个邮箱没有收到邀请，或已经注册过了」。
 
 ## 能做什么
 
@@ -52,11 +87,26 @@ MCP 会话接口是 `/api/mcp/status`、`/api/mcp/token`、`/api/mcp/token/enc`�
 
 ## 在模拟器上核对过的事
 
-对照 Vaultwarden `v-zh-authenticator-1.2.1`，HTTPS，证书由测试 CA 签发。Android 14 的应用信任库在 Conscrypt 的 apex 目录，只把 CA 放进 `/system/etc/security/cacerts` 不够，应用会报「无法验证服务器的证书」。用户安装的 CA 仍然受应用的网络安全配置信任。
+对照 Vaultwarden `v-zh-authenticator-1.2.2`（`SIGNUPS_ALLOWED=false`，`MCP_ENABLED=true`），HTTPS，证书由测试 CA 签发。Android 14 的应用信任库在 Conscrypt 的 apex 目录，只把 CA 放进 `/system/etc/security/cacerts` 不够。用户安装的 CA 仍然受应用的网络安全配置信任。核对用的是 R8 压缩后的 x86_64 发布包。
 
-- 用服务器地址、邮箱和主密码登录成功。没有注册、地区、单点登录入口。界面是简体中文，奶油底和陶土色。
-- 通过 API 写入的一条验证器（名称「API同步」，密钥 `JBSWY3DPEHPK3PXP`）同步后出现在验证器页。当时的验证码是 `910 300`，下一个是 `025 459`，和独立计算的 TOTP 一致。
-- 点删除会弹出确认框，标题是条目名称「API同步」，说明是先放进回收站，取消是默认按钮，删除是危险色。点取消后条目还在。
-- 强制停止再打开，没有要求重新输入主密码（超时默认是从不），验证器条目还在。
-- 这次没有在模拟器里走完扫码、MCP 令牌创建和登录条目保存。MCP 加解密、otpauth、导入和自动填充保存判断有单元测试。服务器在打开 `MCP_ENABLED` 之后，`GET /api/mcp/status` 返回已启用。
-- `AuthenticatorLogicTest` 11 项、`FirstTimeActionManagerTest` 25 项通过。`./gradlew detekt` 通过。没有跑完整的单元测试套件。
+- 首次打开的无障碍说明是简体中文（「无障碍服务说明」「我知道了」「关闭应用」）。
+- 未受邀请的邮箱走「收到邀请？创建账户」，服务器拒绝后显示「这个邮箱没有收到邀请，或已经注册过了」。受邀请的邮箱可以在应用里设主密码并登录。
+- 从图片识别 `otpauth://` 二维码，导入 1 条，列表上的验证码和密钥一致。
+- 新建登录（名称、用户名、密码、网站）后，密码库里能看到「登录已保存」。
+- 导出打开系统分享，内容是带明文警告的 JSON。把同一文件再导入，提示「已导入 1 条」。
+- 删除先确认「会先放进回收站，之后还能恢复」，回收站里可以恢复，恢复后回收站是空的，条目回到列表。
+- 会话超时默认是「从不」。改成「立即」后，切到后台再打开会要求主密码。改回「从不」时会先警告，确认后不再自动锁定。
+- 浅色是奶油底。深色背景取样是 `#2C211C`，画面里没有纯黑。
+- 把「Bitwarden 验证器版」设为自动填充服务后，在 Chrome 里打开本机登录页，用快捷设置里的自动填充磁贴选出刚保存的登录，用户名和密码写进了网页。登录条目本身没有验证器密钥（编辑页的密钥框在自动化点击下没有获得焦点），所以这次填充没有把验证码复制到剪贴板。验证器卡片上点验证码会拉起系统剪贴板条。
+- 「此网站永不」在自动填充的保存页上。这台模拟器里的 Chrome 用自己的密码库，没有把保存请求交给应用的自动填充服务，所以没有弹出这一页。
+- MCP：创建、轮换都会显示一次 `vw_mcp_` 令牌。给条目打开「允许 MCP 读取」、别名 `example` 之后，`POST /mcp` 的 `get_totp_code` 返回的验证码和列表上的一致（当时都是 `993572`）。撤销后同一令牌返回 401，正文是「MCP 访问令牌无效或已吊销」。
+
+发布包的 SHA-256 也写在对应的 GitHub Release 里。手机安装 `arm64-v8a`（约 44 MB）。universal 包包含全部架构，大约 82 MB，不要拿它当手机安装包。
+
+| APK | SHA-256 |
+| --- | --- |
+| `com.minxiangnan.bitwarden.zh-arm64-v8a.apk` | `7f1a322a4946ae6ff44074caaddcf7c7a6a5fd5b318ba8a8c619bf677dec75a1` |
+| `com.minxiangnan.bitwarden.zh-armeabi-v7a.apk` | `057f0f65179fb6c2be840daf9e0887a423ba3c7b0a0d8bbe527a6f850d37cbd3` |
+| `com.minxiangnan.bitwarden.zh-x86_64.apk` | `578ed2da36688ab23d767f6387ac6f5af5f27108bc3a91978612334c57cfe95e` |
+| `com.minxiangnan.bitwarden.zh-x86.apk` | `229b5b74a6c44379a5c72d9f85fcf32058e2711132a70a63f54034e3cea0caa4` |
+| `com.minxiangnan.bitwarden.zh.apk`（universal） | `7a66941b4f31f8943023819db8f7688e5a079d97a75b521e6417391d0903e41f` |

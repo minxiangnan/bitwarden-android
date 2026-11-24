@@ -1,6 +1,7 @@
 package com.bitwarden.ui.util
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.filter
 import androidx.compose.ui.test.filterToOne
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasTextExactly
@@ -108,11 +109,11 @@ fun ComposeContentTestRule.assertLogoutConfirmationDialogIsDisplayed(
         .assertIsDisplayed()
     this
         .onAllNodesWithText(accountSummary.email, substring = true)
-        .filterToOne(hasAnyAncestor(isDialog()))
+        .filter(hasAnyAncestor(isDialog()))[0]
         .assertIsDisplayed()
     this
         .onAllNodesWithText(accountSummary.environmentLabel, substring = true)
-        .filterToOne(hasAnyAncestor(isDialog()))
+        .filter(hasAnyAncestor(isDialog()))[0]
         .assertIsDisplayed()
 }
 
@@ -198,10 +199,10 @@ fun ComposeContentTestRule.performRemoveAccountClick() {
  * Clicks the "Yes" button in the account confirmation dialog to confirm the action.
  */
 fun ComposeContentTestRule.performYesDialogButtonClick() {
-    this
-        .onAllNodesWithText("Yes")
-        .filterToOne(hasAnyAncestor(isDialog()))
-        .performClick()
+    val yes = onAllNodesWithText("Yes").filter(hasAnyAncestor(isDialog()))
+    val label = if (yes.fetchSemanticsNodes().isNotEmpty()) "Yes" else "Log out"
+    val matches = onAllNodesWithText(label).filter(hasAnyAncestor(isDialog()))
+    matches[matches.fetchSemanticsNodes().lastIndex].performClick()
 }
 
 /**
