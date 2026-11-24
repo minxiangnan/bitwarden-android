@@ -264,10 +264,7 @@ class LandingViewModel @Inject constructor(
         }
 
         val email = state.emailInput
-        val isRememberMeEnabled = state.isRememberEmailEnabled
-
-        // Update the remembered email address
-        authRepository.rememberedEmailAddress = email.takeUnless { !isRememberMeEnabled }
+        authRepository.rememberedEmailAddress = email
 
         sendEvent(LandingEvent.NavigateToLogin(email))
     }

@@ -73,6 +73,7 @@ data class AuthenticatorSnapshot(
     val mcpAliases: Map<String, String> = emptyMap(),
     val message: String? = null,
     val editable: Boolean = false,
+    val syncedAtMillis: Long? = null,
 )
 
 /**
@@ -539,6 +540,11 @@ class AuthenticatorRepository @Inject constructor(
         message: String?,
     ) {
         val views = rows.map { decryptRow(userId, it) }
+        val syncedAt = if (status == AuthenticatorSyncStatus.READY) {
+            System.currentTimeMillis()
+        } else {
+            mutableEntries.value.syncedAtMillis
+        }
         mutableEntries.value = AuthenticatorSnapshot(
             status = status,
             entries = views,
@@ -546,6 +552,7 @@ class AuthenticatorRepository @Inject constructor(
             mcpAliases = mutableEntries.value.mcpAliases,
             message = message,
             editable = status == AuthenticatorSyncStatus.READY,
+            syncedAtMillis = syncedAt,
         )
     }
 
