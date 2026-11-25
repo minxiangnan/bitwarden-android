@@ -117,6 +117,7 @@ class AuthenticatorEditViewModel @AssistedInject constructor(
                 alias = action.aliases[entryId].orEmpty(),
                 mcpEnabled = action.aliases.containsKey(entryId),
                 editable = !entry.undecryptable,
+                baseRevision = entry.revisionDate,
             )
         }
     }
@@ -165,6 +166,7 @@ class AuthenticatorEditViewModel @AssistedInject constructor(
             kind = kind,
             host = state.host.trim(),
             tags = parseTagList(state.tags),
+            baseRevision = state.baseRevision.takeIf { it.isNotBlank() },
         )
         viewModelScope.launch {
             val saved = repository.save(entryId.takeIf { it.isNotBlank() }, draft)
@@ -177,6 +179,12 @@ class AuthenticatorEditViewModel @AssistedInject constructor(
             if (id != null && (state.mcpEnabled || state.alias.isNotBlank())) {
                 repository.setMcp(id, state.mcpEnabled, state.alias).onFailure { error ->
                     sendAction(AuthenticatorEditAction.ShowMessage(error.message ?: "MCP 没有更新"))
+                    return@launch
+                }
+                // The create notification can arrive before the alias is stored. Touch the entry
+                // afterwards so other devices reload and see the alias.
+                repository.save(id, draft.copy(baseRevision = null)).onFailure { error ->
+                    sendAction(AuthenticatorEditAction.ShowMessage(error.message ?: "没有保存"))
                     return@launch
                 }
             }
@@ -235,6 +243,7 @@ data class AuthenticatorEditState(
     val steam: Boolean = false,
     val hotp: Boolean = false,
     val mcpEnabled: Boolean = false,
+    val baseRevision: String = "",
     val alias: String = "",
     val editable: Boolean = true,
     val confirmDelete: Boolean = false,

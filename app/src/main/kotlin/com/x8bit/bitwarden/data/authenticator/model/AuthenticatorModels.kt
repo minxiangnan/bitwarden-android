@@ -70,6 +70,8 @@ data class AuthenticatorDraft(
     val tags: List<String> = emptyList(),
     val counter: Long = 0,
     val deletedAt: String? = null,
+    /** Revision the edit was based on. A newer row on the server is rejected. */
+    val baseRevision: String? = null,
 )
 
 /**
