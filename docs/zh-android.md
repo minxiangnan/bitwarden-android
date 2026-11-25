@@ -2,7 +2,7 @@
 
 这是官方 Bitwarden Android 客户端的一个并存分支。应用名是「Bitwarden 验证器版」，包名是 `com.minxiangnan.bitwarden.zh`。它可以和官方客户端装在同一台手机上。登录条目和验证器条目都放在同一台自建服务器上，和浏览器扩展用同一套接口、同一套用户密钥加密，所以手机和扩展看到的是同一份验证码。
 
-对应的扩展是 `v-zh-authenticator-1.1.6`，服务器是 Vaultwarden `v-zh-authenticator-1.2.2`。
+对应的扩展是 `v-zh-authenticator-1.1.7`，服务器是 Vaultwarden `v-zh-authenticator-1.2.3`。1.1.6 和 1.2.2 仍能同步验证码条目。1.2.3 会拒绝过期的写入，并在别名变化时发通知。
 
 ## 安装
 
@@ -131,3 +131,15 @@ MCP 会话接口是 `/api/mcp/status`、`/api/mcp/token`、`/api/mcp/token/enc`�
 | `com.minxiangnan.bitwarden.zh-x86_64.apk` | 45,672,828 | `9beced0d7953ff94b7e690390bf37bc2251a14d8e420cd9db65ac2bb1c64f58f` |
 | `com.minxiangnan.bitwarden.zh-x86.apk` | 46,072,591 | `e617184e919c6df828970e0540ea2aa9afefceb0c70f38574e66910431c271d2` |
 | `com.minxiangnan.bitwarden.zh.apk`（universal） | 85,974,463 | `24f7703441ec4a23a032dbeff9618704f8b2d9b2e59c6ea19cc7909cf267071b` |
+
+1.0.4 把同一条通道补完整。生产 compose 里 `ENABLE_WEBSOCKET=true`，Caddy 对 `/notifications/hub` 做 WebSocket 升级并且不缓冲。在本机用同样的转发测过：创建 10 毫秒、修改 17 毫秒、放进回收站 15 毫秒、彻底删除 11 毫秒、写入别名 15 毫秒，对端就收到通知。带着旧的 `revisionDate` 再保存会得到 409，服务器上的名称保持为后写入的那一版。用同一个客户端 id 再 POST 一次不会多出一条。安卓在套接字断开时每 3 秒拉一次，回到前台也会拉。离线时保存会被拒绝，提示「当前离线，没有保存。」电脑把一条改名之后，安卓列表在同一分钟里出现新名称，服务器日志里安卓在响应后 6 毫秒来拉列表。
+
+1.0.4：
+
+| APK | 大小 | SHA-256 |
+| --- | --- | --- |
+| `com.minxiangnan.bitwarden.zh-arm64-v8a.apk` | 46,269,245 | `cd7598923f658411f00e8aab6f47889d92c7d54d9ac742fcca32d5df1093bc81` |
+| `com.minxiangnan.bitwarden.zh-armeabi-v7a.apk` | 43,148,183 | `02ba4e9047b2addf59c27fa7c3fc5f112a63a37237d639d0f636cb27ecdff320` |
+| `com.minxiangnan.bitwarden.zh-x86_64.apk` | 45,670,400 | `7b8019ef5994ab987986aef36588c96cf8b28b280976acb48210d48b866240f9` |
+| `com.minxiangnan.bitwarden.zh-x86.apk` | 46,070,163 | `12f5dd3eed775123e95bb58d1c331fe0c590dcd6438818d7b3ffd03a3ea75647` |
+| `com.minxiangnan.bitwarden.zh.apk`（universal） | 85,972,035 | `1c6b60af26869193a8c340e269280d386d1676365e3b3f2354e5a4b81f5151a4` |

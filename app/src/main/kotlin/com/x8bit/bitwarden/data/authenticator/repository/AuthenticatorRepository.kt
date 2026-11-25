@@ -148,7 +148,7 @@ class AuthenticatorRepository @Inject constructor(
     @Suppress("LongMethod", "TooGenericExceptionCaught")
     suspend fun refresh() {
         val userId = activeUnlockedUserId() ?: return
-        mutex.withLock {
+        val drop = mutex.withLock {
             if (mutableEntries.value.entries.isEmpty()) {
                 mutableEntries.value = mutableEntries.value.copy(
                     status = AuthenticatorSyncStatus.LOADING,
@@ -161,7 +161,7 @@ class AuthenticatorRepository @Inject constructor(
                     message = error.message ?: "同步失败。",
                     editable = false,
                 )
-                return@withLock
+                return@withLock emptyList()
             }
             try {
                 listed.fold(
@@ -197,14 +197,26 @@ class AuthenticatorRepository @Inject constructor(
                 },
             )
             refreshMcpLocked(userId)
+            val ids = if (mutableEntries.value.status == AuthenticatorSyncStatus.READY) {
+                duplicateAuthenticatorIds(mutableEntries.value.entries)
+            } else {
+                emptyList()
+            }
+            if (ids.isNotEmpty()) {
+                val kept = mutableEntries.value.entries.filter { it.id !in ids }
+                mutableEntries.value = mutableEntries.value.copy(entries = kept)
+            }
+            ids
             } catch (error: Throwable) {
                 mutableEntries.value = mutableEntries.value.copy(
                     status = AuthenticatorSyncStatus.ERROR,
                     message = error.message ?: "同步失败。",
                     editable = false,
                 )
+                emptyList()
             }
         }
+        drop.forEach { id -> service.deleteEntry(id) }
     }
 
     /**
@@ -524,13 +536,38 @@ class AuthenticatorRepository @Inject constructor(
         if (!mutableEntries.value.editable && mutableEntries.value.entries.isNotEmpty()) {
             return Result.failure(IllegalStateException("离线时不能修改"))
         }
-        val body = toRequest(userId, draft, sortOrder)
+        val body = toRequest(
+            userId = userId,
+            draft = draft,
+            sortOrder = sortOrder,
+            clientId = if (entryId.isNullOrBlank()) {
+                java.util.UUID.randomUUID().toString()
+            } else {
+                null
+            },
+            revisionDate = draft.baseRevision ?: entryId?.let { find(it)?.revisionDate },
+        )
         val result = if (entryId.isNullOrBlank()) {
             service.createEntry(body)
         } else {
             service.updateEntry(entryId, body)
         }
-        return result.onSuccess { refresh() }.map { }
+        return result.fold(
+            onSuccess = {
+                refresh()
+                Result.success(Unit)
+            },
+            onFailure = { error ->
+                if (error.httpStatusCode() == CONFLICT) {
+                    refresh()
+                    Result.failure(IllegalStateException("这条验证码刚在别的设备上改过，已重新加载，没有覆盖。"))
+                } else if (isOffline(error)) {
+                    Result.failure(IllegalStateException("当前离线，没有保存。"))
+                } else {
+                    Result.failure(error)
+                }
+            },
+        )
     }
 
     private suspend fun publishRows(
@@ -593,6 +630,8 @@ class AuthenticatorRepository @Inject constructor(
         userId: String,
         draft: AuthenticatorDraft,
         sortOrder: Int,
+        clientId: String?,
+        revisionDate: String?,
     ): AuthenticatorEntryRequestJson {
         val kind = entryKind(draft.kind, draft.digits)
         val digits = if (kind == AuthenticatorKind.STEAM) STEAM_DIGITS else draft.digits
@@ -616,7 +655,18 @@ class AuthenticatorRepository @Inject constructor(
             notes = notes.takeIf { it.isNotEmpty() }?.let { encryptText(userId, it).text },
             favorite = draft.favorite,
             sortOrder = sortOrder,
+            id = clientId,
+            revisionDate = revisionDate?.takeIf { it.isNotBlank() },
         )
+    }
+
+    private fun isOffline(error: Throwable): Boolean {
+        var current: Throwable? = error
+        while (current != null) {
+            if (current is java.io.IOException) return true
+            current = current.cause
+        }
+        return false
     }
 
     private suspend fun encryptText(userId: String, value: String): DecryptedText {
@@ -687,6 +737,7 @@ class AuthenticatorRepository @Inject constructor(
         const val SOURCE: String = "authenticator"
         const val LABEL: String = "android"
         const val NOT_FOUND: Int = 404
+        const val CONFLICT: Int = 409
         const val NONCE_SIZE: Int = 12
     }
 }

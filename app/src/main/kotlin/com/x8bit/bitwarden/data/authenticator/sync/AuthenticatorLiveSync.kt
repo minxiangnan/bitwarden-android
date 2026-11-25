@@ -29,6 +29,7 @@ import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 import okio.ByteString
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.resume
@@ -38,8 +39,8 @@ import kotlin.coroutines.resume
  *
  * Vaultwarden tells every connected device about a create, edit, or delete on
  * `/notifications/hub`. This opens that socket and reloads the list. Coming back to the
- * app reloads as well, so a missed socket message is picked up without a manual refresh.
- * Pull-to-refresh stays on the list screen.
+ * app reloads as well. While the socket is down, the list is polled every few seconds.
+ * There is no Google push dependency. Pull-to-refresh stays on the list screen.
  */
 @Singleton
 class AuthenticatorLiveSync @Inject constructor(
@@ -50,6 +51,7 @@ class AuthenticatorLiveSync @Inject constructor(
     dispatcherManager: DispatcherManager,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + dispatcherManager.io)
+    private val hubReady = AtomicBoolean(false)
     private val sockets = OkHttpClient.Builder()
         .readTimeout(0, TimeUnit.MILLISECONDS)
         .pingInterval(PING_SECONDS, TimeUnit.SECONDS)
@@ -66,6 +68,16 @@ class AuthenticatorLiveSync @Inject constructor(
             )
         }
         scope.launch { watchHub() }
+        scope.launch { pollWhileDisconnected() }
+    }
+
+    private suspend fun pollWhileDisconnected() {
+        while (coroutineContext.isActive) {
+            delay(POLL_MS)
+            if (!hubReady.get()) {
+                reload()
+            }
+        }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -98,8 +110,11 @@ class AuthenticatorLiveSync @Inject constructor(
             }
             .distinctUntilChanged()
             .collectLatest { hubUrl ->
-                if (hubUrl != null) {
+                if (hubUrl == null) {
+                    hubReady.set(false)
+                } else {
                     stayConnected(hubUrl)
+                    hubReady.set(false)
                 }
             }
     }
@@ -125,6 +140,7 @@ class AuthenticatorLiveSync @Inject constructor(
                 Request.Builder().url(hubUrl).build(),
                 object : WebSocketListener() {
                     override fun onOpen(webSocket: WebSocket, response: Response) {
+                        hubReady.set(true)
                         webSocket.send(HANDSHAKE)
                         reload()
                     }
@@ -145,6 +161,7 @@ class AuthenticatorLiveSync @Inject constructor(
                     }
 
                     override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
+                        hubReady.set(false)
                         if (continuation.isActive) {
                             continuation.resume(Unit)
                         }
@@ -155,6 +172,7 @@ class AuthenticatorLiveSync @Inject constructor(
                         t: Throwable,
                         response: Response?,
                     ) {
+                        hubReady.set(false)
                         if (continuation.isActive) {
                             continuation.resume(Unit)
                         }
@@ -176,3 +194,4 @@ private const val PING_SECONDS: Long = 15
 private const val FIRST_RETRY_MS: Long = 1_000
 private const val MAX_RETRY_MS: Long = 30_000
 private const val SETTLED_CONNECTION_MS: Long = 10_000
+private const val POLL_MS: Long = 3_000

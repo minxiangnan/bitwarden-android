@@ -52,6 +52,9 @@ data class AuthenticatorEntryJson(
  */
 @Serializable
 data class AuthenticatorEntryRequestJson(
+    @SerialName("id")
+    val id: String? = null,
+
     @SerialName("name")
     val name: String,
 
@@ -78,6 +81,9 @@ data class AuthenticatorEntryRequestJson(
 
     @SerialName("sortOrder")
     val sortOrder: Int = 0,
+
+    @SerialName("revisionDate")
+    val revisionDate: String? = null,
 )
 
 /**
