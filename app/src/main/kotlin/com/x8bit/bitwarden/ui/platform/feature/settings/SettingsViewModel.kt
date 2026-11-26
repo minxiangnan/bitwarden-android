@@ -11,6 +11,7 @@ import com.bitwarden.ui.util.asText
 import com.x8bit.bitwarden.data.billing.manager.PremiumStateManager
 import com.x8bit.bitwarden.data.billing.manager.UPGRADED_TO_PREMIUM_LEARN_MORE_URL
 import com.x8bit.bitwarden.data.platform.manager.FirstTimeActionManager
+import com.x8bit.bitwarden.data.platform.update.AppUpdateCoordinator
 import com.x8bit.bitwarden.data.platform.manager.SpecialCircumstanceManager
 import com.x8bit.bitwarden.data.platform.manager.model.SpecialCircumstance
 import dagger.assisted.Assisted
@@ -34,6 +35,7 @@ class SettingsViewModel @AssistedInject constructor(
     specialCircumstanceManager: SpecialCircumstanceManager,
     firstTimeActionManager: FirstTimeActionManager,
     private val premiumStateManager: PremiumStateManager,
+    private val appUpdateCoordinator: AppUpdateCoordinator,
 ) : BaseViewModel<SettingsState, SettingsEvent, SettingsAction>(
     initialState = SettingsState(
         isPreAuth = isPreAuth,
@@ -206,6 +208,8 @@ class SettingsViewModel @AssistedInject constructor(
                 sendEvent(SettingsEvent.NavigateAbout)
             }
 
+            Settings.UPDATE -> appUpdateCoordinator.requestManualCheck()
+
             Settings.MCP -> {
                 sendEvent(SettingsEvent.NavigateMcp)
             }
@@ -254,6 +258,7 @@ data class SettingsState(
                 Settings.PLAN -> shouldShowPlanRow
                 Settings.OTHER -> true
                 Settings.ABOUT -> true
+                Settings.UPDATE -> true
                 Settings.MCP -> !isPreAuth
             }
         }
@@ -433,6 +438,11 @@ enum class Settings(
         text = BitwardenString.about.asText(),
         vectorIconRes = BitwardenDrawable.ic_info_circle,
         testTag = "AboutSettingsButton",
+    ),
+    UPDATE(
+        text = BitwardenString.zh_update_check.asText(),
+        vectorIconRes = BitwardenDrawable.ic_download,
+        testTag = "CheckUpdateSettingsButton",
     ),
     MCP(
         text = BitwardenString.zh_authenticator_mcp.asText(),

@@ -7,7 +7,7 @@
 ## 安装
 
 1. 卸载旧的测试包（如果有）。本分支不会覆盖官方 Bitwarden。
-2. 安装 `arm64-v8a` 的发布包。系统会提示未知来源，这是预期的。1.0.1、1.0.2 和 1.0.3 是同一把发布密钥，可以直接覆盖安装。如果手机上还装着 1.0.0 的调试签名包，要先卸载。
+2. 安装 `arm64-v8a` 的发布包。系统会提示未知来源，这是预期的。1.0.1 及以后是同一把发布密钥，可以直接覆盖安装。如果手机上还装着 1.0.0 的调试签名包，要先卸载。1.0.5 起可以在设置里点「检查更新」，或在每天第一次打开时收到新版本提示。点「立即更新」才会下载对应 ABI 的安装包，校验 `SHA256SUMS` 后交给系统安装界面。
 3. 打开应用。服务器地址留空时会显示占位符。填入你的服务器，必须是 `https://` 开头。只填域名时会自动补上 `https://`。明文 `http://` 会被拒绝，并提示需要 HTTPS，自己安装的 CA 也可以。
 4. 填邮箱，点「继续」，再填主密码。没有公开注册、地区选择、单点登录和通行密钥入口。管理员邀请过的邮箱，用登录页下方的「收到邀请？创建账户」。
 5. 首次解锁后，保险箱超时默认是「从不」，超时动作是「锁定」。不会自动上锁，除非你自己改。URI 匹配默认是「主机完全一致」。这些设置会写进本地，重启和更新后还在。
@@ -143,3 +143,15 @@ MCP 会话接口是 `/api/mcp/status`、`/api/mcp/token`、`/api/mcp/token/enc`�
 | `com.minxiangnan.bitwarden.zh-x86_64.apk` | 45,670,400 | `7b8019ef5994ab987986aef36588c96cf8b28b280976acb48210d48b866240f9` |
 | `com.minxiangnan.bitwarden.zh-x86.apk` | 46,070,163 | `12f5dd3eed775123e95bb58d1c331fe0c590dcd6438818d7b3ffd03a3ea75647` |
 | `com.minxiangnan.bitwarden.zh.apk`（universal） | 85,972,035 | `1c6b60af26869193a8c340e269280d386d1676365e3b3f2354e5a4b81f5151a4` |
+
+1.0.5 在设置里增加「检查更新」，每天第一次打开也会向 GitHub Releases 查询 `v-zh-authenticator-android-` 的最新稳定版。点「立即更新」后按设备 ABI 下载安装包，对照 `SHA256SUMS` 校验，再交给系统安装界面。签名仍是 1.0.1 起的那把发布密钥。
+
+1.0.5：
+
+| APK | 大小 | SHA-256 |
+| --- | --- | --- |
+| `com.minxiangnan.bitwarden.zh-arm64-v8a.apk` | 46,320,245 | `3c7701b370eeb9b96159ed7a8c7a6ffdba1d92e7a4cb70d1fd191eea490f3181` |
+| `com.minxiangnan.bitwarden.zh-armeabi-v7a.apk` | 43,199,183 | `ef46ce10d9d8c608a536bb739151caedeaa99dc532a8553f2e03b55b779262fc` |
+| `com.minxiangnan.bitwarden.zh-x86_64.apk` | 45,721,400 | `76692bdf6b475e1f4b1c628d3170f4894f875704f5c38d785cba2cfd0023ab0c` |
+| `com.minxiangnan.bitwarden.zh-x86.apk` | 46,121,163 | `baf97631306857d7fe844e90c39a72727df077cfe775784da03ef7b6746669ec` |
+| `com.minxiangnan.bitwarden.zh.apk`（universal） | 86,023,035 | `364e93b795e2981e03e44d319fde226f7e2c48eba6211e0768d24f629034afa3` |

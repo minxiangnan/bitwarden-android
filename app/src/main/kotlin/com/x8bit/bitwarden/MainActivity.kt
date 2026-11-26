@@ -43,6 +43,7 @@ import com.x8bit.bitwarden.ui.platform.feature.debugmenu.navigateToDebugMenuScre
 import com.x8bit.bitwarden.ui.platform.feature.main.MainGraph
 import com.x8bit.bitwarden.ui.platform.feature.overlaynav.overlayNavDestination
 import com.x8bit.bitwarden.ui.platform.model.AuthTabLaunchers
+import com.x8bit.bitwarden.ui.platform.update.AppUpdateHost
 import com.x8bit.bitwarden.ui.platform.util.appLanguage
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.map
@@ -283,6 +284,7 @@ private fun MainActivityContent(
             theme = state.theme,
             dynamicColor = state.isDynamicColorsEnabled,
         ) {
+            AppUpdateHost()
             BitwardenNavDisplay(
                 modifier = Modifier.background(BitwardenTheme.colorScheme.background.primary),
                 navigationController = navigationController,
