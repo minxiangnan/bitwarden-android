@@ -5,6 +5,7 @@ import com.bitwarden.ui.platform.base.BaseViewModelTest
 import com.x8bit.bitwarden.data.billing.manager.PremiumStateManager
 import com.x8bit.bitwarden.data.platform.manager.FirstTimeActionManager
 import com.x8bit.bitwarden.data.platform.manager.SpecialCircumstanceManager
+import com.x8bit.bitwarden.data.platform.update.AppUpdateCoordinator
 import com.x8bit.bitwarden.data.platform.manager.model.SpecialCircumstance
 import io.mockk.every
 import io.mockk.just
@@ -38,6 +39,8 @@ class SettingsViewModelTest : BaseViewModelTest() {
     private val mutableUpgradedToPremiumCardEligibleFlow = MutableStateFlow(false)
     private val mutableIsSelfHostedFlow = MutableStateFlow(false)
     private val mutableShouldShowPlanBadgeFlow = MutableStateFlow(false)
+    private val appUpdateCoordinator: AppUpdateCoordinator = mockk(relaxed = true)
+
     private val premiumStateManager: PremiumStateManager = mockk(relaxed = true) {
         every { isPlanRowEligibleFlow } returns mutablePlanRowEligibleFlow
         every {
@@ -54,6 +57,14 @@ class SettingsViewModelTest : BaseViewModelTest() {
             viewModel.trySendAction(SettingsAction.CloseClick)
             assertEquals(SettingsEvent.NavigateBack, awaitItem())
         }
+    }
+
+    @Test
+    fun `on SettingsClick with UPDATE requests a manual check`() {
+        val viewModel = createViewModel()
+        viewModel.trySendAction(SettingsAction.SettingsClick(Settings.UPDATE))
+        verify { appUpdateCoordinator.requestManualCheck() }
+        assertTrue(viewModel.stateFlow.value.settingRows.contains(Settings.UPDATE))
     }
 
     @Test
@@ -398,6 +409,7 @@ class SettingsViewModelTest : BaseViewModelTest() {
         firstTimeActionManager = firstTimeManager,
         specialCircumstanceManager = specialCircumstanceManager,
         premiumStateManager = premiumStateManager,
+        appUpdateCoordinator = appUpdateCoordinator,
     )
 }
 
