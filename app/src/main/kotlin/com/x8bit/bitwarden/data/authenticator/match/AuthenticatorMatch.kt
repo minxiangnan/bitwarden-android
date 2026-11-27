@@ -89,18 +89,18 @@ fun filterAuthenticatorEntries(
     sort: AuthenticatorSort,
     group: String?,
 ): List<AuthenticatorEntryView> {
-    val term = query.trim().lowercase()
+    val term = query.trim()
     return entries
         .filter { it.deletedAt == null }
         .filter { !favoritesOnly || it.favorite }
         .filter { group == null || it.issuer.equals(group, ignoreCase = true) || group in it.tags }
         .filter { entry ->
             term.isEmpty() ||
-                entry.name.lowercase().contains(term) ||
-                entry.issuer.lowercase().contains(term) ||
-                entry.notes.lowercase().contains(term) ||
-                entry.host.lowercase().contains(term) ||
-                entry.tags.any { it.lowercase().contains(term) }
+                entry.name.contains(term, ignoreCase = true) ||
+                entry.issuer.contains(term, ignoreCase = true) ||
+                entry.notes.contains(term, ignoreCase = true) ||
+                entry.host.contains(term, ignoreCase = true) ||
+                entry.tags.any { it.contains(term, ignoreCase = true) }
         }
         .sortedWith { left, right -> compareBySort(left, right, sort) }
 }
@@ -121,6 +121,24 @@ private fun compareBySort(
     AuthenticatorSort.MANUAL ->
         left.sortOrder.compareTo(right.sortOrder).takeIf { it != 0 }
             ?: left.name.compareTo(right.name, ignoreCase = true)
+}
+
+/**
+ * Inclusive-exclusive ranges of [query] inside [text]. Matching ignores case.
+ * An empty query matches nothing, so the caller can leave the text plain.
+ */
+fun matchRanges(text: String, query: String): List<IntRange> {
+    val term = query.trim()
+    if (term.isEmpty() || text.isEmpty()) return emptyList()
+    val ranges = ArrayList<IntRange>()
+    var start = 0
+    while (start < text.length) {
+        val index = text.indexOf(term, startIndex = start, ignoreCase = true)
+        if (index < 0) break
+        ranges.add(index until (index + term.length))
+        start = index + term.length
+    }
+    return ranges
 }
 
 /**

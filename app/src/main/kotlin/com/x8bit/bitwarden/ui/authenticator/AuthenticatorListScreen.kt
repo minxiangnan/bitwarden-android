@@ -5,7 +5,6 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import android.view.HapticFeedbackConstants
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -25,6 +24,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.runtime.Composable
@@ -38,14 +38,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -416,6 +412,7 @@ fun AuthenticatorListScreen(
                 items(state.rows, key = { it.id }) { row ->
                     AuthenticatorCard(
                         row = row,
+                        query = state.query,
                         trash = trash,
                         onCopy = {
                             viewModel.trySendAction(AuthenticatorListAction.CopyClick(row.id))
@@ -447,9 +444,9 @@ fun AuthenticatorListScreen(
 }
 
 @Composable
-@Suppress("LongMethod")
-private fun AuthenticatorCard(
+internal fun AuthenticatorCard(
     row: AuthenticatorRow,
+    query: String,
     trash: Boolean,
     onCopy: () -> Unit,
     onEdit: () -> Unit,
@@ -457,115 +454,40 @@ private fun AuthenticatorCard(
     onRestore: () -> Unit,
     onFavorite: () -> Unit,
     onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     var menu by rememberSaveable(row.id) { mutableStateOf(false) }
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .combinedClickable(
-                onClick = if (trash) onEdit else onCopy,
-                onLongClick = { menu = true },
-            )
-            .padding(horizontal = 20.dp, vertical = 14.dp),
-    ) {
+    val urgent = !trash && row.seconds in 1..AUTHENTICATOR_URGENT_SECONDS
+    Column(modifier = modifier.fillMaxWidth().testTag("AuthenticatorRow")) {
         Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .combinedClickable(
+                    onClick = if (trash) onEdit else onCopy,
+                    onLongClick = { menu = true },
+                )
+                .padding(start = 16.dp, top = 8.dp, bottom = 8.dp),
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = row.title,
-                    style = BitwardenTheme.typography.titleMedium,
-                    color = BitwardenTheme.colorScheme.text.primary,
-                )
-                if (row.subtitle.isNotBlank()) {
-                    Text(
-                        text = row.subtitle,
-                        style = BitwardenTheme.typography.bodySmall,
-                        color = BitwardenTheme.colorScheme.text.secondary,
-                    )
-                }
-            }
-            if (!trash && row.seconds > 0) {
-                CountdownRing(seconds = row.seconds, period = row.period)
-            } else if (row.favorite) {
-                Text(text = "★", color = BitwardenTheme.colorScheme.text.interaction)
-            }
-        }
-        Text(
-            text = row.code.ifBlank { "—" },
-            style = BitwardenTheme.typography.displaySmall,
-            fontFamily = FontFamily.Monospace,
-            color = if (row.seconds in 1..5) {
-                BitwardenTheme.colorScheme.status.error
-            } else {
-                BitwardenTheme.colorScheme.text.primary
-            },
-            modifier = Modifier.padding(top = 8.dp),
-        )
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(top = 4.dp),
-        ) {
-            if (!trash && row.nextCode != null) {
-                Text(
-                    text = stringResource(BitwardenString.zh_authenticator_next) +
-                        " " +
-                        row.nextCode,
-                    style = BitwardenTheme.typography.bodySmall,
-                    color = BitwardenTheme.colorScheme.text.secondary,
-                )
-            }
-            if (row.favorite) {
-                Text(text = "★", color = BitwardenTheme.colorScheme.text.interaction)
-            }
-            if (row.kindLabel.isNotBlank()) {
-                Text(
-                    text = row.kindLabel,
-                    style = BitwardenTheme.typography.bodySmall,
-                    color = BitwardenTheme.colorScheme.text.secondary,
-                )
-            }
-            if (row.alias != null) {
-                Text(
-                    text = row.alias,
-                    style = BitwardenTheme.typography.bodySmall,
-                    color = BitwardenTheme.colorScheme.text.interaction,
+            AuthenticatorIdentity(row = row, query = query, modifier = Modifier.weight(1f))
+            AuthenticatorCode(row = row, trash = trash, urgent = urgent)
+            Box {
+                AuthenticatorOverflowButton(onClick = { menu = true })
+                AuthenticatorCardMenu(
+                    expanded = menu,
+                    trash = trash,
+                    favorite = row.favorite,
+                    onDismiss = { menu = false },
+                    onCopy = onCopy,
+                    onEdit = onEdit,
+                    onFavorite = onFavorite,
+                    onTrash = onTrash,
+                    onRestore = onRestore,
+                    onDelete = onDelete,
                 )
             }
         }
-        AuthenticatorCardMenu(
-            expanded = menu,
-            trash = trash,
-            favorite = row.favorite,
-            onDismiss = { menu = false },
-            onCopy = onCopy,
-            onEdit = onEdit,
-            onFavorite = onFavorite,
-            onTrash = onTrash,
-            onRestore = onRestore,
-            onDelete = onDelete,
-        )
-        Row {
-            if (trash) {
-                BitwardenTextButton(
-                    label = stringResource(BitwardenString.zh_authenticator_restore),
-                    onClick = onRestore,
-                )
-                BitwardenTextButton(
-                    label = stringResource(BitwardenString.delete),
-                    onClick = onDelete,
-                )
-            } else {
-                BitwardenTextButton(label = stringResource(BitwardenString.edit), onClick = onEdit)
-                BitwardenTextButton(
-                    label = stringResource(BitwardenString.delete),
-                    onClick = onTrash,
-                )
-            }
-        }
+        HorizontalDivider(color = BitwardenTheme.colorScheme.stroke.divider)
     }
 }
 
@@ -639,52 +561,6 @@ private fun AuthenticatorCardMenu(
                 },
             )
         }
-    }
-}
-
-private const val URGENT_SECONDS = 5
-private const val FULL_CIRCLE_DEGREES = 360f
-
-@Composable
-private fun CountdownRing(seconds: Int, period: Int) {
-    val urgent = seconds <= URGENT_SECONDS
-    val color = if (urgent) {
-        BitwardenTheme.colorScheme.status.error
-    } else {
-        BitwardenTheme.colorScheme.icon.secondary
-    }
-    val track = color.copy(alpha = 0.22f)
-    Box(contentAlignment = Alignment.Center, modifier = Modifier.size(48.dp)) {
-        Canvas(modifier = Modifier.size(48.dp)) {
-            val stroke = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
-            val inset = stroke.width / 2
-            val arcSize = Size(size.width - stroke.width, size.height - stroke.width)
-            val topLeft = Offset(inset, inset)
-            drawArc(
-                color = track,
-                startAngle = -90f,
-                sweepAngle = FULL_CIRCLE_DEGREES,
-                useCenter = false,
-                topLeft = topLeft,
-                size = arcSize,
-                style = stroke,
-            )
-            val sweep = FULL_CIRCLE_DEGREES * seconds / period.coerceAtLeast(1)
-            drawArc(
-                color = color,
-                startAngle = -90f,
-                sweepAngle = sweep,
-                useCenter = false,
-                topLeft = topLeft,
-                size = arcSize,
-                style = stroke,
-            )
-        }
-        Text(
-            text = seconds.toString(),
-            style = BitwardenTheme.typography.labelMedium,
-            color = color,
-        )
     }
 }
 
