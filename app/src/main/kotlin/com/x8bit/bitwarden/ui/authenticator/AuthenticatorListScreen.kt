@@ -471,7 +471,18 @@ fun AuthenticatorListScreen(
                                 index = index,
                                 lastIndex = shownRows.lastIndex,
                                 listState = listState,
-                                onDragStart = { if (dragRows == null) dragRows = state.rows },
+                                onDragStart = {
+                                    val feedback = if (
+                                        android.os.Build.VERSION.SDK_INT >=
+                                        android.os.Build.VERSION_CODES.R
+                                    ) {
+                                        HapticFeedbackConstants.GESTURE_START
+                                    } else {
+                                        HapticFeedbackConstants.LONG_PRESS
+                                    }
+                                    view.performHapticFeedback(feedback)
+                                    if (dragRows == null) dragRows = state.rows
+                                },
                                 onShift = { target ->
                                     val current = (dragRows ?: state.rows).toMutableList()
                                     val from = current.indexOfFirst { it.id == row.id }
@@ -566,8 +577,16 @@ internal fun AuthenticatorCard(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 16.dp, top = 8.dp, bottom = 8.dp),
+                .padding(
+                    start = if (reorder == null) 16.dp else 0.dp,
+                    top = if (reorder == null) 8.dp else 0.dp,
+                    bottom = if (reorder == null) 8.dp else 0.dp,
+                ),
         ) {
+            if (reorder != null) {
+                DragHandle(reorder)
+                AuthenticatorMoveTopButton(enabled = reorder.index > 0, onClick = onMoveTop)
+            }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
@@ -604,9 +623,6 @@ internal fun AuthenticatorCard(
                     onRestore = onRestore,
                     onDelete = onDelete,
                 )
-            }
-            if (reorder != null) {
-                DragHandle(reorder)
             }
         }
         HorizontalDivider(color = BitwardenTheme.colorScheme.stroke.divider)
@@ -889,7 +905,7 @@ private fun DragHandle(reorder: AuthenticatorReorder) {
     val label = stringResource(BitwardenString.zh_authenticator_drag_handle)
     Canvas(
         Modifier
-            .size(40.dp)
+            .size(48.dp)
             .semantics { contentDescription = label }
             .testTag("AuthenticatorDragHandle")
             .pointerInput(Unit) {
