@@ -1,5 +1,6 @@
 package com.x8bit.bitwarden.ui.authenticator
 
+import android.Manifest
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -63,6 +64,8 @@ import com.bitwarden.ui.platform.components.field.BitwardenTextField
 import com.bitwarden.ui.platform.components.model.CardStyle
 import com.bitwarden.ui.platform.components.scaffold.BitwardenScaffold
 import com.bitwarden.ui.platform.composition.LocalIntentManager
+import com.x8bit.bitwarden.ui.platform.composition.LocalPermissionsManager
+import com.bitwarden.ui.platform.manager.util.startAppSettingsActivity
 import com.bitwarden.ui.platform.resource.BitwardenString
 import com.bitwarden.ui.platform.theme.BitwardenTheme
 import com.x8bit.bitwarden.data.authenticator.importing.decodeQrImage
@@ -97,7 +100,23 @@ fun AuthenticatorListScreen(
     }
     val context = LocalContext.current
     val intentManager = LocalIntentManager.current
+    val permissionsManager = LocalPermissionsManager.current
     var menu by rememberSaveable { mutableStateOf(false) }
+    var cameraDenied by rememberSaveable { mutableStateOf(false) }
+    val cameraLauncher = permissionsManager.getLauncher { granted ->
+        if (granted) {
+            onScan()
+        } else {
+            cameraDenied = true
+        }
+    }
+    val requestScan = {
+        if (permissionsManager.checkPermission(Manifest.permission.CAMERA)) {
+            onScan()
+        } else {
+            cameraLauncher.launch(Manifest.permission.CAMERA)
+        }
+    }
     var paste by rememberSaveable { mutableStateOf(false) }
     var pasteText by rememberSaveable { mutableStateOf("") }
     val importFile = rememberLauncherForActivityResult(
@@ -134,6 +153,20 @@ fun AuthenticatorListScreen(
                 )
             }
         }
+    }
+    if (cameraDenied) {
+        BitwardenTwoButtonDialog(
+            title = stringResource(BitwardenString.zh_scan_permission_title),
+            message = stringResource(BitwardenString.zh_scan_permission_body),
+            confirmButtonText = stringResource(BitwardenString.zh_scan_open_settings),
+            dismissButtonText = stringResource(BitwardenString.cancel),
+            onConfirmClick = {
+                cameraDenied = false
+                intentManager.startAppSettingsActivity()
+            },
+            onDismissClick = { cameraDenied = false },
+            onDismissRequest = { cameraDenied = false },
+        )
     }
     AuthenticatorListDialogs(
         dialog = state.dialog,
@@ -190,7 +223,7 @@ fun AuthenticatorListScreen(
                 if (!trash) {
                     BitwardenTextButton(
                         label = stringResource(BitwardenString.zh_authenticator_scan),
-                        onClick = onScan,
+                        onClick = requestScan,
                     )
                     BitwardenTextButton(
                         label = stringResource(BitwardenString.zh_authenticator_add),
@@ -375,7 +408,7 @@ fun AuthenticatorListScreen(
             if (state.rows.isEmpty() && state.status != AuthenticatorSyncStatus.LOADING) {
                 AuthenticatorEmpty(
                     trash = trash,
-                    onScan = onScan,
+                    onScan = requestScan,
                     onAdd = onAdd,
                 )
             }

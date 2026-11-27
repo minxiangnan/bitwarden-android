@@ -64,6 +64,14 @@ class AuthenticatorListViewModel @AssistedInject constructor(
 
     init {
         viewModelScope.launch {
+            repository.scanNotice.collect { message ->
+                if (message != null) {
+                    repository.consumeScanNotice()
+                    sendAction(AuthenticatorListAction.ShowMessage(message))
+                }
+            }
+        }
+        viewModelScope.launch {
             while (true) {
                 delay(TICK_MS)
                 sendAction(AuthenticatorListAction.Internal.Tick)

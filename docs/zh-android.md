@@ -155,3 +155,15 @@ MCP 会话接口是 `/api/mcp/status`、`/api/mcp/token`、`/api/mcp/token/enc`�
 | `com.minxiangnan.bitwarden.zh-x86_64.apk` | 45,721,400 | `76692bdf6b475e1f4b1c628d3170f4894f875704f5c38d785cba2cfd0023ab0c` |
 | `com.minxiangnan.bitwarden.zh-x86.apk` | 46,121,163 | `baf97631306857d7fe844e90c39a72727df077cfe775784da03ef7b6746669ec` |
 | `com.minxiangnan.bitwarden.zh.apk`（universal） | 86,023,035 | `364e93b795e2981e03e44d319fde226f7e2c48eba6211e0768d24f629034afa3` |
+
+1.0.6 修复验证器页扫码打不开摄像头。点「扫码」会先申请相机权限；拒绝时给出中文说明和「去设置」。允许之后打开取景，识别 `otpauth://` 或 `otpauth-migration://` 后直接保存并回到列表。手动输入密钥仍然可用。二维码解码是打进安装包的 ZXing，不依赖 Google Play 服务。签名仍是 1.0.1 起的那把发布密钥。
+
+1.0.6：
+
+| APK | 大小 | SHA-256 |
+| --- | --- | --- |
+| `com.minxiangnan.bitwarden.zh-arm64-v8a.apk` | 46,332,249 | `aa3b66f96efce440332973ec94620b8f0af89c80a9792d792cce592ecda60ab6` |
+| `com.minxiangnan.bitwarden.zh-armeabi-v7a.apk` | 43,211,187 | `1518f93762bea9c98352e9aca40db72c1c1b46a618d9cd6833c2ba1a6ef3d89c` |
+| `com.minxiangnan.bitwarden.zh-x86_64.apk` | 45,733,404 | `89e6b4942d91a30c4d38fc2b1f99f36c90546f4cd4d2413ae5b24f4aae02c763` |
+| `com.minxiangnan.bitwarden.zh-x86.apk` | 46,133,167 | `c085317f8ced513f6c26c4b4c9e533a0f01e34b7e3b3f8508b2a8009bd335a18` |
+| `com.minxiangnan.bitwarden.zh.apk`（universal） | 86,035,039 | `b0a5668aa3af12f7a915773a26fb77d147363a9cc8e533705422c3d4ccd76072` |

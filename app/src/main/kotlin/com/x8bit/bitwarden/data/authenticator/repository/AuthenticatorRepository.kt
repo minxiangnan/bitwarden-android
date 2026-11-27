@@ -110,11 +110,18 @@ class AuthenticatorRepository @Inject constructor(
     private var mcpToken: String? = null
     private var mcpSalt: String? = null
     private var stashedDraft: AuthenticatorDraft? = null
+    private val mutableScanNotice = MutableStateFlow<String?>(null)
 
     /**
      * Decrypted entries for the active unlocked user.
      */
     val entries: StateFlow<AuthenticatorSnapshot> = mutableEntries.asStateFlow()
+
+    /**
+     * One-shot notice after a scan is saved. The list shows it once, including
+     * when the scanner is still covering the list.
+     */
+    val scanNotice: StateFlow<String?> = mutableScanNotice.asStateFlow()
 
     /**
      * MCP token status for the active user.
@@ -311,6 +318,20 @@ class AuthenticatorRepository @Inject constructor(
             save(entryId, entry.toDraft().copy(counter = entry.counter + 1))
         }
         return code
+    }
+
+    /**
+     * Asks the list to show [message] after a scan is saved.
+     */
+    fun publishScanNotice(message: String) {
+        mutableScanNotice.value = message
+    }
+
+    /**
+     * Clears the scan notice so it is not shown again.
+     */
+    fun consumeScanNotice() {
+        mutableScanNotice.value = null
     }
 
     /**
