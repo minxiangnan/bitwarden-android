@@ -167,3 +167,15 @@ MCP 会话接口是 `/api/mcp/status`、`/api/mcp/token`、`/api/mcp/token/enc`�
 | `com.minxiangnan.bitwarden.zh-x86_64.apk` | 45,733,404 | `89e6b4942d91a30c4d38fc2b1f99f36c90546f4cd4d2413ae5b24f4aae02c763` |
 | `com.minxiangnan.bitwarden.zh-x86.apk` | 46,133,167 | `c085317f8ced513f6c26c4b4c9e533a0f01e34b7e3b3f8508b2a8009bd335a18` |
 | `com.minxiangnan.bitwarden.zh.apk`（universal） | 86,035,039 | `b0a5668aa3af12f7a915773a26fb77d147363a9cc8e533705422c3d4ccd76072` |
+
+1.0.7 把验证器列表收成一行。左侧是名称，有备注时在名称下面用一行小字显示，没有备注就不占高度。右侧是缩小后的验证码和小圆形倒计时。只在剩余不超过 5 秒时，才在验证码下面显示「下一段」。编辑和删除放到长按和右侧菜单，点整行仍然复制验证码。编辑页可以查看和修改备注，备注写进条目的 notes，和服务器、扩展一起同步。搜索不区分大小写，同时匹配名称和备注，匹配的字会高亮。签名仍是 1.0.1 起的那把发布密钥。
+
+1.0.7：
+
+| APK | 大小 | SHA-256 |
+| --- | --- | --- |
+| `com.minxiangnan.bitwarden.zh-arm64-v8a.apk` | 46,330,833 | `0fe7836e3a3744af4f4cde5a562f29e240df465745cea42107e374070dd993b4` |
+| `com.minxiangnan.bitwarden.zh-armeabi-v7a.apk` | 43,209,771 | `56301fab68454a09ef7e9661ba8ea973289003eb208614d2542ee9198064d40f` |
+| `com.minxiangnan.bitwarden.zh-x86_64.apk` | 45,731,988 | `d5d9aa0da29462ac04671d113610e303e5a5c2b0659467d1289d0d8cced02c6c` |
+| `com.minxiangnan.bitwarden.zh-x86.apk` | 46,131,751 | `4a6ff890135aeef92f6f39fd675dfa11624ad91ca7d34b700905a2feef5b1cc4` |
+| `com.minxiangnan.bitwarden.zh.apk`（universal） | 86,033,623 | `6e115618b652bb3e747d4fce2a104c87f290b7d02f1071484ff168eadbd13900` |
