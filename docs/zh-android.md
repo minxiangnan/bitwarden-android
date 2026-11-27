@@ -195,3 +195,15 @@ MCP 会话接口是 `/api/mcp/status`、`/api/mcp/token`、`/api/mcp/token/enc`�
 | `com.minxiangnan.bitwarden.zh-x86_64.apk` | 45,758,748 | `b9918b5dbf0bc37a18b7d5fc80a57e3a984f1283fcb1a75067d23df0584ba8c9` |
 | `com.minxiangnan.bitwarden.zh-x86.apk` | 46,158,511 | `9df3be58eac21a19b37d9a09eb700a73fb3c38519dce21538a112bb5b89b53d7` |
 | `com.minxiangnan.bitwarden.zh.apk`（universal） | 86,060,383 | `df99e5694a20983287cfe31c1c351e7b6bb496c7d5a8318713e5da0e2a56b34f` |
+
+1.0.9 给验证器列表加了显示顺序，并和浏览器扩展用同一个字段同步。每条验证器把十进制顺序写进加密备注里的 `zh.totp.order`；密钥相同的登录条目同时写成隐藏自定义字段，编辑页和详情页不显示这个系统字段。没有该字段的条目排在后面，按名称排序。拖动只改被拖动的一条，取前后邻居的中值；间隔太小才把当前列表重新编号。列表顶部可以在「自定义」（默认）和「名称 A-Z」之间切换。自定义模式下用右侧手柄拖动，长按一行仍然打开菜单。菜单里有「上移」「下移」「置顶」。搜索时不能拖动。拖动结束有轻微震动。星标仍然只是「只看收藏」筛选，不把收藏固定在列表顶部，这和扩展现在的做法一致。签名仍是 1.0.1 起的那把发布密钥。
+
+1.0.9：
+
+| APK | 大小 | SHA-256 |
+| --- | --- | --- |
+| `com.minxiangnan.bitwarden.zh-arm64-v8a.apk` | 46,369,989 | `cbb6af62a4f18228c9c6673433b2d46766b6fe102df3b5cb77ed2f9a76961b1c` |
+| `com.minxiangnan.bitwarden.zh-armeabi-v7a.apk` | 43,248,927 | `5b71e3be08136dbe813374bcebba58d6b09b4a779081c1b7c044931416a01809` |
+| `com.minxiangnan.bitwarden.zh-x86_64.apk` | 45,771,144 | `653e067ca86e88f326d4ff7a6b6c68a8ee6c73df3a3b35de68aa7b17bf65e69c` |
+| `com.minxiangnan.bitwarden.zh-x86.apk` | 46,170,907 | `7f9e3743a2955faf5004422db8975f11e6acc8e118cddc0d0f156dd88bd552ee` |
+| `com.minxiangnan.bitwarden.zh.apk`（universal） | 86,072,779 | `f3ee289186f457cb1f59c7667a5604f518cf13401fcdae5b4a984997c59b74d2` |
