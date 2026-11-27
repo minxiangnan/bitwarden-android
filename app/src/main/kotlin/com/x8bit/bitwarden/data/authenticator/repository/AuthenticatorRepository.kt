@@ -20,6 +20,9 @@ import com.x8bit.bitwarden.data.authenticator.mcp.mcpAad
 import com.x8bit.bitwarden.data.authenticator.mcp.normalizeAlias
 import com.x8bit.bitwarden.data.authenticator.mcp.sealField
 import com.x8bit.bitwarden.data.authenticator.model.AuthenticatorMeta
+import com.x8bit.bitwarden.data.authenticator.order.loginOrdersBySecret
+import com.x8bit.bitwarden.data.authenticator.order.withCipherOrders
+import com.x8bit.bitwarden.data.authenticator.order.writeLoginOrders
 import com.x8bit.bitwarden.data.authenticator.meta.joinAuthenticatorNotes
 import com.x8bit.bitwarden.data.authenticator.meta.kindFromStored
 import com.x8bit.bitwarden.data.authenticator.meta.splitAuthenticatorNotes
@@ -33,6 +36,7 @@ import com.x8bit.bitwarden.data.authenticator.otp.entryKind
 import com.x8bit.bitwarden.data.authenticator.otp.normalizeTotpSecret
 import com.x8bit.bitwarden.data.vault.datasource.sdk.VaultSdkSource
 import com.x8bit.bitwarden.data.vault.manager.VaultLockManager
+import com.x8bit.bitwarden.data.vault.repository.VaultRepository
 import com.x8bit.bitwarden.data.vault.repository.model.VaultUnlockData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -98,6 +102,7 @@ class AuthenticatorRepository @Inject constructor(
     private val authRepository: AuthRepository,
     private val vaultLockManager: VaultLockManager,
     private val vaultSdkSource: VaultSdkSource,
+    private val vaultRepository: VaultRepository,
     private val diskSource: AuthenticatorDiskSource,
     private val json: Json,
     serviceClient: BitwardenServiceClient,
@@ -268,6 +273,26 @@ class AuthenticatorRepository @Inject constructor(
     suspend fun setFavorite(entryId: String, favorite: Boolean): Result<Unit> {
         val entry = find(entryId) ?: return Result.failure(IllegalStateException("找不到这条验证码"))
         return save(entryId, entry.toDraft().copy(favorite = favorite))
+    }
+
+    /**
+     * Saves decimal order strings. Login ciphers with the same TOTP secret get the
+     * hidden field first, so a refresh does not put the previous cipher value back.
+     */
+    suspend fun applyOrders(orders: Map<String, String>): Result<Unit> {
+        if (orders.isEmpty()) return Result.success(Unit)
+        val bySecret = orders.mapNotNull { (id, order) ->
+            find(id)?.secret?.let { secret -> normalizeTotpSecret(secret) to order }
+        }.toMap()
+        writeLoginOrders(vaultRepository, bySecret)
+        for ((id, order) in orders) {
+            val entry = find(id)
+            if (entry != null && entry.order != order) {
+                val saved = mutate(id, entry.toDraft().copy(order = order), entry.sortOrder)
+                if (saved.isFailure) return saved
+            }
+        }
+        return Result.success(Unit)
     }
 
     /**
@@ -557,6 +582,7 @@ class AuthenticatorRepository @Inject constructor(
         if (!mutableEntries.value.editable && mutableEntries.value.entries.isNotEmpty()) {
             return Result.failure(IllegalStateException("离线时不能修改"))
         }
+        val existing = entryId?.let { find(it) }
         val body = toRequest(
             userId = userId,
             draft = draft,
@@ -566,7 +592,8 @@ class AuthenticatorRepository @Inject constructor(
             } else {
                 null
             },
-            revisionDate = draft.baseRevision ?: entryId?.let { find(it)?.revisionDate },
+            revisionDate = draft.baseRevision ?: existing?.revisionDate,
+            keptOrder = draft.order ?: existing?.order,
         )
         val result = if (entryId.isNullOrBlank()) {
             service.createEntry(body)
@@ -598,6 +625,7 @@ class AuthenticatorRepository @Inject constructor(
         message: String?,
     ) {
         val views = rows.map { decryptRow(userId, it) }
+            .withCipherOrders(loginOrdersBySecret(vaultRepository))
         val syncedAt = if (status == AuthenticatorSyncStatus.READY) {
             System.currentTimeMillis()
         } else {
@@ -644,6 +672,7 @@ class AuthenticatorRepository @Inject constructor(
             tags = split.meta.tags,
             counter = split.meta.counter,
             deletedAt = split.meta.deletedAt,
+            order = split.meta.order,
         )
     }
 
@@ -653,6 +682,7 @@ class AuthenticatorRepository @Inject constructor(
         sortOrder: Int,
         clientId: String?,
         revisionDate: String?,
+        keptOrder: String?,
     ): AuthenticatorEntryRequestJson {
         val kind = entryKind(draft.kind, draft.digits)
         val digits = if (kind == AuthenticatorKind.STEAM) STEAM_DIGITS else draft.digits
@@ -662,6 +692,7 @@ class AuthenticatorRepository @Inject constructor(
             tags = draft.tags,
             counter = draft.counter,
             deletedAt = draft.deletedAt,
+            order = keptOrder,
         )
         val notes = joinAuthenticatorNotes(draft.notes, meta, digits)
         val name = draft.name.ifBlank { draft.issuer.ifBlank { "验证码" } }
@@ -750,6 +781,7 @@ class AuthenticatorRepository @Inject constructor(
             tags = tags,
             counter = counter,
             deletedAt = deletedAt,
+            order = order,
         )
 
     private data class DecryptedText(val text: String, val failed: Boolean)

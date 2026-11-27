@@ -17,6 +17,7 @@ import com.bitwarden.vault.CipherView
 import com.bitwarden.vault.Fido2CredentialView
 import com.bitwarden.vault.FieldType
 import com.bitwarden.vault.FieldView
+import com.x8bit.bitwarden.data.authenticator.order.TOTP_ORDER_FIELD
 import com.bitwarden.vault.IdentityView
 import com.bitwarden.vault.LoginUriView
 import com.x8bit.bitwarden.data.vault.repository.model.VaultData
@@ -62,6 +63,7 @@ fun CipherView.toViewState(
             name = name,
             customFields = fields
                 .orEmpty()
+                .filter { it.name != TOTP_ORDER_FIELD }
                 .map { fieldView ->
                     fieldView.toCustomField(
                         previousState = previousState

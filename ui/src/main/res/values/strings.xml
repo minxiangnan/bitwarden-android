@@ -1457,7 +1457,13 @@ Do you want to switch to this account?</string>
     <string name="zh_authenticator_trash">回收站</string>
     <string name="zh_authenticator_mcp">MCP 访问</string>
     <string name="zh_authenticator_sort_name">按名称</string>
+    <string name="zh_authenticator_sort_custom">自定义</string>
+    <string name="zh_authenticator_sort_name_az">名称 A-Z</string>
     <string name="zh_authenticator_sort_issuer">按发行方</string>
+    <string name="zh_authenticator_move_up">上移</string>
+    <string name="zh_authenticator_move_down">下移</string>
+    <string name="zh_authenticator_move_top">置顶</string>
+    <string name="zh_authenticator_drag_handle">拖动排序</string>
     <string name="zh_authenticator_favorites">只看收藏</string>
     <string name="zh_authenticator_all_groups">全部分组</string>
     <string name="zh_authenticator_next">下一段</string>

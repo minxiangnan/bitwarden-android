@@ -87,6 +87,10 @@ class AuthenticatorLogicTest {
         val chinese = joinAuthenticatorNotes("公司 VPN", meta, digits = 6)
         assertEquals("公司 VPN", splitAuthenticatorNotes(chinese).text)
         assertEquals(meta, split.meta)
+        val ordered = meta.copy(order = "1.5")
+        val withOrder = splitAuthenticatorNotes(joinAuthenticatorNotes("备注", ordered, 6))
+        assertEquals("1.5", withOrder.meta.order)
+        assertEquals("备注", withOrder.text)
         assertEquals(AuthenticatorKind.HOTP, kindFromStored(split.meta, split.hasTrailer, 6))
         assertEquals(AuthenticatorKind.STEAM, kindFromStored(AuthenticatorMeta(), false, 5))
     }
@@ -194,6 +198,32 @@ class AuthenticatorLogicTest {
         val aad = mcpAad("user", "authenticator", "entry", "gitlab", "secret")
         val sealed = sealField(key, aad, "GEZDGNBVGY3TQOJQ", ByteArray(12) { it.toByte() })
         assertEquals("GEZDGNBVGY3TQOJQ", openField(key, aad, sealed))
+    }
+
+    @Test
+    fun `custom order keeps favorites as a filter and numbers ahead of names`() {
+        val favorite = entry(id = "fav", issuer = "A", host = "a.example", favorite = true)
+            .copy(name = "Alpha")
+        val early = entry(id = "early", issuer = "Z", host = "z.example")
+            .copy(name = "Zulu", order = "0")
+        val late = entry(id = "late", issuer = "M", host = "m.example")
+            .copy(name = "Mid", order = "1024")
+        val sorted = filterAuthenticatorEntries(
+            entries = listOf(favorite, late, early),
+            query = "",
+            favoritesOnly = false,
+            sort = AuthenticatorSort.MANUAL,
+            group = null,
+        )
+        assertEquals(listOf("Zulu", "Mid", "Alpha"), sorted.map { it.name })
+        val onlyFavorites = filterAuthenticatorEntries(
+            entries = listOf(favorite, early),
+            query = "",
+            favoritesOnly = true,
+            sort = AuthenticatorSort.MANUAL,
+            group = null,
+        )
+        assertEquals(listOf("Alpha"), onlyFavorites.map { it.name })
     }
 
     @Test

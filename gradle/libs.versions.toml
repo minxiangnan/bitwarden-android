@@ -2,8 +2,8 @@
 [versions]
 
 # App version
-appVersionCode = "9"
-appVersionName = "1.0.8"
+appVersionCode = "10"
+appVersionName = "1.0.9"
 
 # SDK Versions
 compileSdk = "37"
