@@ -17,6 +17,7 @@ class ToastManagerTest {
     private val context: Context = mockk()
     private val toast: Toast = mockk {
         every { show() } just runs
+        every { cancel() } just runs
     }
     private val toastManager: ToastManager = ToastManagerImpl(
         context = context,
@@ -64,5 +65,22 @@ class ToastManagerTest {
             Toast.makeText(context, messageId, Toast.LENGTH_LONG)
             toast.show()
         }
+    }
+
+    @Test
+    fun `a second show cancels the toast already on screen`() {
+        toastManager.show(message = "one")
+        toastManager.show(message = "two")
+
+        verify(exactly = 1) { toast.cancel() }
+        verify(exactly = 2) { toast.show() }
+    }
+
+    @Test
+    fun `cancel removes the current toast`() {
+        toastManager.show(message = "one")
+        toastManager.cancel()
+
+        verify(exactly = 1) { toast.cancel() }
     }
 }

@@ -5,6 +5,8 @@ import android.content.ClipDescription
 import android.content.ClipboardManager
 import android.content.Context
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.os.PersistableBundle
 import androidx.compose.ui.text.AnnotatedString
 import androidx.core.content.getSystemService
@@ -30,6 +32,8 @@ class BitwardenClipboardManagerImpl(
     private val toastManager: ToastManager,
 ) : BitwardenClipboardManager {
     private val clipboardManager: ClipboardManager = requireNotNull(context.getSystemService())
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private val dismissConfirmation = Runnable { toastManager.cancel() }
 
     private val clearClipboardFrequencySeconds: Int?
         get() = settingsRepository.clearClipboardFrequency.frequencySeconds
@@ -38,6 +42,7 @@ class BitwardenClipboardManagerImpl(
         text: AnnotatedString,
         isSensitive: Boolean,
         toastDescriptorOverride: String?,
+        showToast: Boolean,
     ) {
         clipboardManager.setPrimaryClip(
             ClipData
@@ -55,14 +60,14 @@ class BitwardenClipboardManagerImpl(
                     }
                 },
         )
-        if (!isBuildVersionAtLeast(version = Build.VERSION_CODES.TIRAMISU)) {
+        if (showToast && !isBuildVersionAtLeast(version = Build.VERSION_CODES.TIRAMISU)) {
             val descriptor = toastDescriptorOverride
                 ?.let { context.resources.getString(BitwardenString.value_has_been_copied, it) }
                 ?: context.resources.getString(
                     BitwardenString.value_has_been_copied,
                     context.resources.getString(BitwardenString.value),
                 )
-            toastManager.show(message = descriptor)
+            showReplacingConfirmation(descriptor)
         }
 
         val frequency = clearClipboardFrequencySeconds ?: return
@@ -79,8 +84,19 @@ class BitwardenClipboardManagerImpl(
         )
     }
 
-    override fun setText(text: String, isSensitive: Boolean, toastDescriptorOverride: String?) {
-        setText(text.toAnnotatedString(), isSensitive, toastDescriptorOverride)
+    override fun setText(
+        text: String,
+        isSensitive: Boolean,
+        toastDescriptorOverride: String?,
+        showToast: Boolean,
+    ) {
+        setText(text.toAnnotatedString(), isSensitive, toastDescriptorOverride, showToast)
+    }
+
+    private fun showReplacingConfirmation(message: String) {
+        mainHandler.removeCallbacks(dismissConfirmation)
+        toastManager.show(message = message)
+        mainHandler.postDelayed(dismissConfirmation, COPY_CONFIRMATION_MS)
     }
 
     override fun setText(text: String, isSensitive: Boolean, toastDescriptorOverride: Text) {
@@ -93,5 +109,9 @@ class BitwardenClipboardManagerImpl(
 
     override fun setText(text: Text, isSensitive: Boolean, toastDescriptorOverride: String?) {
         setText(text.toString(context.resources), isSensitive, toastDescriptorOverride)
+    }
+
+    private companion object {
+        const val COPY_CONFIRMATION_MS: Long = 1_200L
     }
 }

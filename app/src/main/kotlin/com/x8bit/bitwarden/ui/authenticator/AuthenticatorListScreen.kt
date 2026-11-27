@@ -133,16 +133,13 @@ fun AuthenticatorListScreen(
             viewModel.trySendAction(AuthenticatorListAction.ImportText(payload))
         }
     }
+    LaunchedEffect(state.copiedNonce) {
+        if (state.copiedId != null) {
+            view.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
+        }
+    }
     EventsEffect(viewModel) { event ->
         when (event) {
-            is AuthenticatorListEvent.Copied -> {
-                view.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
-                snackbarHostState.showSnackbar(
-                    BitwardenSnackbarData(
-                        message = "已复制 ${event.formatted}".asText(),
-                    ),
-                )
-            }
             is AuthenticatorListEvent.Notice -> {
                 snackbarHostState.showSnackbar(
                     BitwardenSnackbarData(message = event.text.asText()),
@@ -414,6 +411,7 @@ fun AuthenticatorListScreen(
                         row = row,
                         query = state.query,
                         trash = trash,
+                        copied = state.copiedId == row.id,
                         onCopy = {
                             viewModel.trySendAction(AuthenticatorListAction.CopyClick(row.id))
                         },
@@ -449,6 +447,7 @@ internal fun AuthenticatorCard(
     query: String,
     trash: Boolean,
     onCopy: () -> Unit,
+    copied: Boolean = false,
     onEdit: () -> Unit,
     onTrash: () -> Unit,
     onRestore: () -> Unit,
@@ -470,7 +469,12 @@ internal fun AuthenticatorCard(
                 .padding(start = 16.dp, top = 8.dp, bottom = 8.dp),
         ) {
             AuthenticatorIdentity(row = row, query = query, modifier = Modifier.weight(1f))
-            AuthenticatorCode(row = row, trash = trash, urgent = urgent)
+            AuthenticatorCode(
+                row = row,
+                trash = trash,
+                urgent = urgent,
+                copied = copied,
+            )
             Box {
                 AuthenticatorOverflowButton(onClick = { menu = true })
                 AuthenticatorCardMenu(

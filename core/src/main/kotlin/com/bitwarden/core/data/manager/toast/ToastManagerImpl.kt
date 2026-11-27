@@ -9,11 +9,24 @@ import android.widget.Toast
 class ToastManagerImpl(
     private val context: Context,
 ) : ToastManager {
+    private var current: Toast? = null
+
     override fun show(message: CharSequence, duration: Int) {
-        Toast.makeText(context, message, duration).show()
+        showToast(Toast.makeText(context, message, duration))
     }
 
     override fun show(messageId: Int, duration: Int) {
-        Toast.makeText(context, messageId, duration).show()
+        showToast(Toast.makeText(context, messageId, duration))
+    }
+
+    override fun cancel() {
+        current?.cancel()
+        current = null
+    }
+
+    private fun showToast(toast: Toast) {
+        current?.cancel()
+        current = toast
+        toast.show()
     }
 }

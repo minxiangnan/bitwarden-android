@@ -7,8 +7,8 @@ import com.x8bit.bitwarden.data.authenticator.match.filterAuthenticatorEntries
 import com.x8bit.bitwarden.data.authenticator.model.AuthenticatorEntryView
 import com.x8bit.bitwarden.data.authenticator.model.AuthenticatorKind
 import com.x8bit.bitwarden.data.authenticator.otp.currentCode
-import com.x8bit.bitwarden.data.authenticator.otp.entryKind
 import com.x8bit.bitwarden.data.authenticator.otp.formatAuthenticatorCode
+import com.x8bit.bitwarden.data.authenticator.otp.entryKind
 import com.x8bit.bitwarden.data.authenticator.otp.nextTotpCode
 import com.x8bit.bitwarden.data.authenticator.otp.secondsRemaining
 import com.x8bit.bitwarden.data.authenticator.repository.AuthenticatorRepository
@@ -19,6 +19,7 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -152,6 +153,24 @@ class AuthenticatorListViewModel @AssistedInject constructor(
                 rebuild()
             }
             AuthenticatorListAction.Internal.Tick -> rebuild()
+            is AuthenticatorListAction.Internal.CodeCopied -> {
+                val nonce = state.copiedNonce + 1
+                mutableStateFlow.update { it.copy(copiedId = action.id, copiedNonce = nonce) }
+                clearCopiedJob?.cancel()
+                clearCopiedJob = viewModelScope.launch {
+                    delay(COPY_FEEDBACK_MS)
+                    sendAction(AuthenticatorListAction.Internal.ClearCopied(nonce))
+                }
+            }
+            is AuthenticatorListAction.Internal.ClearCopied -> {
+                mutableStateFlow.update { current ->
+                    if (current.copiedNonce == action.nonce) {
+                        current.copy(copiedId = null)
+                    } else {
+                        current
+                    }
+                }
+            }
         }
     }
 
@@ -192,11 +211,17 @@ class AuthenticatorListViewModel @AssistedInject constructor(
         }
     }
 
+    private var clearCopiedJob: Job? = null
+
     private fun copy(id: String) {
         viewModelScope.launch {
             val code = repository.consumeCode(id, clock.millis()) ?: return@launch
-            clipboardManager.setText(text = code, toastDescriptorOverride = "验证码")
-            sendEvent(AuthenticatorListEvent.Copied(formatAuthenticatorCode(code)))
+            clipboardManager.setText(
+                text = code,
+                toastDescriptorOverride = "验证码",
+                showToast = false,
+            )
+            sendAction(AuthenticatorListAction.Internal.CodeCopied(id))
         }
     }
 
@@ -262,6 +287,7 @@ class AuthenticatorListViewModel @AssistedInject constructor(
 
     private companion object {
         const val TICK_MS: Long = 1_000
+        const val COPY_FEEDBACK_MS: Long = 1_200
     }
 }
 
@@ -298,6 +324,8 @@ data class AuthenticatorListState(
     val recentIds: List<String> = emptyList(),
     val refreshing: Boolean = false,
     val syncedAtMillis: Long? = null,
+    val copiedId: String? = null,
+    val copiedNonce: Int = 0,
     val dialog: Dialog? = null,
 ) {
     /**
@@ -325,11 +353,6 @@ data class AuthenticatorListState(
  * List events.
  */
 sealed class AuthenticatorListEvent {
-    /**
-     * A code was copied. [formatted] is grouped for display, not the clipboard text.
-     */
-    data class Copied(val formatted: String) : AuthenticatorListEvent()
-
     /**
      * A short result that should not block the list.
      */
@@ -428,5 +451,15 @@ sealed class AuthenticatorListAction {
          * One second passed.
          */
         data object Tick : Internal()
+
+        /**
+         * [id] was copied. The list shows one inline confirmation and resets its timer.
+         */
+        data class CodeCopied(val id: String) : Internal()
+
+        /**
+         * Clears the inline confirmation when it still belongs to [nonce].
+         */
+        data class ClearCopied(val nonce: Int) : Internal()
     }
 }
