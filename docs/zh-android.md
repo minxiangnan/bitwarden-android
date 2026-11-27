@@ -207,3 +207,15 @@ MCP 会话接口是 `/api/mcp/status`、`/api/mcp/token`、`/api/mcp/token/enc`�
 | `com.minxiangnan.bitwarden.zh-x86_64.apk` | 45,771,144 | `653e067ca86e88f326d4ff7a6b6c68a8ee6c73df3a3b35de68aa7b17bf65e69c` |
 | `com.minxiangnan.bitwarden.zh-x86.apk` | 46,170,907 | `7f9e3743a2955faf5004422db8975f11e6acc8e118cddc0d0f156dd88bd552ee` |
 | `com.minxiangnan.bitwarden.zh.apk`（universal） | 86,072,779 | `f3ee289186f457cb1f59c7667a5604f518cf13401fcdae5b4a984997c59b74d2` |
+
+1.0.10 把自定义排序的控件放到每一行最前面。拖动手柄在行首，旁边是一键「置顶」。点置顶只改这一条的 `zh.totp.order`，和扩展用同一个隐藏字段以及验证器备注里的 `[[bwmeta:1]]` 同步。已经在最上面的那一条，置顶按钮是淡色且点了不会动。长按菜单仍有「上移」「下移」「置顶」。搜索时，以及切到「名称 A-Z」时，这两个控件都不显示。点名称和验证码仍然复制。拖动一开始和松手都有轻微震动。签名仍是 1.0.1 起的那把发布密钥。
+
+1.0.10：
+
+| APK | 大小 | SHA-256 |
+| --- | --- | --- |
+| `com.minxiangnan.bitwarden.zh-arm64-v8a.apk` | 46,371,101 | `78ea80bc499ea426f74f5dc7fc5ccf1e64b7b7358c1bcc29dd846098a9b5b4e4` |
+| `com.minxiangnan.bitwarden.zh-armeabi-v7a.apk` | 43,250,039 | `e4e9e631a3bcaa0e22404beb5be2386f1efedf6289d4dc60a7819d935a86b54d` |
+| `com.minxiangnan.bitwarden.zh-x86_64.apk` | 45,772,256 | `9749ccd80078545ce67ef816a283bc820fdadf6d49ddc6461f9221935bc3f3d0` |
+| `com.minxiangnan.bitwarden.zh-x86.apk` | 46,172,019 | `dcdceb84cb870398d04a0781fa80d476bd8aaedd90d08b589783c23a6515ac41` |
+| `com.minxiangnan.bitwarden.zh.apk`（universal） | 86,073,891 | `187636e0275af0a3c45f717a6f941a02ae0325cbefa5b668d6f92972538cb151` |
