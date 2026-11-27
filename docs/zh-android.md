@@ -170,12 +170,14 @@ MCP 会话接口是 `/api/mcp/status`、`/api/mcp/token`、`/api/mcp/token/enc`�
 
 1.0.7 把验证器列表收成一行。左侧是名称，有备注时在名称下面用一行小字显示，没有备注就不占高度。右侧是缩小后的验证码和小圆形倒计时。只在剩余不超过 5 秒时，才在验证码下面显示「下一段」。编辑和删除放到长按和右侧菜单，点整行仍然复制验证码。编辑页可以查看和修改备注，备注写进条目的 notes，和服务器、扩展一起同步。搜索不区分大小写，同时匹配名称和备注，匹配的字会高亮。签名仍是 1.0.1 起的那把发布密钥。
 
+1.0.7 同时给每条登录项加了 URI 匹配规则。密码库列表、登录分组和搜索结果的更多菜单里有「匹配规则」，可选默认、基础域名、主机、精确、开始于、正则表达式、从不。选择会写到该登录项的每一条 URI 并同步。编辑页原有的 URI 匹配选项保留。没手动改过全局默认的用户仍是「主机」。自动填充服务和无障碍填充先用单项规则，单项是默认时再用全局规则。
+
 1.0.7：
 
 | APK | 大小 | SHA-256 |
 | --- | --- | --- |
-| `com.minxiangnan.bitwarden.zh-arm64-v8a.apk` | 46,330,833 | `0fe7836e3a3744af4f4cde5a562f29e240df465745cea42107e374070dd993b4` |
-| `com.minxiangnan.bitwarden.zh-armeabi-v7a.apk` | 43,209,771 | `56301fab68454a09ef7e9661ba8ea973289003eb208614d2542ee9198064d40f` |
-| `com.minxiangnan.bitwarden.zh-x86_64.apk` | 45,731,988 | `d5d9aa0da29462ac04671d113610e303e5a5c2b0659467d1289d0d8cced02c6c` |
-| `com.minxiangnan.bitwarden.zh-x86.apk` | 46,131,751 | `4a6ff890135aeef92f6f39fd675dfa11624ad91ca7d34b700905a2feef5b1cc4` |
-| `com.minxiangnan.bitwarden.zh.apk`（universal） | 86,033,623 | `6e115618b652bb3e747d4fce2a104c87f290b7d02f1071484ff168eadbd13900` |
+| `com.minxiangnan.bitwarden.zh-arm64-v8a.apk` | 46,346,557 | `53f244d2a61c8683a0ff9fadb600d5543529ed659d137893e4295ea31742d7d9` |
+| `com.minxiangnan.bitwarden.zh-armeabi-v7a.apk` | 43,225,495 | `6baeee997ad0f2d06a13d60987d3f8b0e108a83e908d5db2fb9f719eb096862d` |
+| `com.minxiangnan.bitwarden.zh-x86_64.apk` | 45,747,712 | `7b0018b16fb4ce0495a7581aeec5b24c094b5a9dd8de913d021a91dffacebda9` |
+| `com.minxiangnan.bitwarden.zh-x86.apk` | 46,147,475 | `e75e928d4c962bc69b3d8820a3abbee9d074f2d28ac38fc601b28fc8fc3246f6` |
+| `com.minxiangnan.bitwarden.zh.apk`（universal） | 86,049,347 | `0841937bd367f77fbaaa82a9c1812394f1899d704d687d3f70ce86cbed4c4368` |
