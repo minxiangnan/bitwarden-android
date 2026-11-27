@@ -38,6 +38,7 @@ import com.x8bit.bitwarden.ui.platform.composition.LocalAppResumeStateManager
 import com.x8bit.bitwarden.ui.platform.feature.search.handlers.SearchHandlers
 import com.x8bit.bitwarden.ui.platform.feature.vaultunlocked.VaultUnlockedGraph
 import com.x8bit.bitwarden.ui.tools.feature.send.addedit.ModeType
+import com.x8bit.bitwarden.ui.vault.feature.itemlisting.LoginUriMatchDialog
 import com.x8bit.bitwarden.ui.vault.feature.vault.VaultFilter
 import com.x8bit.bitwarden.ui.vault.model.VaultAddEditType
 import kotlinx.collections.immutable.toImmutableList
@@ -121,6 +122,7 @@ fun SearchScreen(
         dialogState = state.dialogState,
         onDismissRequest = searchHandlers.onDismissRequest,
         onUpgradeToPremiumClick = searchHandlers.onUpgradeToPremiumClick,
+        onUriMatchSelected = searchHandlers.onUriMatchSelected,
     )
 
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
@@ -196,6 +198,7 @@ private fun SearchDialogs(
     dialogState: SearchState.DialogState?,
     onDismissRequest: () -> Unit,
     onUpgradeToPremiumClick: () -> Unit,
+    onUriMatchSelected: (cipherId: String, matchName: String) -> Unit,
 ) {
     when (dialogState) {
         is SearchState.DialogState.ArchiveRequiresPremium -> {
@@ -217,6 +220,16 @@ private fun SearchDialogs(
         is SearchState.DialogState.Loading -> BitwardenLoadingDialog(
             text = dialogState.message(),
         )
+
+        is SearchState.DialogState.UriMatchRule -> {
+            LoginUriMatchDialog(
+                cipherId = dialogState.cipherId,
+                selectedName = dialogState.selectedName,
+                defaultOptionLabel = dialogState.defaultOptionLabel,
+                onDismissRequest = onDismissRequest,
+                onMatchSelected = onUriMatchSelected,
+            )
+        }
 
         null -> Unit
     }

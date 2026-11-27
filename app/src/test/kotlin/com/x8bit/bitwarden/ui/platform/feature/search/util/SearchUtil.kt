@@ -55,6 +55,9 @@ fun createMockDisplayItemForCipher(
                         cipherId = "mockId-$number",
                         requiresPasswordReprompt = true,
                     ),
+                    ListingItemOverflowAction.VaultAction.UriMatchClick(
+                        cipherId = "mockId-$number",
+                    ),
                     ListingItemOverflowAction.VaultAction.ViewClick(
                         cipherId = "mockId-$number",
                         cipherType = cipherType,

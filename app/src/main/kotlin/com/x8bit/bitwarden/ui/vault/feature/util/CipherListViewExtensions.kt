@@ -117,6 +117,13 @@ fun CipherListView.toOverflowActions(
                                 CopyableCipherFields.PASSPORT_PASSPORT_NUMBER,
                             )
                     },
+                ListingItemOverflowAction.VaultAction.UriMatchClick(cipherId = cipherId)
+                    .takeIf {
+                        this.type is CipherListViewType.Login &&
+                            this.edit &&
+                            this.deletedDate == null &&
+                            this.login?.uris?.any { !it.uri.isNullOrBlank() } == true
+                    },
                 ListingItemOverflowAction.VaultAction.ViewClick(
                     cipherId = cipherId,
                     cipherType = this.type.toSdkCipherType(),

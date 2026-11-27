@@ -55,6 +55,7 @@ import com.x8bit.bitwarden.data.platform.repository.SettingsRepository
 import com.x8bit.bitwarden.data.platform.repository.model.VaultSection
 import com.x8bit.bitwarden.data.platform.util.userFriendlyMessage
 import com.x8bit.bitwarden.data.vault.manager.model.GetCipherResult
+import com.x8bit.bitwarden.data.vault.repository.model.UpdateCipherResult
 import com.x8bit.bitwarden.data.vault.manager.model.SyncVaultDataResult
 import com.x8bit.bitwarden.data.vault.repository.VaultRepository
 import com.x8bit.bitwarden.data.vault.repository.model.ArchiveCipherResult
@@ -64,7 +65,12 @@ import com.x8bit.bitwarden.data.vault.repository.model.VaultData
 import com.x8bit.bitwarden.ui.platform.model.SnackbarRelay
 import com.x8bit.bitwarden.ui.vault.components.model.CreateVaultItemType
 import com.x8bit.bitwarden.ui.vault.components.util.toVaultItemCipherTypeOrNull
+import com.x8bit.bitwarden.ui.platform.feature.settings.autofill.util.displayLabel
+import com.x8bit.bitwarden.ui.vault.feature.addedit.model.UriMatchDisplayType
+import com.x8bit.bitwarden.ui.vault.feature.addedit.util.toUriMatchType
 import com.x8bit.bitwarden.ui.vault.feature.itemlisting.model.ListingItemOverflowAction
+import com.x8bit.bitwarden.ui.vault.feature.itemlisting.util.currentUriMatch
+import com.x8bit.bitwarden.ui.vault.feature.itemlisting.util.withLoginUriMatch
 import com.x8bit.bitwarden.ui.vault.feature.vault.VaultState.PolicyBanner
 import com.x8bit.bitwarden.ui.vault.feature.vault.model.VaultFilterData
 import com.x8bit.bitwarden.ui.vault.feature.vault.model.VaultFilterType
@@ -409,6 +415,7 @@ class VaultViewModel @Inject constructor(
             is VaultAction.DismissActionCardClick -> handleDismissActionCardClick(action)
             is VaultAction.ActionCardClick -> handleActionCardClick(action)
             is VaultAction.SectionHeaderClick -> handleSectionHeaderClick(action)
+            is VaultAction.UriMatchSelected -> handleUriMatchSelected(action)
         }
     }
 
@@ -869,6 +876,10 @@ class VaultViewModel @Inject constructor(
                 handleEditClick(overflowAction)
             }
 
+            is ListingItemOverflowAction.VaultAction.UriMatchClick -> {
+                handleUriMatchClick(overflowAction)
+            }
+
             is ListingItemOverflowAction.VaultAction.LaunchClick -> {
                 handleLaunchClick(overflowAction)
             }
@@ -1227,6 +1238,108 @@ class VaultViewModel @Inject constructor(
 
             is VaultAction.Internal.UserNotificationPolicyReceive -> {
                 handleUserNotificationPolicyReceive(action)
+            }
+
+            is VaultAction.Internal.UriMatchDialogReceive -> handleUriMatchDialogReceive(action)
+            is VaultAction.Internal.UriMatchSaveReceive -> handleUriMatchSaveReceive(action)
+        }
+    }
+
+    private fun handleUriMatchClick(action: ListingItemOverflowAction.VaultAction.UriMatchClick) {
+        viewModelScope.launch {
+            when (val result = vaultRepository.getCipher(action.cipherId)) {
+                is GetCipherResult.Success -> sendAction(
+                    VaultAction.Internal.UriMatchDialogReceive(
+                        cipherId = action.cipherId,
+                        selectedName = result.cipherView.login?.uris.currentUriMatch().name,
+                        defaultOptionLabel = settingsRepository.defaultUriMatchType.displayLabel,
+                    ),
+                )
+
+                is GetCipherResult.Failure -> sendAction(
+                    VaultAction.Internal.UriMatchSaveReceive(
+                        result = UpdateCipherResult.Error(error = result.error),
+                    ),
+                )
+
+                GetCipherResult.CipherNotFound -> sendAction(
+                    VaultAction.Internal.UriMatchSaveReceive(
+                        result = UpdateCipherResult.Error(error = null),
+                    ),
+                )
+            }
+        }
+    }
+
+    private fun handleUriMatchSelected(action: VaultAction.UriMatchSelected) {
+        val displayType = UriMatchDisplayType.entries
+            .firstOrNull { it.name == action.matchName }
+            ?: return
+        mutableStateFlow.update {
+            it.copy(
+                dialog = VaultState.DialogState.Loading(
+                    message = BitwardenString.saving.asText(),
+                ),
+            )
+        }
+        viewModelScope.launch {
+            val cipherView = when (val result = vaultRepository.getCipher(action.cipherId)) {
+                is GetCipherResult.Success -> result.cipherView
+                is GetCipherResult.Failure -> {
+                    sendAction(
+                        VaultAction.Internal.UriMatchSaveReceive(
+                            result = UpdateCipherResult.Error(error = result.error),
+                        ),
+                    )
+                    return@launch
+                }
+
+                GetCipherResult.CipherNotFound -> {
+                    sendAction(
+                        VaultAction.Internal.UriMatchSaveReceive(
+                            result = UpdateCipherResult.Error(error = null),
+                        ),
+                    )
+                    return@launch
+                }
+            }
+            sendAction(
+                VaultAction.Internal.UriMatchSaveReceive(
+                    result = vaultRepository.updateCipher(
+                        cipherId = action.cipherId,
+                        cipherView = cipherView.withLoginUriMatch(displayType.toUriMatchType()),
+                    ),
+                ),
+            )
+        }
+    }
+
+    private fun handleUriMatchDialogReceive(action: VaultAction.Internal.UriMatchDialogReceive) {
+        mutableStateFlow.update {
+            it.copy(
+                dialog = VaultState.DialogState.UriMatchRule(
+                    cipherId = action.cipherId,
+                    selectedName = action.selectedName,
+                    defaultOptionLabel = action.defaultOptionLabel,
+                ),
+            )
+        }
+    }
+
+    private fun handleUriMatchSaveReceive(action: VaultAction.Internal.UriMatchSaveReceive) {
+        when (val result = action.result) {
+            UpdateCipherResult.Success -> mutableStateFlow.update { it.copy(dialog = null) }
+            is UpdateCipherResult.Error -> {
+                mutableStateFlow.update {
+                    it.copy(
+                        dialog = VaultState.DialogState.Error(
+                            title = BitwardenString.an_error_has_occurred.asText(),
+                            message = result.errorMessage?.asText()
+                                ?: BitwardenString.generic_error_message.asText(),
+                            error = result.error,
+                        ),
+                    )
+                }
             }
         }
     }
@@ -2493,6 +2606,16 @@ data class VaultState(
             val title: Text,
             val message: Text,
         ) : DialogState()
+
+        /**
+         * Per-login URI match shortcut. [selectedName] is a [UriMatchDisplayType] name.
+         */
+        @Parcelize
+        data class UriMatchRule(
+            val cipherId: String,
+            val selectedName: String,
+            val defaultOptionLabel: Text,
+        ) : DialogState()
     }
 
     /**
@@ -2813,6 +2936,14 @@ sealed class VaultAction {
     ) : VaultAction()
 
     /**
+     * The user chose a URI match rule for one login. The rule is written onto every URI.
+     */
+    data class UriMatchSelected(
+        val cipherId: String,
+        val matchName: String,
+    ) : VaultAction()
+
+    /**
      * User submitted their master password to authenticate before continuing with
      * the selected overflow action.
      */
@@ -3033,6 +3164,22 @@ sealed class VaultAction {
          */
         data class UpgradedToPremiumCardEligibilityReceive(
             val isEligible: Boolean,
+        ) : Internal()
+
+        /**
+         * The decrypted login is ready to show the URI match shortcut.
+         */
+        data class UriMatchDialogReceive(
+            val cipherId: String,
+            val selectedName: String,
+            val defaultOptionLabel: Text,
+        ) : Internal()
+
+        /**
+         * The cipher update that stores the URI match rule has finished.
+         */
+        data class UriMatchSaveReceive(
+            val result: UpdateCipherResult,
         ) : Internal()
     }
 }

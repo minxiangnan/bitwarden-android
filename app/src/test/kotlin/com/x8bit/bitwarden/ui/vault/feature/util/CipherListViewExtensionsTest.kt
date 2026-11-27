@@ -54,6 +54,7 @@ class CipherListViewExtensionsTest {
                     cipherId = id,
                     requiresPasswordReprompt = false,
                 ),
+                ListingItemOverflowAction.VaultAction.UriMatchClick(cipherId = id),
                 ListingItemOverflowAction.VaultAction.ViewClick(
                     cipherId = id,
                     cipherType = CipherType.LOGIN,
@@ -118,6 +119,7 @@ class CipherListViewExtensionsTest {
         assertEquals(
             listOf(
                 ListingItemOverflowAction.VaultAction.CopyUsernameClick(username = username),
+                ListingItemOverflowAction.VaultAction.UriMatchClick(cipherId = id),
                 ListingItemOverflowAction.VaultAction.ViewClick(
                     cipherId = id,
                     cipherType = CipherType.LOGIN,
@@ -721,6 +723,34 @@ class CipherListViewExtensionsTest {
 
         assertTrue(
             result.none { it is ListingItemOverflowAction.VaultAction.EditClick },
+        )
+        assertTrue(
+            result.none { it is ListingItemOverflowAction.VaultAction.UriMatchClick },
+        )
+    }
+
+    @Suppress("MaxLineLength")
+    @Test
+    fun `toOverflowActions should omit the uri match shortcut when the login is deleted`() {
+        val cipher = createMockCipherListView(
+            number = 1,
+            id = id,
+            isDeleted = true,
+            type = CipherListViewType.Login(
+                createMockLoginListView(
+                    number = 1,
+                    uris = listOf(createMockUriView(number = 1, uri = uri)),
+                ),
+            ),
+        )
+
+        val result = cipher.toOverflowActions(
+            hasMasterPassword = false,
+            isPremiumUser = false,
+        )
+
+        assertTrue(
+            result.none { it is ListingItemOverflowAction.VaultAction.UriMatchClick },
         )
     }
 

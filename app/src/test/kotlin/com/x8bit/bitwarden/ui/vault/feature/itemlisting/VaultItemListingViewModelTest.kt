@@ -42,6 +42,8 @@ import com.bitwarden.vault.CipherListView
 import com.bitwarden.vault.CipherListViewType
 import com.bitwarden.vault.CipherRepromptType
 import com.bitwarden.vault.CipherType
+import com.bitwarden.vault.CipherView
+import com.bitwarden.vault.UriMatchType
 import com.x8bit.bitwarden.data.auth.datasource.disk.model.OnboardingStatus
 import com.x8bit.bitwarden.data.auth.repository.AuthRepository
 import com.x8bit.bitwarden.data.auth.repository.model.LogoutReason
@@ -105,6 +107,7 @@ import com.x8bit.bitwarden.data.vault.repository.model.DeleteSendResult
 import com.x8bit.bitwarden.data.vault.repository.model.GenerateTotpResult
 import com.x8bit.bitwarden.data.vault.repository.model.RemovePasswordSendResult
 import com.x8bit.bitwarden.data.vault.repository.model.UnarchiveCipherResult
+import com.x8bit.bitwarden.data.vault.repository.model.UpdateCipherResult
 import com.x8bit.bitwarden.data.vault.repository.model.VaultData
 import com.x8bit.bitwarden.ui.credentials.manager.model.AssertFido2CredentialResult
 import com.x8bit.bitwarden.ui.credentials.manager.model.CreateCredentialResult
@@ -114,6 +117,7 @@ import com.x8bit.bitwarden.ui.platform.feature.search.model.SearchType
 import com.x8bit.bitwarden.ui.platform.model.SnackbarRelay
 import com.x8bit.bitwarden.ui.tools.feature.send.model.SendItemType
 import com.x8bit.bitwarden.ui.vault.components.model.CreateVaultItemType
+import com.x8bit.bitwarden.ui.vault.feature.addedit.model.UriMatchDisplayType
 import com.x8bit.bitwarden.ui.vault.feature.addedit.util.createMockPasskeyAttestationOptions
 import com.x8bit.bitwarden.ui.vault.feature.itemlisting.model.ListingItemOverflowAction
 import com.x8bit.bitwarden.ui.vault.feature.itemlisting.util.createMockDisplayItemForCipher
@@ -127,6 +131,7 @@ import io.mockk.Ordering
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
+import io.mockk.slot
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.mockkObject
@@ -6689,6 +6694,59 @@ class VaultItemListingViewModelTest : BaseViewModelTest() {
     fun `BankAccount listing type should display the FAB`() {
         assertTrue(VaultItemListingState.ItemListingType.Vault.BankAccount.hasFab)
     }
+
+    @Suppress("MaxLineLength")
+    @Test
+    fun `uri match shortcut saves the chosen rule onto every login uri and syncs the cipher`() =
+        runTest {
+            every {
+                settingsRepository.defaultUriMatchType
+            } returns com.x8bit.bitwarden.data.platform.repository.model.UriMatchType.HOST
+            val base = createMockCipherView(number = 1)
+            val login = requireNotNull(base.login)
+            val firstUri = requireNotNull(login.uris).first()
+            val cipher = base.copy(
+                login = login.copy(
+                    uris = listOf(
+                        firstUri.copy(uri = "https://vpn.example.com", match = null),
+                        firstUri.copy(
+                            uri = "https://vpn.example.com/admin",
+                            match = UriMatchType.DOMAIN,
+                        ),
+                    ),
+                ),
+            )
+            coEvery { vaultRepository.getCipher(cipher.id!!) } returns GetCipherResult.Success(cipher)
+            val updated = slot<CipherView>()
+            coEvery {
+                vaultRepository.updateCipher(cipherId = cipher.id!!, cipherView = capture(updated))
+            } returns UpdateCipherResult.Success
+            val viewModel = createVaultItemListingViewModel()
+
+            viewModel.trySendAction(
+                VaultItemListingsAction.OverflowOptionClick(
+                    ListingItemOverflowAction.VaultAction.UriMatchClick(cipherId = cipher.id!!),
+                ),
+            )
+
+            val dialog = viewModel.stateFlow.value.dialogState
+                as VaultItemListingState.DialogState.UriMatchRule
+            assertEquals(cipher.id, dialog.cipherId)
+            assertEquals(UriMatchDisplayType.DEFAULT.name, dialog.selectedName)
+
+            viewModel.trySendAction(
+                VaultItemListingsAction.UriMatchSelected(
+                    cipherId = cipher.id!!,
+                    matchName = UriMatchDisplayType.HOST.name,
+                ),
+            )
+
+            assertEquals(
+                listOf(UriMatchType.HOST, UriMatchType.HOST),
+                updated.captured.login?.uris?.map { it.match },
+            )
+            assertNull(viewModel.stateFlow.value.dialogState)
+        }
 
     private fun setupFido2CreateRequest(
         mockCallingAppInfo: CallingAppInfo = this.mockCallingAppInfo,
