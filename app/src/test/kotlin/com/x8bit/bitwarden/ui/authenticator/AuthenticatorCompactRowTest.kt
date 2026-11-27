@@ -166,6 +166,24 @@ class AuthenticatorCompactRowTest : BitwardenComposeTest() {
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
         }
     }
+
+    @Test
+    fun `copied row shows one short inline confirmation`() {
+        setContent {
+            AuthenticatorCode(
+                row = sampleRow(seconds = 20, notes = ""),
+                trash = false,
+                urgent = true,
+                copied = true,
+            )
+        }
+        composeTestRule
+            .onNodeWithText("已复制 ✓")
+            .assertIsDisplayed()
+        composeTestRule
+            .onNodeWithTag("AuthenticatorNextCode")
+            .assertDoesNotExist()
+    }
 }
 
 /**

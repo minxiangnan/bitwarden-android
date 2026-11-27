@@ -99,7 +99,12 @@ internal fun AuthenticatorIdentity(
  * Code, a small countdown, and the next code only while the current window is almost over.
  */
 @Composable
-internal fun AuthenticatorCode(row: AuthenticatorRow, trash: Boolean, urgent: Boolean) {
+internal fun AuthenticatorCode(
+    row: AuthenticatorRow,
+    trash: Boolean,
+    urgent: Boolean,
+    copied: Boolean = false,
+) {
     Column(horizontalAlignment = Alignment.End) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
@@ -121,7 +126,15 @@ internal fun AuthenticatorCode(row: AuthenticatorRow, trash: Boolean, urgent: Bo
                 )
             }
         }
-        if (urgent && row.nextCode != null) {
+        if (copied) {
+            Text(
+                text = stringResource(BitwardenString.zh_authenticator_copied),
+                style = BitwardenTheme.typography.labelSmall,
+                color = BitwardenTheme.colorScheme.text.interaction,
+                maxLines = 1,
+                modifier = Modifier.testTag("AuthenticatorCopied"),
+            )
+        } else if (urgent && row.nextCode != null) {
             Text(
                 text = stringResource(BitwardenString.zh_authenticator_next) + " " + row.nextCode,
                 style = BitwardenTheme.typography.labelSmall,

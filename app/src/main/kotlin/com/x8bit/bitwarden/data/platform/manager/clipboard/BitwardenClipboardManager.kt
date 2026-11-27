@@ -10,16 +10,17 @@ interface BitwardenClipboardManager {
 
     /**
      * Places the given [text] into the device's clipboard. Setting the data to [isSensitive] will
-     * obfuscate the displayed data on the default popup (true by default). A toast will be
-     * displayed on devices that do not have a default popup (pre-API 32) and will not be displayed
-     * on newer APIs. If a toast is displayed, it will be formatted as "[text] copied" or if a
-     * [toastDescriptorOverride] is provided, it will be formatted as
-     * "[toastDescriptorOverride] copied".
+     * obfuscate the displayed data on the default popup (true by default). On Android 13 and
+     * newer the system already shows a clipboard popup, so this manager does not add another.
+     * On older versions a toast is shown unless [showToast] is false. That toast replaces any
+     * confirmation already on screen and dismisses after about 1.2 seconds. It is formatted as
+     * "[text] copied", or "[toastDescriptorOverride] copied" when a descriptor is provided.
      */
     fun setText(
         text: AnnotatedString,
         isSensitive: Boolean = true,
         toastDescriptorOverride: String? = null,
+        showToast: Boolean = true,
     )
 
     /**
@@ -29,6 +30,7 @@ interface BitwardenClipboardManager {
         text: String,
         isSensitive: Boolean = true,
         toastDescriptorOverride: String? = null,
+        showToast: Boolean = true,
     )
 
     /**

@@ -16,4 +16,9 @@ interface ToastManager {
      * Displays a [Toast] with the given [messageId].
      */
     fun show(@StringRes messageId: Int, duration: Int = Toast.LENGTH_SHORT)
+
+    /**
+     * Removes the toast currently on screen, if this manager showed it.
+     */
+    fun cancel()
 }
