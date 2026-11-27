@@ -74,6 +74,7 @@ import com.x8bit.bitwarden.ui.platform.manager.resource.ResourceManager
 import com.x8bit.bitwarden.ui.platform.model.SnackbarRelay
 import com.x8bit.bitwarden.ui.tools.feature.generator.model.GeneratorMode
 import com.x8bit.bitwarden.ui.vault.feature.addedit.model.CustomFieldAction
+import com.x8bit.bitwarden.data.authenticator.order.TOTP_ORDER_FIELD
 import com.x8bit.bitwarden.ui.vault.feature.addedit.model.CustomFieldType
 import com.x8bit.bitwarden.ui.vault.feature.addedit.model.UriItem
 import com.x8bit.bitwarden.ui.vault.feature.addedit.model.toCustomField
@@ -1094,6 +1095,7 @@ class VaultAddEditViewModel @AssistedInject constructor(
     private fun handleCustomFieldValueChange(
         action: VaultAddEditAction.Common.CustomFieldValueChange,
     ) {
+        if (action.customField.name == TOTP_ORDER_FIELD) return
         updateCommonContent { commonContent ->
             commonContent.copy(
                 customFieldData = commonContent.customFieldData.map { customField ->
@@ -1110,48 +1112,11 @@ class VaultAddEditViewModel @AssistedInject constructor(
     private fun handleCustomFieldActionSelected(
         action: VaultAddEditAction.Common.CustomFieldActionSelect,
     ) {
+        if (action.customField.name == TOTP_ORDER_FIELD) return
         when (action.customFieldAction) {
-            CustomFieldAction.MOVE_UP -> {
-                val items =
-                    (state.viewState as VaultAddEditState.ViewState.Content)
-                        .common
-                        .customFieldData
-                        .toMutableList()
+            CustomFieldAction.MOVE_UP -> moveCustomField(action.customField, -1)
 
-                val index = items.lastIndexOf(action.customField)
-                if (index == 0) {
-                    return
-                }
-
-                Collections.swap(items, index, index - 1)
-
-                updateCommonContent { commonContent ->
-                    commonContent.copy(
-                        customFieldData = items,
-                    )
-                }
-            }
-
-            CustomFieldAction.MOVE_DOWN -> {
-                val items =
-                    (state.viewState as VaultAddEditState.ViewState.Content)
-                        .common
-                        .customFieldData
-                        .toMutableList()
-
-                val index = items.indexOf(action.customField)
-                if (index == items.lastIndex) {
-                    return
-                }
-
-                Collections.swap(items, index, index + 1)
-
-                updateCommonContent { commonContent ->
-                    commonContent.copy(
-                        customFieldData = items,
-                    )
-                }
-            }
+            CustomFieldAction.MOVE_DOWN -> moveCustomField(action.customField, 1)
 
             CustomFieldAction.REMOVE -> {
                 updateCommonContent { commonContent ->
@@ -1165,6 +1130,24 @@ class VaultAddEditViewModel @AssistedInject constructor(
 
             // Nothing is done here since we handle this with a CustomFieldValueChange action
             CustomFieldAction.EDIT -> Unit
+        }
+    }
+
+    private fun moveCustomField(item: VaultAddEditState.Custom, direction: Int) {
+        val items = (state.viewState as VaultAddEditState.ViewState.Content)
+            .common
+            .customFieldData
+            .toMutableList()
+        val index = items.indexOf(item)
+        if (index < 0) return
+        var target = index + direction
+        while (target in items.indices && items[target].name == TOTP_ORDER_FIELD) {
+            target += direction
+        }
+        if (target !in items.indices) return
+        Collections.swap(items, index, target)
+        updateCommonContent { commonContent ->
+            commonContent.copy(customFieldData = items)
         }
     }
 

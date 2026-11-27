@@ -13,6 +13,9 @@ import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
+import com.x8bit.bitwarden.data.authenticator.order.TOTP_ORDER_FIELD
+import com.x8bit.bitwarden.data.authenticator.order.formatTotpOrder
+import com.x8bit.bitwarden.data.authenticator.order.parseTotpOrder
 import kotlinx.serialization.json.put
 
 private const val SENTINEL = "[[bwmeta:1]]"
@@ -51,7 +54,8 @@ fun shouldPersistMeta(meta: AuthenticatorMeta, digits: Int): Boolean {
         meta.host.isNotEmpty() ||
         meta.tags.isNotEmpty() ||
         meta.counter > 0 ||
-        meta.deletedAt != null
+        meta.deletedAt != null ||
+        parseTotpOrder(meta.order) != null
 }
 
 /**
@@ -96,6 +100,7 @@ private fun compactMeta(meta: AuthenticatorMeta): JsonObject = buildJsonObject {
     if (meta.tags.isNotEmpty()) put("tags", JsonArray(meta.tags.map { JsonPrimitive(it) }))
     if (meta.counter > 0) put("counter", meta.counter)
     if (meta.deletedAt != null) put("deletedAt", meta.deletedAt)
+    parseTotpOrder(meta.order)?.let { put(TOTP_ORDER_FIELD, formatTotpOrder(it)) }
 }
 
 private fun sanitizeMeta(record: JsonObject): AuthenticatorMeta {
@@ -121,6 +126,9 @@ private fun sanitizeMeta(record: JsonObject): AuthenticatorMeta {
         tags = tags,
         counter = counter.coerceAtLeast(0),
         deletedAt = deletedAt,
+        order = record.string(TOTP_ORDER_FIELD)?.let { raw ->
+            parseTotpOrder(raw)?.let(::formatTotpOrder)
+        },
     )
 }
 

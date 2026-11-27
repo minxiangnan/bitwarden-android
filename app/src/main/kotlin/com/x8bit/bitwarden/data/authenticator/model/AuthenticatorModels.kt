@@ -27,6 +27,8 @@ data class AuthenticatorMeta(
     val tags: List<String> = emptyList(),
     val counter: Long = 0,
     val deletedAt: String? = null,
+    /** Decimal order string. Unset entries sort after numbered ones. */
+    val order: String? = null,
 )
 
 /**
@@ -51,6 +53,8 @@ data class AuthenticatorEntryView(
     val tags: List<String> = emptyList(),
     val counter: Long = 0,
     val deletedAt: String? = null,
+    /** Decimal order string, when the entry has one. */
+    val order: String? = null,
 )
 
 /**
@@ -70,6 +74,8 @@ data class AuthenticatorDraft(
     val tags: List<String> = emptyList(),
     val counter: Long = 0,
     val deletedAt: String? = null,
+    /** Decimal order. Null keeps the order already stored on the entry. */
+    val order: String? = null,
     /** Revision the edit was based on. A newer row on the server is rejected. */
     val baseRevision: String? = null,
 )

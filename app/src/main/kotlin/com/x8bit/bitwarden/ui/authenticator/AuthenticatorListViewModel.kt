@@ -6,6 +6,8 @@ import com.x8bit.bitwarden.data.authenticator.match.AuthenticatorSort
 import com.x8bit.bitwarden.data.authenticator.match.filterAuthenticatorEntries
 import com.x8bit.bitwarden.data.authenticator.model.AuthenticatorEntryView
 import com.x8bit.bitwarden.data.authenticator.model.AuthenticatorKind
+import com.x8bit.bitwarden.data.authenticator.order.TotpOrderSlot
+import com.x8bit.bitwarden.data.authenticator.order.ordersAfterMove
 import com.x8bit.bitwarden.data.authenticator.otp.currentCode
 import com.x8bit.bitwarden.data.authenticator.otp.formatAuthenticatorCode
 import com.x8bit.bitwarden.data.authenticator.otp.entryKind
@@ -95,6 +97,45 @@ class AuthenticatorListViewModel @AssistedInject constructor(
             is AuthenticatorListAction.SortSelected -> {
                 mutableStateFlow.update { it.copy(sort = action.sort) }
                 rebuild()
+            }
+            is AuthenticatorListAction.MoveTo -> {
+                val canMove = !trash &&
+                    state.query.isBlank() &&
+                    state.sort == AuthenticatorSort.MANUAL
+                val slots = if (canMove) {
+                    state.rows.map { row ->
+                        val entry = snapshot.entries.firstOrNull { it.id == row.id }
+                        TotpOrderSlot(
+                            id = row.id,
+                            order = entry?.order,
+                            name = entry?.name ?: row.title,
+                        )
+                    }
+                } else {
+                    emptyList()
+                }
+                val orders = if (canMove) {
+                    ordersAfterMove(slots, action.id, action.toIndex)
+                } else {
+                    emptyMap()
+                }
+                if (orders.isNotEmpty()) {
+                    snapshot = snapshot.copy(
+                        entries = snapshot.entries.map { entry ->
+                            orders[entry.id]?.let { entry.copy(order = it) } ?: entry
+                        },
+                    )
+                    rebuild()
+                    viewModelScope.launch {
+                        repository.applyOrders(orders).onFailure { error ->
+                            sendAction(
+                                AuthenticatorListAction.ShowMessage(
+                                    error.message ?: "没有保存顺序",
+                                ),
+                            )
+                        }
+                    }
+                }
             }
             is AuthenticatorListAction.GroupSelected -> {
                 mutableStateFlow.update { it.copy(group = action.group) }
@@ -313,7 +354,7 @@ data class AuthenticatorRow(
 data class AuthenticatorListState(
     val isTrash: Boolean = false,
     val query: String = "",
-    val sort: AuthenticatorSort = AuthenticatorSort.NAME,
+    val sort: AuthenticatorSort = AuthenticatorSort.MANUAL,
     val group: String? = null,
     val favoritesOnly: Boolean = false,
     val status: AuthenticatorSyncStatus = AuthenticatorSyncStatus.LOADING,
@@ -372,6 +413,11 @@ sealed class AuthenticatorListAction {
      * Sort changed.
      */
     data class SortSelected(val sort: AuthenticatorSort) : AuthenticatorListAction()
+
+    /**
+     * Moves [id] to [toIndex] in the custom order. Ignored while searching.
+     */
+    data class MoveTo(val id: String, val toIndex: Int) : AuthenticatorListAction()
 
     /**
      * Group filter changed. Null shows every group.

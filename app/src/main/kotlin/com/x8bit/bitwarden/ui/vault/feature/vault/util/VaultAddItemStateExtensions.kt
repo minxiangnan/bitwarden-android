@@ -10,6 +10,7 @@ import com.bitwarden.vault.CipherType
 import com.bitwarden.vault.CipherView
 import com.bitwarden.vault.DriversLicenseView
 import com.bitwarden.vault.FieldType
+import com.x8bit.bitwarden.data.authenticator.order.TOTP_ORDER_FIELD
 import com.bitwarden.vault.FieldView
 import com.bitwarden.vault.IdentityView
 import com.bitwarden.vault.LoginUriView
@@ -266,6 +267,7 @@ private fun getHiddenFieldHistory(
             oldField.type == FieldType.HIDDEN &&
                 !oldField.value.isNullOrEmpty() &&
                 !oldField.name.isNullOrEmpty() &&
+                oldField.name != TOTP_ORDER_FIELD &&
                 newFields
                     .none { newField ->
                         newField is VaultAddEditState.Custom.HiddenField &&

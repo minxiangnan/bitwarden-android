@@ -1,6 +1,7 @@
 package com.x8bit.bitwarden.data.authenticator.match
 
 import com.x8bit.bitwarden.data.authenticator.model.AuthenticatorEntryView
+import com.x8bit.bitwarden.data.authenticator.order.compareTotpOrder
 import com.x8bit.bitwarden.data.authenticator.model.AuthenticatorKind
 import com.x8bit.bitwarden.data.authenticator.otp.entryKind
 import com.x8bit.bitwarden.data.authenticator.otp.toOtpAuthUri
@@ -119,8 +120,9 @@ private fun compareBySort(
             .takeIf { it != 0 }
             ?: left.name.compareTo(right.name, ignoreCase = true)
     AuthenticatorSort.MANUAL ->
-        left.sortOrder.compareTo(right.sortOrder).takeIf { it != 0 }
-            ?: left.name.compareTo(right.name, ignoreCase = true)
+        compareTotpOrder(left.order, left.name, right.order, right.name)
+            .takeIf { it != 0 }
+            ?: left.issuer.compareTo(right.issuer, ignoreCase = true)
 }
 
 /**

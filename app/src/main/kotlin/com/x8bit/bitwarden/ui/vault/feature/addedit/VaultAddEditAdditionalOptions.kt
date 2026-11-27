@@ -20,6 +20,7 @@ import com.bitwarden.ui.platform.components.header.BitwardenListHeaderText
 import com.bitwarden.ui.platform.components.model.CardStyle
 import com.bitwarden.ui.platform.components.toggle.BitwardenSwitch
 import com.bitwarden.ui.platform.resource.BitwardenString
+import com.x8bit.bitwarden.data.authenticator.order.TOTP_ORDER_FIELD
 import com.x8bit.bitwarden.ui.vault.feature.addedit.handlers.VaultAddEditCommonHandlers
 import com.x8bit.bitwarden.ui.vault.feature.addedit.model.CustomFieldType
 
@@ -111,8 +112,11 @@ fun LazyListScope.vaultAddEditAdditionalOptions(
             }
         }
 
+        val visibleFields = commonState.customFieldData.filter {
+            it.name != TOTP_ORDER_FIELD
+        }
         itemsIndexed(
-            items = commonState.customFieldData,
+            items = visibleFields,
             key = { _, customItem -> "customField_${customItem.itemId}" },
         ) { index, customItem ->
             Column(
@@ -127,7 +131,7 @@ fun LazyListScope.vaultAddEditAdditionalOptions(
                     onCustomFieldValueChange = commonTypeHandlers.onCustomFieldValueChange,
                     onCustomFieldAction = commonTypeHandlers.onCustomFieldActionSelect,
                     showMoveUpAction = index > 0,
-                    showMoveDownAction = index < commonState.customFieldData.lastIndex,
+                    showMoveDownAction = index < visibleFields.lastIndex,
                     onHiddenVisibilityChanged = commonTypeHandlers.onHiddenFieldVisibilityChange,
                     supportedLinkedTypes = itemType.vaultLinkedFieldTypes,
                     cardStyle = CardStyle.Full,
