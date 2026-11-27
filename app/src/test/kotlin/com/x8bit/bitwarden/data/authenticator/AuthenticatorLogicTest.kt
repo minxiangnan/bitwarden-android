@@ -3,8 +3,11 @@ package com.x8bit.bitwarden.data.authenticator
 import com.x8bit.bitwarden.data.authenticator.importing.decodeMigrationPayload
 import com.x8bit.bitwarden.data.authenticator.importing.decodeMigrationUri
 import com.x8bit.bitwarden.data.authenticator.importing.parseAuthenticatorImport
+import com.x8bit.bitwarden.data.authenticator.match.AuthenticatorSort
 import com.x8bit.bitwarden.data.authenticator.match.bestAuthenticatorForUrl
 import com.x8bit.bitwarden.data.authenticator.match.entryMatchesHost
+import com.x8bit.bitwarden.data.authenticator.match.filterAuthenticatorEntries
+import com.x8bit.bitwarden.data.authenticator.match.matchRanges
 import com.x8bit.bitwarden.data.authenticator.mcp.deriveMcpKey
 import com.x8bit.bitwarden.data.authenticator.mcp.mcpAad
 import com.x8bit.bitwarden.data.authenticator.mcp.normalizeAlias
@@ -81,6 +84,8 @@ class AuthenticatorLogicTest {
         val joined = joinAuthenticatorNotes("备注", meta, digits = 6)
         val split = splitAuthenticatorNotes(joined)
         assertEquals("备注", split.text)
+        val chinese = joinAuthenticatorNotes("公司 VPN", meta, digits = 6)
+        assertEquals("公司 VPN", splitAuthenticatorNotes(chinese).text)
         assertEquals(meta, split.meta)
         assertEquals(AuthenticatorKind.HOTP, kindFromStored(split.meta, split.hasTrailer, 6))
         assertEquals(AuthenticatorKind.STEAM, kindFromStored(AuthenticatorMeta(), false, 5))
@@ -189,6 +194,38 @@ class AuthenticatorLogicTest {
         val aad = mcpAad("user", "authenticator", "entry", "gitlab", "secret")
         val sealed = sealField(key, aad, "GEZDGNBVGY3TQOJQ", ByteArray(12) { it.toByte() })
         assertEquals("GEZDGNBVGY3TQOJQ", openField(key, aad, sealed))
+    }
+
+    @Test
+    fun `search matches name and notes without case including chinese`() {
+        val vpn = entry(id = "1", issuer = "VPN", host = "vpn.example").copy(
+            name = "minxiangnan@vpn.com",
+            notes = "公司 VPN",
+        )
+        val other = entry(id = "2", issuer = "GitHub", host = "github.com").copy(notes = "个人")
+        assertEquals(
+            listOf(vpn),
+            filterAuthenticatorEntries(
+                entries = listOf(other, vpn),
+                query = "公司",
+                favoritesOnly = false,
+                sort = AuthenticatorSort.NAME,
+                group = null,
+            ),
+        )
+        assertEquals(
+            listOf(vpn),
+            filterAuthenticatorEntries(
+                entries = listOf(vpn, other),
+                query = "MINXIANGNAN",
+                favoritesOnly = false,
+                sort = AuthenticatorSort.NAME,
+                group = null,
+            ),
+        )
+        assertEquals(listOf(0 until 2), matchRanges("公司 VPN", "公司"))
+        assertEquals(listOf(0 until 11), matchRanges("minxiangnan@vpn.com", "MinXiangNan"))
+        assertEquals(emptyList<IntRange>(), matchRanges("公司 VPN", "   "))
     }
 
     @Test

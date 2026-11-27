@@ -96,6 +96,14 @@ fun AuthenticatorEditScreen(
             Field(state.name, BitwardenString.zh_authenticator_name) {
                 viewModel.trySendAction(AuthenticatorEditAction.NameChanged(it))
             }
+            Field(
+                value = state.notes,
+                label = BitwardenString.zh_authenticator_notes,
+                singleLine = false,
+                testTag = "AuthenticatorNotesField",
+            ) {
+                viewModel.trySendAction(AuthenticatorEditAction.NotesChanged(it))
+            }
             Field(state.issuer, BitwardenString.zh_authenticator_issuer) {
                 viewModel.trySendAction(AuthenticatorEditAction.IssuerChanged(it))
             }
@@ -104,9 +112,6 @@ fun AuthenticatorEditScreen(
             }
             Field(state.tags, BitwardenString.zh_authenticator_tags) {
                 viewModel.trySendAction(AuthenticatorEditAction.TagsChanged(it))
-            }
-            Field(state.notes, BitwardenString.zh_authenticator_notes) {
-                viewModel.trySendAction(AuthenticatorEditAction.NotesChanged(it))
             }
             Text(
                 text = stringResource(BitwardenString.zh_authenticator_advanced),
@@ -165,11 +170,19 @@ fun AuthenticatorEditScreen(
 }
 
 @Composable
-private fun Field(value: String, label: Int, onValue: (String) -> Unit) {
+private fun Field(
+    value: String,
+    label: Int,
+    singleLine: Boolean = true,
+    testTag: String? = null,
+    onValue: (String) -> Unit,
+) {
     BitwardenTextField(
         value = value,
         onValueChange = onValue,
         label = stringResource(label),
+        singleLine = singleLine,
+        textFieldTestTag = testTag,
         cardStyle = CardStyle.Full,
         modifier = Modifier
             .standardHorizontalMargin()

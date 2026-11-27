@@ -241,10 +241,7 @@ class AuthenticatorListViewModel @AssistedInject constructor(
         return AuthenticatorRow(
             id = id,
             title = name.ifBlank { issuer.ifBlank { "验证码" } },
-            subtitle = listOf(issuer, host)
-                .filter { it.isNotBlank() }
-                .distinct()
-                .joinToString(" · "),
+            notes = notes.trim(),
             code = code?.let(::formatAuthenticatorCode).orEmpty(),
             nextCode = if (kind == AuthenticatorKind.HOTP) {
                 null
@@ -274,7 +271,7 @@ class AuthenticatorListViewModel @AssistedInject constructor(
 data class AuthenticatorRow(
     val id: String,
     val title: String,
-    val subtitle: String,
+    val notes: String,
     val code: String,
     val nextCode: String?,
     val seconds: Int,
