@@ -189,6 +189,30 @@ private fun FavoriteMark() {
 }
 
 @Composable
+internal fun AuthenticatorMoveTopButton(enabled: Boolean, onClick: () -> Unit) {
+    val label = stringResource(BitwardenString.zh_authenticator_move_top)
+    val color = if (enabled) {
+        BitwardenTheme.colorScheme.icon.secondary
+    } else {
+        BitwardenTheme.colorScheme.text.secondary
+    }
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .size(48.dp)
+            .semantics { contentDescription = label }
+            .testTag("AuthenticatorMoveTop")
+            .clickable(enabled = enabled, onClick = onClick),
+    ) {
+        Text(
+            text = "↑",
+            color = color,
+            style = BitwardenTheme.typography.titleMedium,
+        )
+    }
+}
+
+@Composable
 internal fun AuthenticatorOverflowButton(onClick: () -> Unit) {
     val description = stringResource(BitwardenString.zh_authenticator_more)
     val color = BitwardenTheme.colorScheme.icon.secondary

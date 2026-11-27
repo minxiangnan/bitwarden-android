@@ -115,6 +115,30 @@ class AuthenticatorListViewModelTest : BaseViewModelTest() {
         }
     }
 
+    @Test
+    fun `pinning a row writes one smaller order and puts it first`() = runTest {
+        coEvery { repository.applyOrders(any()) } returns Result.success(Unit)
+        val viewModel = viewModel()
+        try {
+            viewModel.applySnapshot(
+                AuthenticatorSnapshot(
+                    status = AuthenticatorSyncStatus.READY,
+                    editable = true,
+                    entries = listOf(
+                        entry("a", "0", "Alpha"),
+                        entry("b", "1024", "Beta"),
+                        entry("c", "2048", "Gamma"),
+                    ),
+                ),
+            )
+            viewModel.trySendAction(AuthenticatorListAction.MoveTo("c", 0))
+            assertEquals(listOf("c", "a", "b"), viewModel.stateFlow.value.rows.map { it.id })
+            coVerify { repository.applyOrders(mapOf("c" to "-1024")) }
+        } finally {
+            viewModel.viewModelScope.cancel()
+        }
+    }
+
     private fun entry(id: String, order: String, name: String) = AuthenticatorEntryView(
         id = id,
         name = name,
