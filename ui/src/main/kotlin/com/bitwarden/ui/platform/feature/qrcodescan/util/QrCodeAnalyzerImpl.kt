@@ -18,45 +18,64 @@ import java.nio.ByteBuffer
 @OmitFromCoverage
 class QrCodeAnalyzerImpl : QrCodeAnalyzer {
 
-    /**
-     * This will ensure that only 1 QR code is analyzed at a time.
-     */
-    private var isQrCodeInAnalysis: Boolean = false
-
     override lateinit var onQrCodeScanned: (String) -> Unit
 
     override fun analyze(image: ImageProxy) {
-        if (isQrCodeInAnalysis) return
-        isQrCodeInAnalysis = true
-
-        val plane = image.planes[0]
-        val source = PlanarYUVLuminanceSource(
-            plane.buffer.toByteArray(),
-            plane.rowStride,
-            image.height,
-            0,
-            0,
-            image.width,
-            image.height,
-            false,
-        )
-        val binaryBitmap = BinaryBitmap(HybridBinarizer(source))
         try {
-            val result = MultiFormatReader().decode(
-                binaryBitmap,
-                mapOf(
-                    DecodeHintType.POSSIBLE_FORMATS to arrayListOf(BarcodeFormat.QR_CODE),
-                    DecodeHintType.ALSO_INVERTED to true,
-                ),
-            )
-
-            onQrCodeScanned(result.text)
-        } catch (_: NotFoundException) {
-            return
+            val plane = image.planes.firstOrNull() ?: return
+            val packed = lumaFromYPlane(
+                raw = plane.buffer.toByteArray(),
+                rowStride = plane.rowStride,
+                width = image.width,
+                height = image.height,
+            ) ?: return
+            val text = decodeQrLuminance(packed, image.width, image.height) ?: return
+            if (::onQrCodeScanned.isInitialized) {
+                onQrCodeScanned(text)
+            }
+        } catch (_: RuntimeException) {
+            // One bad frame must not leave the image open or stop the camera.
         } finally {
             image.close()
-            isQrCodeInAnalysis = false
         }
+    }
+}
+
+/**
+ * Copies the Y plane into a tightly packed buffer. Returns null when the crop cannot fit.
+ */
+internal fun lumaFromYPlane(
+    raw: ByteArray,
+    rowStride: Int,
+    width: Int,
+    height: Int,
+): ByteArray? {
+    if (width <= 0 || height <= 0 || rowStride < width) return null
+    if (raw.size.toLong() < rowStride.toLong() * height) return null
+    if (rowStride == width) return raw
+    val packed = ByteArray(width * height)
+    for (row in 0 until height) {
+        System.arraycopy(raw, row * rowStride, packed, row * width, width)
+    }
+    return packed
+}
+
+/**
+ * Reads a QR code from packed luminance bytes. Returns null when no code is present.
+ */
+internal fun decodeQrLuminance(luma: ByteArray, width: Int, height: Int): String? {
+    if (width <= 0 || height <= 0 || luma.size < width * height) return null
+    val source = PlanarYUVLuminanceSource(luma, width, height, 0, 0, width, height, false)
+    return try {
+        MultiFormatReader().decode(
+            BinaryBitmap(HybridBinarizer(source)),
+            mapOf(
+                DecodeHintType.POSSIBLE_FORMATS to arrayListOf(BarcodeFormat.QR_CODE),
+                DecodeHintType.ALSO_INVERTED to true,
+            ),
+        ).text
+    } catch (_: NotFoundException) {
+        null
     }
 }
 

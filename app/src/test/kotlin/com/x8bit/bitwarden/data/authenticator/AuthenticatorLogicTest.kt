@@ -1,6 +1,7 @@
 package com.x8bit.bitwarden.data.authenticator
 
 import com.x8bit.bitwarden.data.authenticator.importing.decodeMigrationPayload
+import com.x8bit.bitwarden.data.authenticator.importing.decodeMigrationUri
 import com.x8bit.bitwarden.data.authenticator.importing.parseAuthenticatorImport
 import com.x8bit.bitwarden.data.authenticator.match.bestAuthenticatorForUrl
 import com.x8bit.bitwarden.data.authenticator.match.entryMatchesHost
@@ -124,6 +125,9 @@ class AuthenticatorLogicTest {
         assertEquals("ada", entry.name)
         assertEquals("GitHub", entry.issuer)
         assertEquals(AuthenticatorKind.TOTP, entry.kind)
+        val data = java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(payload)
+        val fromUri = decodeMigrationUri("otpauth-migration://offline?data=$data").single()
+        assertEquals(entry, fromUri)
     }
 
     @Test

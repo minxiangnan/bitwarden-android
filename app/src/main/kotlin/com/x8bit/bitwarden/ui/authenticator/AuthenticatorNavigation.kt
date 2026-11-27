@@ -42,7 +42,7 @@ fun EntryProviderScope<AuthenticatorGraph>.authenticatorDestinations(
     slideUpEntry<AuthenticatorGraph.ScanRoute> {
         AuthenticatorScanScreen(
             onClose = { navigationController.navigateBack() },
-            onOpenEdit = {
+            onManual = {
                 navigationController.navigateBack()
                 navigationController.navigate(AuthenticatorGraph.EditRoute(""))
             },
