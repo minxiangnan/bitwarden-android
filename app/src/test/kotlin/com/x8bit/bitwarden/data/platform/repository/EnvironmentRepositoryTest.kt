@@ -101,6 +101,7 @@ class EnvironmentRepositoryTest {
             Environment.Prod.Us,
             repository.environment,
         )
+        assertEquals(false, repository.hasSavedEnvironment)
 
         // Updating the repository updates the disk source
         repository.environment = environment
@@ -108,6 +109,7 @@ class EnvironmentRepositoryTest {
             environmentUrlDataJson,
             fakeEnvironmentDiskSource.preAuthEnvironmentUrlData,
         )
+        assertEquals(true, repository.hasSavedEnvironment)
 
         // Updating the disk source updates the repository
         fakeEnvironmentDiskSource.preAuthEnvironmentUrlData = null

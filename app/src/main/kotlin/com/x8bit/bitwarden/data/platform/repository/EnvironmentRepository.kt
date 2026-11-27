@@ -13,6 +13,12 @@ interface EnvironmentRepository {
     var environment: Environment
 
     /**
+     * `true` after an environment has been stored. A fresh install is `false`, so the login
+     * screen can fill the default self-hosted server without replacing a later choice.
+     */
+    val hasSavedEnvironment: Boolean
+
+    /**
      * Emits updates that track [environment].
      */
     val environmentStateFlow: StateFlow<Environment>

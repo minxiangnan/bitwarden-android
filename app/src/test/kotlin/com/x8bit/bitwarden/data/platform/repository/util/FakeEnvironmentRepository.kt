@@ -17,7 +17,18 @@ class FakeEnvironmentRepository : EnvironmentRepository {
         get() = mutableEnvironmentStateFlow.value
         set(value) {
             mutableEnvironmentStateFlow.value = value
+            environmentSaved = true
         }
+
+    /**
+     * Tests start as if an environment was already chosen. Set this to false to simulate a
+     * fresh install.
+     */
+    var environmentSaved: Boolean = true
+
+    override val hasSavedEnvironment: Boolean
+        get() = environmentSaved
+
     override val environmentStateFlow: StateFlow<Environment>
         get() = mutableEnvironmentStateFlow.asStateFlow()
 

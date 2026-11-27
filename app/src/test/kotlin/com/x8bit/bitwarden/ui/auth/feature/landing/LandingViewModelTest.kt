@@ -663,7 +663,43 @@ class LandingViewModelTest : BaseViewModelTest() {
 
         val viewModel = createViewModel(userState = userState)
 
-        assertTrue(viewModel.stateFlow.value.emailInput.isEmpty())
+        assertEquals(ZH_DEFAULT_EMAIL, viewModel.stateFlow.value.emailInput)
+    }
+
+    @Test
+    fun `unset environment fills the self-hosted server and a missing email uses the default`() {
+        fakeEnvironmentRepository.environmentSaved = false
+        val viewModel = createViewModel()
+
+        assertEquals(ZH_DEFAULT_EMAIL, viewModel.stateFlow.value.emailInput)
+        assertEquals(ZH_DEFAULT_SERVER, viewModel.stateFlow.value.serverUrlInput)
+        assertEquals(
+            Environment.Type.SELF_HOSTED,
+            viewModel.stateFlow.value.selectedEnvironmentType,
+        )
+        assertTrue(viewModel.stateFlow.value.isContinueButtonEnabled)
+        assertEquals(false, viewModel.stateFlow.value.isRememberEmailEnabled)
+        assertEquals(
+            Environment.SelfHosted(
+                com.bitwarden.data.datasource.disk.model.EnvironmentUrlDataJson(
+                    base = ZH_DEFAULT_SERVER,
+                ),
+            ),
+            fakeEnvironmentRepository.environment,
+        )
+    }
+
+    @Test
+    fun `a saved server is kept and a remembered email replaces the default`() {
+        val savedServer = "https://vault.example.com"
+        fakeEnvironmentRepository.environment = Environment.SelfHosted(
+            com.bitwarden.data.datasource.disk.model.EnvironmentUrlDataJson(base = savedServer),
+        )
+        val viewModel = createViewModel(rememberedEmail = "remembered@gmail.com")
+
+        assertEquals(savedServer, viewModel.stateFlow.value.serverUrlInput)
+        assertEquals("remembered@gmail.com", viewModel.stateFlow.value.emailInput)
+        assertEquals(true, viewModel.stateFlow.value.isRememberEmailEnabled)
     }
 
     @Test
@@ -704,8 +740,8 @@ class LandingViewModelTest : BaseViewModelTest() {
 private const val SERVER_URL = "https://vault.example.com"
 
 private val DEFAULT_STATE = LandingState(
-    emailInput = "",
-    isContinueButtonEnabled = false,
+    emailInput = ZH_DEFAULT_EMAIL,
+    isContinueButtonEnabled = true,
     isRememberEmailEnabled = false,
     selectedEnvironmentType = Environment.Type.US,
     selectedEnvironmentLabel = Environment.Prod.Us.label,
