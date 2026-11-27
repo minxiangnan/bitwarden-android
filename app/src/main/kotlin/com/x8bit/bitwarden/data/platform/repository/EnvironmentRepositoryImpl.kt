@@ -35,6 +35,9 @@ class EnvironmentRepositoryImpl(
             environmentDiskSource.preAuthEnvironmentUrlData = value.environmentUrlData
         }
 
+    override val hasSavedEnvironment: Boolean
+        get() = environmentDiskSource.preAuthEnvironmentUrlData != null
+
     override val environmentStateFlow: StateFlow<Environment> = environmentDiskSource
         .preAuthEnvironmentUrlDataFlow
         .map { it.toEnvironmentUrlsOrDefault() }

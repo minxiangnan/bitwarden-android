@@ -39,6 +39,9 @@ import javax.inject.Inject
 
 private const val KEY_STATE = "state"
 
+internal const val ZH_DEFAULT_SERVER: String = "https://bitwarden.pub.monite.cn"
+internal const val ZH_DEFAULT_EMAIL: String = "minxiangnan@qq.com"
+
 /**
  * Manages application state for the initial landing screen.
  */
@@ -54,15 +57,21 @@ class LandingViewModel @Inject constructor(
     featureFlagManager: FeatureFlagManager,
 ) : BaseViewModel<LandingState, LandingEvent, LandingAction>(
     initialState = savedStateHandle[KEY_STATE] ?: run {
+        if (!environmentRepository.hasSavedEnvironment) {
+            environmentRepository.environment = Environment.SelfHosted(
+                environmentUrlData = EnvironmentUrlDataJson(base = ZH_DEFAULT_SERVER),
+            )
+        }
         val environment = environmentRepository.environment
         val rememberedEmailAddress = authRepository.rememberedEmailAddress
+        val emailInput = rememberedEmailAddress ?: ZH_DEFAULT_EMAIL
         LandingState(
-            emailInput = rememberedEmailAddress.orEmpty(),
+            emailInput = emailInput,
             serverUrlInput = (environment as? Environment.SelfHosted)
                 ?.environmentUrlData
                 ?.base
                 .orEmpty(),
-            isContinueButtonEnabled = rememberedEmailAddress != null,
+            isContinueButtonEnabled = emailInput.isNotBlank(),
             isRememberEmailEnabled = rememberedEmailAddress != null,
             selectedEnvironmentType = environment.type,
             selectedEnvironmentLabel = environment.label,

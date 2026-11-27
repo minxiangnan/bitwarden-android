@@ -8,8 +8,8 @@
 
 1. 卸载旧的测试包（如果有）。本分支不会覆盖官方 Bitwarden。
 2. 安装 `arm64-v8a` 的发布包。系统会提示未知来源，这是预期的。1.0.1 及以后是同一把发布密钥，可以直接覆盖安装。如果手机上还装着 1.0.0 的调试签名包，要先卸载。1.0.5 起可以在设置里点「检查更新」，或在每天第一次打开时收到新版本提示。点「立即更新」才会下载对应 ABI 的安装包，校验 `SHA256SUMS` 后交给系统安装界面。
-3. 打开应用。服务器地址留空时会显示占位符。填入你的服务器，必须是 `https://` 开头。只填域名时会自动补上 `https://`。明文 `http://` 会被拒绝，并提示需要 HTTPS，自己安装的 CA 也可以。
-4. 填邮箱，点「继续」，再填主密码。没有公开注册、地区选择、单点登录和通行密钥入口。管理员邀请过的邮箱，用登录页下方的「收到邀请？创建账户」。
+3. 打开应用。还没保存过服务器时，会选中自建并填入 `https://bitwarden.pub.monite.cn`。已经改过的地址不会被盖掉。地址必须是 `https://`。只填域名时会自动补上 `https://`。明文 `http://` 会被拒绝，并提示需要 HTTPS，自己安装的 CA 也可以。
+4. 还没记住邮箱时，邮箱填 `minxiangnan@qq.com`。已经记住的邮箱保持不变。应用接着打开主密码，光标在密码框里。要改服务器或邮箱，点「不是你」。没有公开注册、地区选择、单点登录和通行密钥入口。管理员邀请过的邮箱，用登录页下方的「收到邀请？创建账户」。
 5. 首次解锁后，保险箱超时默认是「从不」，超时动作是「锁定」。不会自动上锁，除非你自己改。URI 匹配默认是「主机完全一致」。这些设置会写进本地，重启和更新后还在。
 6. 系统设置里把「Bitwarden 验证器版」设为自动填充服务。名称和官方客户端不同。深链是 `bwzh://`，不会抢官方的 `bitwarden://`。
 
@@ -182,14 +182,16 @@ MCP 会话接口是 `/api/mcp/status`、`/api/mcp/token`、`/api/mcp/token/enc`�
 | `com.minxiangnan.bitwarden.zh-x86.apk` | 46,147,475 | `e75e928d4c962bc69b3d8820a3abbee9d074f2d28ac38fc601b28fc8fc3246f6` |
 | `com.minxiangnan.bitwarden.zh.apk`（universal） | 86,049,347 | `0841937bd367f77fbaaa82a9c1812394f1899d704d687d3f70ce86cbed4c4368` |
 
-1.0.8 去掉验证器列表里排队叠放的大块「验证码已复制」。连续点复制只在这一行显示一条「已复制 ✓」，大约 1.2 秒后自己消失，没有关闭按钮，并有轻微震动。Android 13 及以上不再额外加应用提示，只留系统自己的剪贴板提示。密码库、搜索、条目详情、验证码页、生成器和自动填充的复制，在 Android 13 以下改成替换上一条短提示，不再排队；Android 13 及以上同样只留系统提示。签名仍是 1.0.1 起的那把发布密钥。
+1.0.8 去掉验证器列表里排队叠放的大块「验证码已复制」。连续点复制只在这一行显示一条「已复制 ✓」，大约 1.2 秒后自己消失，没有关闭按钮，并有轻微震动。Android 13 及以上不再额外加应用提示，只留系统自己的剪贴板提示。密码库、搜索、条目详情、验证码页、生成器和自动填充的复制，在 Android 13 以下改成替换上一条短提示，不再排队；Android 13 及以上同样只留系统提示。
+
+1.0.8 同时给登录页加了默认值。还没保存过环境时，自动选中自建并填入 `https://bitwarden.pub.monite.cn`；已经改过的地址不会被盖掉。还没记住邮箱时填 `minxiangnan@qq.com`。这两项都齐了就进入主密码，光标在密码框里。签名仍是 1.0.1 起的那把发布密钥。
 
 1.0.8：
 
 | APK | 大小 | SHA-256 |
 | --- | --- | --- |
-| `com.minxiangnan.bitwarden.zh-arm64-v8a.apk` | 46,350,285 | `f5dc5ffc5c91e23112c30e630ac13c4eba4e5d8b429999188e255831d167586e` |
-| `com.minxiangnan.bitwarden.zh-armeabi-v7a.apk` | 43,229,223 | `5a3318f2926764a6f145332831f4847b1b351f4b7948458d0f852e0e35f4cf91` |
-| `com.minxiangnan.bitwarden.zh-x86_64.apk` | 45,751,440 | `f36473d013531ed51be6f8aa4c782ade3fccc97ab24d6e75ddc3c51a5ec5df6e` |
-| `com.minxiangnan.bitwarden.zh-x86.apk` | 46,151,203 | `42b2beda0e12ab4707984c2aeb221b9d1e02ccc169fc66dc190ef1ce72587f9d` |
-| `com.minxiangnan.bitwarden.zh.apk`（universal） | 86,053,075 | `8b6e6419587dd2b98825820801f800aa9efb56ce1134f9de26747ba98af653e3` |
+| `com.minxiangnan.bitwarden.zh-arm64-v8a.apk` | 46,357,593 | `d943916ae6d5502a92fc561d367e8822ba0b74dde992efa685b40c91a4808fdd` |
+| `com.minxiangnan.bitwarden.zh-armeabi-v7a.apk` | 43,236,531 | `da56c7e77793d4a604e1ac4fa1453ced9f88e66174fb16d8cc03e35fb51a5a29` |
+| `com.minxiangnan.bitwarden.zh-x86_64.apk` | 45,758,748 | `b9918b5dbf0bc37a18b7d5fc80a57e3a984f1283fcb1a75067d23df0584ba8c9` |
+| `com.minxiangnan.bitwarden.zh-x86.apk` | 46,158,511 | `9df3be58eac21a19b37d9a09eb700a73fb3c38519dce21538a112bb5b89b53d7` |
+| `com.minxiangnan.bitwarden.zh.apk`（universal） | 86,060,383 | `df99e5694a20983287cfe31c1c351e7b6bb496c7d5a8318713e5da0e2a56b34f` |

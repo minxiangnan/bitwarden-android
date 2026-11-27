@@ -18,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bitwarden.ui.platform.base.util.EventsEffect
+import com.bitwarden.ui.platform.base.util.isValidEmail
 import com.bitwarden.ui.platform.base.util.standardHorizontalMargin
 import com.bitwarden.ui.platform.components.account.BitwardenAccountSwitcher
 import com.bitwarden.ui.platform.components.account.BitwardenPlaceholderAccountActionItem
@@ -55,6 +57,8 @@ import com.bitwarden.ui.platform.components.util.rememberVectorPainter
 import com.bitwarden.ui.platform.resource.BitwardenDrawable
 import com.bitwarden.ui.platform.resource.BitwardenString
 import com.bitwarden.ui.platform.theme.BitwardenTheme
+import com.x8bit.bitwarden.data.authenticator.server.ServerUrlResult
+import com.x8bit.bitwarden.data.authenticator.server.normalizeServerUrl
 
 /**
  * The top level composable for the Landing screen.
@@ -72,6 +76,13 @@ fun LandingScreen(
 ) {
     val state by viewModel.stateFlow.collectAsStateWithLifecycle()
     val snackbarHostState = rememberBitwardenSnackbarHostState()
+    var offeredPasswordFocus by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(state.emailInput, state.serverUrlInput, state.accountSummaries) {
+        if (!offeredPasswordFocus && state.shouldFocusMasterPassword()) {
+            offeredPasswordFocus = true
+            viewModel.trySendAction(LandingAction.ContinueButtonClick)
+        }
+    }
     EventsEffect(viewModel = viewModel) { event ->
         when (event) {
             is LandingEvent.NavigateToLogin -> onNavigateToLogin(event.emailAddress)
@@ -286,4 +297,15 @@ private fun LandingScreenContent(
         Spacer(modifier = Modifier.height(height = 12.dp))
         Spacer(modifier = Modifier.navigationBarsPadding())
     }
+}
+
+private fun LandingState.shouldFocusMasterPassword(): Boolean {
+    val serverReady = normalizeServerUrl(serverUrlInput) is ServerUrlResult.Accepted
+    val emailReady = emailInput.isValidEmail(useStrictValidation = false)
+    val alreadyLoggedIn = accountSummaries.any { account ->
+        account.isLoggedIn &&
+            account.email == emailInput &&
+            account.environmentLabel == selectedEnvironmentLabel
+    }
+    return serverReady && emailReady && !alreadyLoggedIn
 }
