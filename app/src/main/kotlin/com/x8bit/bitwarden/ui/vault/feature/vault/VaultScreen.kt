@@ -67,6 +67,7 @@ import com.x8bit.bitwarden.ui.platform.feature.search.model.SearchType
 import com.x8bit.bitwarden.ui.platform.feature.vaultunlocked.VaultUnlockedGraph
 import com.x8bit.bitwarden.ui.platform.manager.review.AppReviewManager
 import com.x8bit.bitwarden.ui.vault.components.VaultItemSelectionDialog
+import com.x8bit.bitwarden.ui.vault.feature.itemlisting.LoginUriMatchDialog
 import com.x8bit.bitwarden.ui.vault.components.model.CreateVaultItemType
 import com.x8bit.bitwarden.ui.vault.feature.vault.handlers.VaultHandlers
 import com.x8bit.bitwarden.ui.vault.model.VaultAddEditType
@@ -488,6 +489,16 @@ private fun VaultDialogs(
                     vaultHandlers.onKdfUpdatePasswordRepromptSubmit(it)
                 },
                 onDismissRequest = vaultHandlers.dialogDismiss,
+            )
+        }
+
+        is VaultState.DialogState.UriMatchRule -> {
+            LoginUriMatchDialog(
+                cipherId = dialogState.cipherId,
+                selectedName = dialogState.selectedName,
+                defaultOptionLabel = dialogState.defaultOptionLabel,
+                onDismissRequest = vaultHandlers.dialogDismiss,
+                onMatchSelected = vaultHandlers.uriMatchSelected,
             )
         }
 

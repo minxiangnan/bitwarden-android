@@ -1433,6 +1433,7 @@ Do you want to switch to this account?</string>
 
     <string name="zh_authenticator_title">验证器</string>
     <string name="zh_authenticator_search">搜索名称、备注或网站</string>
+    <string name="zh_uri_match_rule">匹配规则</string>
     <string name="zh_authenticator_empty">扫二维码、从图片识别，或手动输入密钥。</string>
     <string name="zh_authenticator_empty_title">还没有验证码</string>
     <string name="zh_authenticator_synced_at">同步于 %1$s</string>

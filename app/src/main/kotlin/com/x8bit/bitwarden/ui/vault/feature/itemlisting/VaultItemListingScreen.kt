@@ -411,6 +411,16 @@ private fun VaultItemListingDialogs(
             )
         }
 
+        is VaultItemListingState.DialogState.UriMatchRule -> {
+            LoginUriMatchDialog(
+                cipherId = dialogState.cipherId,
+                selectedName = dialogState.selectedName,
+                defaultOptionLabel = dialogState.defaultOptionLabel,
+                onDismissRequest = vaultItemListingHandlers.dismissDialogRequest,
+                onMatchSelected = vaultItemListingHandlers.uriMatchSelected,
+            )
+        }
+
         is VaultItemListingState.DialogState.FileTypeRequiresPremium -> {
             PremiumRequiredDialog(
                 message = stringResource(id = BitwardenString.send_file_premium_required),

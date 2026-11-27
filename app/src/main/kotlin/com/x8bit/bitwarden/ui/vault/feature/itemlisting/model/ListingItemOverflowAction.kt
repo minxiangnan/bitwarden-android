@@ -277,6 +277,17 @@ sealed class ListingItemOverflowAction : Parcelable {
         }
 
         /**
+         * Opens the per-item URI match shortcut. The choice is stored on the cipher URIs.
+         */
+        @Parcelize
+        data class UriMatchClick(val cipherId: String) : VaultAction() {
+            override val title: Text get() = BitwardenString.zh_uri_match_rule.asText()
+            override val requiresPasswordReprompt: Boolean get() = false
+            override val contentDescription: Text get() = title
+            override val speedBump: BitwardenTwoButtonDialogData? get() = null
+        }
+
+        /**
          * Click on the launch overflow option.
          */
         @Parcelize

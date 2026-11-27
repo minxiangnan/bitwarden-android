@@ -56,6 +56,7 @@ data class VaultHandlers(
     val dismissActionCardClick: (VaultState.ActionCardState) -> Unit,
     val actionCardClick: (VaultState.ActionCardState) -> Unit,
     val sectionHeaderClick: (VaultSection) -> Unit,
+    val uriMatchSelected: (cipherId: String, matchName: String) -> Unit,
 ) {
     @Suppress("UndocumentedPublicClass")
     companion object {
@@ -161,6 +162,14 @@ data class VaultHandlers(
                 actionCardClick = { viewModel.trySendAction(VaultAction.ActionCardClick(it)) },
                 sectionHeaderClick = {
                     viewModel.trySendAction(VaultAction.SectionHeaderClick(section = it))
+                },
+                uriMatchSelected = { cipherId, matchName ->
+                    viewModel.trySendAction(
+                        VaultAction.UriMatchSelected(
+                            cipherId = cipherId,
+                            matchName = matchName,
+                        ),
+                    )
                 },
             )
     }

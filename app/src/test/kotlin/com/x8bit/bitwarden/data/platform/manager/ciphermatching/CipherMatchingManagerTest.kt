@@ -6,6 +6,7 @@ import com.bitwarden.vault.CipherListViewType
 import com.bitwarden.vault.LoginListView
 import com.bitwarden.vault.LoginUriView
 import com.bitwarden.vault.UriMatchType
+import com.x8bit.bitwarden.data.platform.repository.model.UriMatchType as PlatformUriMatchType
 import com.x8bit.bitwarden.data.autofill.util.login
 import com.x8bit.bitwarden.data.platform.manager.ResourceCacheManager
 import com.x8bit.bitwarden.data.platform.repository.SettingsRepository
@@ -347,6 +348,56 @@ class CipherMatchingManagerTest {
             assertEquals(expected, actual)
         }
 
+    @Suppress("MaxLineLength")
+    @Test
+    fun `filterCiphersForMatches uses the item uri match before the global default for autofill and accessibility`() =
+        runTest {
+            val page = "https://vpn.example.com/login"
+            val itemUri = "https://vpn.example.com"
+            val otherHost = "https://other.example.com"
+            mockkStatic(String::hasPort, String::getHostOrNull)
+            try {
+                every { page.isAndroidApp() } returns false
+                every { page.getDomainOrNull(resourceCacheManager) } returns "example.com"
+                every { page.getWebHostFromAndroidUriOrNull() } returns null
+                every { page.hasPort() } returns false
+                every { page.getHostOrNull() } returns "vpn.example.com"
+                every { itemUri.hasPort() } returns false
+                every { itemUri.getHostOrNull() } returns "vpn.example.com"
+                every { itemUri.getDomainOrNull(resourceCacheManager) } returns "other.test"
+                every { otherHost.hasPort() } returns false
+                every { otherHost.getHostOrNull() } returns "other.example.com"
+                every { otherHost.getDomainOrNull(resourceCacheManager) } returns "other.test"
+
+                val itemHost = loginCipher(match = UriMatchType.HOST, uri = itemUri)
+                val itemNever = loginCipher(match = UriMatchType.NEVER, uri = itemUri)
+                val itemDefault = loginCipher(match = null, uri = itemUri)
+                val itemOtherHost = loginCipher(match = UriMatchType.HOST, uri = otherHost)
+                val ciphers = listOf(itemHost, itemNever, itemDefault, itemOtherHost)
+
+                every { settingsRepository.defaultUriMatchType } returns PlatformUriMatchType.DOMAIN
+                assertEquals(
+                    listOf(itemHost),
+                    cipherMatchingManager.filterCiphersForMatches(
+                        cipherListViews = ciphers,
+                        matchUri = page,
+                    ),
+                )
+
+                every { settingsRepository.defaultUriMatchType } returns PlatformUriMatchType.HOST
+                assertEquals(
+                    listOf(itemHost, itemDefault),
+                    cipherMatchingManager.filterCiphersForMatches(
+                        cipherListViews = ciphers,
+                        matchUri = page,
+                    ),
+                )
+            } finally {
+                every { settingsRepository.defaultUriMatchType } returns DEFAULT_URI_MATCH_TYPE
+                unmockkStatic(String::hasPort, String::getHostOrNull)
+            }
+        }
+
     @Test
     fun `filterCiphersForMatches should skip ciphers without login details`() =
         runTest {
@@ -461,3 +512,16 @@ private const val HOST_NO_PORT_LOGIN_VIEW_URI_NOT_MATCHING: String =
     "HOST_NO_PORT_LOGIN_VIEW_URI_NOT_MATCHING"
 private const val HOST_WITH_PORT: String = "HOST_WITH_PORT"
 private const val HOST: String = "HOST"
+
+private fun loginCipher(
+    match: UriMatchType?,
+    uri: String,
+): CipherListView {
+    val loginUri = LoginUriView(uri = uri, match = match, uriChecksum = null)
+    val login = mockk<LoginListView> {
+        every { uris } returns listOf(loginUri)
+    }
+    return mockk {
+        every { type } returns CipherListViewType.Login(login)
+    }
+}

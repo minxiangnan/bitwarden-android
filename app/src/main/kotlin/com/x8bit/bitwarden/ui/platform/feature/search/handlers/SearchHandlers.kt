@@ -21,6 +21,7 @@ data class SearchHandlers(
     val onVaultFilterSelect: (VaultFilterType) -> Unit,
     val onOverflowItemClick: (ListingItemOverflowAction) -> Unit,
     val onUpgradeToPremiumClick: () -> Unit,
+    val onUriMatchSelected: (cipherId: String, matchName: String) -> Unit,
 ) {
     @Suppress("UndocumentedPublicClass")
     companion object {
@@ -58,6 +59,14 @@ data class SearchHandlers(
                 },
                 onUpgradeToPremiumClick = {
                     viewModel.trySendAction(SearchAction.UpgradeToPremiumClick)
+                },
+                onUriMatchSelected = { cipherId, matchName ->
+                    viewModel.trySendAction(
+                        SearchAction.UriMatchSelected(
+                            cipherId = cipherId,
+                            matchName = matchName,
+                        ),
+                    )
                 },
             )
     }
