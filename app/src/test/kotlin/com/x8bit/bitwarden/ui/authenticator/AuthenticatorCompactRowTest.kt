@@ -187,7 +187,17 @@ class AuthenticatorCompactRowTest : BitwardenComposeTest() {
         assertClose(codes[0].width, bars[0].width)
         assertClose(codes[1].left, bars[1].left)
         val next = boundsOf("AuthenticatorNextCode")
-        assertClose(next.right, codes[1].right)
+        val seconds = composeTestRule
+            .onAllNodesWithTag("AuthenticatorSeconds", useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .map { it.boundsInRoot }
+        assertClose(seconds[1].right, codes[1].right)
+        assertClose(next.bottom, seconds[1].bottom)
+        assertTrue(
+            "next code should share the seconds line, tops ${next.top} and ${seconds[1].top}",
+            kotlin.math.abs(next.top - seconds[1].top) <= 4f,
+        )
+        assertTrue(next.right < seconds[1].left)
     }
 
     @Test

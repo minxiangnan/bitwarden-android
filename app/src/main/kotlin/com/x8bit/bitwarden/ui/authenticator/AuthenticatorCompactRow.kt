@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -51,6 +52,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -63,10 +65,11 @@ import com.x8bit.bitwarden.data.authenticator.match.matchRanges
 
 internal const val AUTHENTICATOR_URGENT_SECONDS = 5
 private const val COUNTDOWN_MILLIS = 1_000
-private const val NAME_FONT_SP = 14f * 2f / 3f
-private const val NAME_LINE_SP = 13f
+private const val NAME_FONT_SP = 12f
+private const val NAME_LINE_SP = 16f
 private const val NOTES_FONT_SP = 11f
 private const val NOTES_LINE_SP = 15f
+private const val NEXT_CODE_GAP_DP = 6
 private const val CODE_FONT_SP = 22f
 private const val CODE_LINE_SP = 26f
 private const val SECONDS_FONT_SP = 11f
@@ -93,10 +96,12 @@ internal fun AuthenticatorIdentity(
     modifier: Modifier = Modifier,
 ) {
     val nameStyle = BitwardenTheme.typography.titleSmall.copy(
+        fontWeight = FontWeight.Medium,
         fontSize = NAME_FONT_SP.sp,
         lineHeight = NAME_LINE_SP.sp,
     )
     val notesStyle = BitwardenTheme.typography.bodySmall.copy(
+        fontWeight = FontWeight.Normal,
         fontSize = NOTES_FONT_SP.sp,
         lineHeight = NOTES_LINE_SP.sp,
     )
@@ -141,8 +146,8 @@ internal fun AuthenticatorIdentity(
 }
 
 /**
- * Code, the bar under it, and the seconds share one fixed-width column.
- * The next code's right edge lines up with that column.
+ * Code, the bar, and the seconds share one fixed-width column.
+ * The next code sits on the seconds line and extends left, so the row does not grow.
  */
 @Composable
 internal fun AuthenticatorCode(
@@ -151,60 +156,59 @@ internal fun AuthenticatorCode(
     urgent: Boolean,
 ) {
     val codeStyle = authenticatorCodeStyle()
-    val columnWidth = CodeColumnWidth(codeStyle)
+    val columnWidth = MeasuredWidth(CODE_COLUMN_SAMPLE, codeStyle)
     val showClock = !trash && row.seconds > 0
-    Column(horizontalAlignment = Alignment.End) {
-        Column(modifier = Modifier.width(columnWidth)) {
-            Text(
-                text = row.code.ifBlank { "—" },
-                style = codeStyle,
-                color = if (urgent) {
-                    BitwardenTheme.colorScheme.status.error
-                } else {
-                    BitwardenTheme.colorScheme.icon.secondary
-                },
-                textAlign = TextAlign.End,
-                maxLines = 1,
-                softWrap = false,
-                modifier = Modifier.fillMaxWidth().testTag("AuthenticatorCodeText"),
+    val secondsText = row.seconds.toString()
+    val secondsWidth = MeasuredWidth(secondsText, secondsStyle())
+    val codeColor = BitwardenTheme.colorScheme.run {
+        if (urgent) status.error else icon.secondary
+    }
+    val secondsColor = BitwardenTheme.colorScheme.run {
+        if (urgent) status.error else text.secondary
+    }
+    Column(modifier = Modifier.width(columnWidth)) {
+        Text(
+            text = row.code.ifBlank { "—" },
+            style = codeStyle,
+            color = codeColor,
+            textAlign = TextAlign.End,
+            maxLines = 1,
+            softWrap = false,
+            modifier = Modifier.fillMaxWidth().testTag("AuthenticatorCodeText"),
+        )
+        if (showClock) {
+            CountdownBar(
+                seconds = row.seconds,
+                period = row.period,
+                modifier = Modifier.padding(top = CODE_BLOCK_GAP_DP.dp).fillMaxWidth(),
             )
-            if (showClock) {
-                CountdownBar(
-                    seconds = row.seconds,
-                    period = row.period,
-                    modifier = Modifier
-                        .padding(top = CODE_BLOCK_GAP_DP.dp)
-                        .fillMaxWidth(),
-                )
+            Box(modifier = Modifier.padding(top = CODE_BLOCK_GAP_DP.dp).fillMaxWidth()) {
+                if (urgent && row.nextCode != null) {
+                    Text(
+                        text = stringResource(BitwardenString.zh_authenticator_next) +
+                            " " + row.nextCode,
+                        style = secondsStyle(),
+                        color = BitwardenTheme.colorScheme.text.secondary,
+                        maxLines = 1,
+                        softWrap = false,
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(end = secondsWidth + NEXT_CODE_GAP_DP.dp)
+                            .wrapContentWidth(unbounded = true, align = Alignment.End)
+                            .testTag("AuthenticatorNextCode"),
+                    )
+                }
                 Text(
-                    text = row.seconds.toString(),
+                    text = secondsText,
                     style = secondsStyle(),
-                    color = if (urgent) {
-                        BitwardenTheme.colorScheme.status.error
-                    } else {
-                        BitwardenTheme.colorScheme.text.secondary
-                    },
+                    color = secondsColor,
                     textAlign = TextAlign.End,
                     maxLines = 1,
-                    modifier = Modifier
-                        .padding(top = CODE_BLOCK_GAP_DP.dp)
-                        .fillMaxWidth()
+                    modifier = Modifier.align(Alignment.BottomEnd)
                         .semantics { invisibleToUser() }
                         .testTag("AuthenticatorSeconds"),
                 )
             }
-        }
-        if (urgent && row.nextCode != null) {
-            Text(
-                text = stringResource(BitwardenString.zh_authenticator_next) + " " + row.nextCode,
-                style = BitwardenTheme.typography.labelSmall,
-                color = BitwardenTheme.colorScheme.text.secondary,
-                textAlign = TextAlign.End,
-                maxLines = 1,
-                modifier = Modifier
-                    .padding(top = CODE_BLOCK_GAP_DP.dp)
-                    .testTag("AuthenticatorNextCode"),
-            )
         }
     }
 }
@@ -381,10 +385,9 @@ private fun secondsStyle(): TextStyle = TextStyle(
 )
 
 @Composable
-private fun CodeColumnWidth(style: TextStyle): Dp {
-    val measurer = rememberTextMeasurer()
-    val widthPx = measurer.measure(
-        text = CODE_COLUMN_SAMPLE,
+private fun MeasuredWidth(text: String, style: TextStyle): Dp {
+    val widthPx = rememberTextMeasurer().measure(
+        text = text,
         style = style,
         maxLines = 1,
         softWrap = false,
