@@ -119,8 +119,7 @@ fun AuthenticatorListScreen(
     val state by viewModel.stateFlow.collectAsState()
     val canReorder = !trash &&
         state.query.isBlank() &&
-        state.group == null &&
-        !state.favoritesOnly
+        state.group == null
     val snackbarHostState = rememberBitwardenSnackbarHostState()
     val view = LocalView.current
     LaunchedEffect(viewModel) {
@@ -334,15 +333,6 @@ fun AuthenticatorListScreen(
                             onClick = {
                                 menu = false
                                 onMcp()
-                            },
-                        )
-                        DropdownMenuItem(
-                            text = {
-                                Text(stringResource(BitwardenString.zh_authenticator_favorites))
-                            },
-                            onClick = {
-                                menu = false
-                                viewModel.trySendAction(AuthenticatorListAction.FavoritesToggled)
                             },
                         )
                     }
@@ -599,11 +589,6 @@ fun AuthenticatorListScreen(
                         onRestore = {
                             viewModel.trySendAction(AuthenticatorListAction.RestoreClick(row.id))
                         },
-                        onFavorite = {
-                            viewModel.trySendAction(
-                                AuthenticatorListAction.FavoriteClick(row.id, row.favorite),
-                            )
-                        },
                         onDelete = {
                             viewModel.trySendAction(
                                 AuthenticatorListAction.PermanentDeleteClick(row.id, row.title),
@@ -639,7 +624,6 @@ internal fun AuthenticatorCard(
     onMoveTop: () -> Unit = {},
     onTrash: () -> Unit,
     onRestore: () -> Unit,
-    onFavorite: () -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -682,7 +666,6 @@ internal fun AuthenticatorCard(
                 AuthenticatorCardMenu(
                     expanded = menu,
                     trash = trash,
-                    favorite = row.favorite,
                     canMoveUp = canMoveUp,
                     canMoveDown = canMoveDown,
                     allowCopy = allowCopy,
@@ -692,7 +675,6 @@ internal fun AuthenticatorCard(
                     onMoveUp = onMoveUp,
                     onMoveDown = onMoveDown,
                     onMoveTop = onMoveTop,
-                    onFavorite = onFavorite,
                     onTrash = onTrash,
                     onRestore = onRestore,
                     onDelete = onDelete,
@@ -714,7 +696,6 @@ internal fun AuthenticatorCard(
 private fun AuthenticatorCardMenu(
     expanded: Boolean,
     trash: Boolean,
-    favorite: Boolean,
     canMoveUp: Boolean,
     canMoveDown: Boolean,
     allowCopy: Boolean,
@@ -724,7 +705,6 @@ private fun AuthenticatorCardMenu(
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
     onMoveTop: () -> Unit,
-    onFavorite: () -> Unit,
     onTrash: () -> Unit,
     onRestore: () -> Unit,
     onDelete: () -> Unit,
@@ -772,23 +752,6 @@ private fun AuthenticatorCardMenu(
                     },
                 )
             }
-            DropdownMenuItem(
-                text = {
-                    Text(
-                        stringResource(
-                            if (favorite) {
-                                BitwardenString.unfavorite
-                            } else {
-                                BitwardenString.favorite
-                            },
-                        ),
-                    )
-                },
-                onClick = {
-                    onDismiss()
-                    onFavorite()
-                },
-            )
             DropdownMenuItem(
                 text = { Text(stringResource(BitwardenString.delete)) },
                 onClick = {

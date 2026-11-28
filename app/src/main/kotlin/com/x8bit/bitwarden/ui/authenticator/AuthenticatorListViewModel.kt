@@ -141,20 +141,7 @@ class AuthenticatorListViewModel @AssistedInject constructor(
                 mutableStateFlow.update { it.copy(group = action.group) }
                 rebuild()
             }
-            AuthenticatorListAction.FavoritesToggled -> {
-                mutableStateFlow.update { it.copy(favoritesOnly = !it.favoritesOnly) }
-                rebuild()
-            }
             is AuthenticatorListAction.CopyClick -> copy(action.id)
-            is AuthenticatorListAction.FavoriteClick -> {
-                viewModelScope.launch {
-                    repository.setFavorite(action.id, !action.favorite).onFailure { error ->
-                        sendAction(
-                            AuthenticatorListAction.ShowMessage(error.message ?: "没有更新收藏"),
-                        )
-                    }
-                }
-            }
             is AuthenticatorListAction.TrashClick -> {
                 mutableStateFlow.update {
                     it.copy(
@@ -225,7 +212,7 @@ class AuthenticatorListViewModel @AssistedInject constructor(
             filterAuthenticatorEntries(
                 entries = snapshot.entries,
                 query = state.query,
-                favoritesOnly = state.favoritesOnly,
+                favoritesOnly = false,
                 sort = AuthenticatorSort.MANUAL,
                 group = state.group,
             )
@@ -357,7 +344,6 @@ data class AuthenticatorListState(
     val query: String = "",
     val sort: AuthenticatorSort = AuthenticatorSort.MANUAL,
     val group: String? = null,
-    val favoritesOnly: Boolean = false,
     val status: AuthenticatorSyncStatus = AuthenticatorSyncStatus.LOADING,
     val message: String? = null,
     val editable: Boolean = false,
@@ -426,19 +412,9 @@ sealed class AuthenticatorListAction {
     data class GroupSelected(val group: String?) : AuthenticatorListAction()
 
     /**
-     * Toggles the favorites filter.
-     */
-    data object FavoritesToggled : AuthenticatorListAction()
-
-    /**
      * Copy the code for [id].
      */
     data class CopyClick(val id: String) : AuthenticatorListAction()
-
-    /**
-     * Toggle favorite for [id]. [favorite] is the current value.
-     */
-    data class FavoriteClick(val id: String, val favorite: Boolean) : AuthenticatorListAction()
 
     /**
      * Ask to trash [name].
