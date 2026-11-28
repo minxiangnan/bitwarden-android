@@ -303,3 +303,15 @@ MCP 会话接口是 `/api/mcp/status`、`/api/mcp/token`、`/api/mcp/token/enc`�
 | `com.minxiangnan.bitwarden.zh-x86_64.apk` | 45,816,908 | `0611dba0654a4817aa3d1378a3d1ab9d448751b5e8b8c1c681c041f4c3802285` |
 | `com.minxiangnan.bitwarden.zh-x86.apk` | 46,216,671 | `268ed21a79597977676e96554b298380a21d824480b2bf2679a8a55a161dc672` |
 | `com.minxiangnan.bitwarden.zh.apk`（universal） | 86,118,543 | `bcc9301c84cb3ad2bc84b4756953d06c0ebc0297d860fb6a2fdfce3d2a5821a9` |
+
+1.1.6 让生成器记住上一次生成的密码和用户名。打开生成器、切换标签、回到前台或旋转屏幕都不会重新生成；只有第一次没有旧值，或者点刷新，才会生成新的。长度和字符集的改动在下一次手动刷新时生效，用户自己改选项时也可以立刻重算。复制后顶部出现和验证器一样的气泡，「密码已复制」或「用户名已复制」，带轻触反馈，不再额外弹底部提示。色板不变。版本号是 1.1.6（versionCode 19）。签名仍是 1.0.1 起的那把发布密钥。
+
+1.1.6：
+
+| APK | 大小 | SHA-256 |
+| --- | --- | --- |
+| `com.minxiangnan.bitwarden.zh-arm64-v8a.apk` | 46,427,281 | `86cce543c559fe677e08bdd19c713f3befb294edbc014697769e4b3a4c3b4a0d` |
+| `com.minxiangnan.bitwarden.zh-armeabi-v7a.apk` | 43,306,219 | `69cd41edaebee084d298c60b5e4629f3c3ab177dd0028a2b3f7362365a4c4187` |
+| `com.minxiangnan.bitwarden.zh-x86_64.apk` | 45,828,436 | `d2e646e6d7bb3de6fd62d099f3e9ae450daf9c9b0811c5588e4b17886a33f935` |
+| `com.minxiangnan.bitwarden.zh-x86.apk` | 46,228,199 | `00bb0ee4ae42b51a61f0a247f480294f521790a0cb3a346b56e3ec1a02e1c7ed` |
+| `com.minxiangnan.bitwarden.zh.apk`（universal） | 86,130,071 | `93d34458b724bc010e13d8d360b046bb58baae6f1b23057fd58b4fd137959ec2` |

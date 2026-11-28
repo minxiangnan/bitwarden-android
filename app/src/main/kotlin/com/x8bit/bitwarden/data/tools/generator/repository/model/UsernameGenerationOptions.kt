@@ -78,6 +78,18 @@ data class UsernameGenerationOptions(
 
     @SerialName("emailWebsite")
     val emailWebsite: String? = null,
+
+    @SerialName("lastPlusAddressed")
+    val lastPlusAddressed: String? = null,
+
+    @SerialName("lastCatchAll")
+    val lastCatchAll: String? = null,
+
+    @SerialName("lastRandomWord")
+    val lastRandomWord: String? = null,
+
+    @SerialName("lastForwarded")
+    val lastForwarded: String? = null,
 ) {
 
     /**

@@ -32,6 +32,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.core.net.toUri
 import com.bitwarden.core.data.repository.util.bufferedMutableSharedFlow
 import com.bitwarden.ui.platform.manager.IntentManager
+import com.bitwarden.ui.platform.resource.BitwardenString
 import com.bitwarden.ui.util.asText
 import com.bitwarden.ui.util.isCoachMarkToolTip
 import com.x8bit.bitwarden.data.platform.manager.util.AppResumeStateManager
@@ -103,6 +104,19 @@ class GeneratorScreenTest : BitwardenComposeTest() {
         verify {
             viewModel.trySendAction(GeneratorAction.SaveClick)
         }
+    }
+
+    @Test
+    fun `copied password shows the top bubble`() {
+        updateState(
+            DEFAULT_STATE.copy(
+                generatedText = "kept-password",
+                copiedMessage = BitwardenString.zh_generator_password_copied,
+                copiedNonce = 1,
+            ),
+        )
+        composeTestRule.onNodeWithText("密码已复制").assertIsDisplayed()
+        composeTestRule.onNodeWithText("kept-password").assertIsDisplayed()
     }
 
     @Test

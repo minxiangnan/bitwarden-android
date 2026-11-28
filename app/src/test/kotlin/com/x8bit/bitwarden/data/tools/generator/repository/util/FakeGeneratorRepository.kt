@@ -202,6 +202,8 @@ class FakeGeneratorRepository : GeneratorRepository {
         assertEquals(request, passwordGeneratorRequest)
     }
 
+    fun recordedPasswordRequest(): PasswordGeneratorRequest? = passwordGeneratorRequest
+
     /**
      * Asserts that the passed in request matches the stored request.
      */

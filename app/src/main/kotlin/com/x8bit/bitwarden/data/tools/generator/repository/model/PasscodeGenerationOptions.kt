@@ -74,6 +74,12 @@ data class PasscodeGenerationOptions(
 
     @SerialName("includeNumber")
     val allowIncludeNumber: Boolean,
+
+    @SerialName("lastPassword")
+    val lastPassword: String? = null,
+
+    @SerialName("lastPassphrase")
+    val lastPassphrase: String? = null,
 ) {
     /**
      * Represents different Passcode types.

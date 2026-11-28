@@ -1471,6 +1471,8 @@ Do you want to switch to this account?</string>
     <string name="zh_authenticator_next">下一段</string>
     <string name="zh_authenticator_remaining">剩余 %1$d 秒</string>
     <string name="zh_authenticator_copied">已复制验证码</string>
+    <string name="zh_generator_password_copied">密码已复制</string>
+    <string name="zh_generator_username_copied">用户名已复制</string>
     <string name="zh_authenticator_groups">分组</string>
     <string name="zh_authenticator_assign_group">分组</string>
     <string name="zh_authenticator_ungrouped">未分组</string>

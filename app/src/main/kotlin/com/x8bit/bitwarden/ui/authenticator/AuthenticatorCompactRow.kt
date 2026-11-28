@@ -221,6 +221,7 @@ internal fun AuthenticatorCode(
 internal fun AuthenticatorCopyBubble(
     visible: Boolean,
     modifier: Modifier = Modifier,
+    message: String = stringResource(BitwardenString.zh_authenticator_copied),
 ) {
     AnimatedVisibility(
         visible = visible,
@@ -232,7 +233,7 @@ internal fun AuthenticatorCopyBubble(
     ) {
         val shadow = BitwardenTheme.colorScheme.icon.secondary
         Text(
-            text = stringResource(BitwardenString.zh_authenticator_copied),
+            text = message,
             style = BitwardenTheme.typography.labelLarge,
             color = BitwardenTheme.colorScheme.filledButton.foreground,
             modifier = Modifier
