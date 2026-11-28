@@ -329,7 +329,7 @@ class AuthenticatorListViewModel @AssistedInject constructor(
 
     private companion object {
         const val TICK_MS: Long = 1_000
-        const val COPY_FEEDBACK_MS: Long = 1_200
+        const val COPY_FEEDBACK_MS: Long = 1_500
     }
 }
 
@@ -500,12 +500,12 @@ sealed class AuthenticatorListAction {
         data object Tick : Internal()
 
         /**
-         * [id] was copied. The list shows one inline confirmation and resets its timer.
+         * [id] was copied. The list shows the top bubble and resets its timer.
          */
         data class CodeCopied(val id: String) : Internal()
 
         /**
-         * Clears the inline confirmation when it still belongs to [nonce].
+         * Clears the copy bubble when it still belongs to [nonce].
          */
         data class ClearCopied(val nonce: Int) : Internal()
     }

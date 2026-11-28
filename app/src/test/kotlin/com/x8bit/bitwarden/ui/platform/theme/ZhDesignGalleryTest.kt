@@ -41,6 +41,7 @@ import com.bitwarden.ui.platform.resource.BitwardenString
 import com.bitwarden.ui.platform.theme.BitwardenTheme
 import com.bitwarden.ui.util.asText
 import com.x8bit.bitwarden.ui.authenticator.AuthenticatorCard
+import com.x8bit.bitwarden.ui.authenticator.AuthenticatorCopyBubble
 import com.x8bit.bitwarden.ui.authenticator.AuthenticatorRow
 import com.x8bit.bitwarden.ui.platform.base.BitwardenComposeTest
 import com.x8bit.bitwarden.ui.platform.components.listitem.BitwardenListItem
@@ -95,6 +96,8 @@ class ZhDesignGalleryTest : BitwardenComposeTest() {
                 }
             }
         }
+        composeTestRule.mainClock.advanceTimeBy(400)
+        composeTestRule.waitForIdle()
         SCREENS.forEach { screen -> save(themeName, screen) }
     }
 
@@ -242,6 +245,7 @@ private fun Gallery(screen: String) {
 
 @androidx.compose.runtime.Composable
 private fun AuthenticatorGallery() {
+    Box(modifier = Modifier.fillMaxWidth()) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
@@ -266,6 +270,11 @@ private fun AuthenticatorGallery() {
                 .fillMaxWidth(),
         )
         AuthenticatorGroup()
+    }
+        AuthenticatorCopyBubble(
+            visible = true,
+            modifier = Modifier.align(Alignment.TopCenter),
+        )
     }
 }
 

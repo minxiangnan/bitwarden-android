@@ -212,6 +212,7 @@ fun AuthenticatorListScreen(
             onDismiss = { paste = false },
         )
     }
+    Box(modifier = Modifier.fillMaxSize()) {
     BitwardenScaffold(
         modifier = Modifier.fillMaxSize(),
         snackbarHost = { BitwardenSnackbarHost(bitwardenHostState = snackbarHostState) },
@@ -491,7 +492,6 @@ fun AuthenticatorListScreen(
                         row = row,
                         query = state.query,
                         trash = trash,
-                        copied = state.copiedId == row.id,
                         canMoveUp = canReorder && index > 0,
                         canMoveDown = canReorder && index < shownRows.lastIndex,
                         allowCopy = true,
@@ -614,6 +614,11 @@ fun AuthenticatorListScreen(
             }
         }
     }
+        AuthenticatorCopyBubble(
+            visible = state.copiedId != null,
+            modifier = Modifier.align(Alignment.TopCenter),
+        )
+    }
 }
 
 @Composable
@@ -623,7 +628,6 @@ internal fun AuthenticatorCard(
     query: String,
     trash: Boolean,
     onCopy: () -> Unit,
-    copied: Boolean = false,
     reorder: AuthenticatorReorder? = null,
     canMoveUp: Boolean = false,
     canMoveDown: Boolean = false,
@@ -671,7 +675,6 @@ internal fun AuthenticatorCard(
                     row = row,
                     trash = trash,
                     urgent = urgent,
-                    copied = copied,
                 )
             }
             Box {

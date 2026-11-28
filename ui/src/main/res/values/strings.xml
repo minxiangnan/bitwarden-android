@@ -1469,7 +1469,7 @@ Do you want to switch to this account?</string>
     <string name="zh_authenticator_favorites">只看收藏</string>
     <string name="zh_authenticator_all_groups">全部分组</string>
     <string name="zh_authenticator_next">下一段</string>
-    <string name="zh_authenticator_copied">已复制 ✓</string>
+    <string name="zh_authenticator_copied">已复制验证码</string>
     <string name="zh_authenticator_secret">密钥</string>
     <string name="zh_authenticator_name">名称</string>
     <string name="zh_authenticator_issuer">发行方</string>
