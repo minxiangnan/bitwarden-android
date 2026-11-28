@@ -42,9 +42,9 @@ Inter, already loaded by `bitwardenTypography`.
 | Style | Size / line | Use |
 | --- | --- | --- |
 | titleLarge | 19 / 28 semibold | Screen titles |
-| titleSmall | 14 / 18 semibold | Row names. Authenticator names use 9.33 / 13, two thirds of this |
+| titleSmall | 14 / 18 semibold | Row names. Authenticator names are 12 / 16 medium |
 | bodyLarge | 16 / 24 | Fields |
-| bodySmall | 12 / 16 | Notes. Authenticator notes are 11 / 15, and not smaller |
+| bodySmall | 12 / 16 | Notes. Authenticator notes are 11 / 15 regular, muted |
 | labelLarge | 14 / 20 | Segment labels, buttons |
 | code | 22 / 28 monospace, `tnum` | Authenticator code |
 
@@ -96,4 +96,4 @@ Haptic: gesture-start when a drag begins, context-click on drop and on copy.
 
 ## Authenticator
 
-One rounded group (16dp), not a stack of outlined cards. Each row is at least 64dp: name in titleSmall and notes in bodySmall, both wrapping to as many lines as they need, code in a fixed-width tabular column. The countdown bar is exactly as wide as that column, the seconds sit on its right edge, and 下一段 shares that right edge. The list stays in the saved custom order. Header is search. Add is a FAB with 扫码 and 添加. 更多 stays in the top bar for import, export, trash, and the rest. Long-press drags a row; the overflow menu keeps 上移, 下移, and 置顶. Favorite flags stay on the stored items and are not shown: no star, no favorites filter, and no favorite action in the menu. Copying a code shows a top pill, 「已复制验证码」, instead of a row caption or a bottom snackbar. It slides and fades in, follows the system animator scale, and is announced to TalkBack.
+One rounded group (16dp), not a stack of outlined cards. Each row is at least 64dp: name in titleSmall and notes in bodySmall, both wrapping to as many lines as they need, code in a fixed-width tabular column. The countdown bar is exactly as wide as that column, the seconds sit on its right edge, and 下一段 shares that seconds line so the row stays the same height. The name is 12sp medium and the notes are 11sp regular. The list stays in the saved custom order. Header is search. Add is a FAB with 扫码 and 添加. 更多 stays in the top bar for import, export, trash, and the rest. Long-press drags a row; the overflow menu keeps 上移, 下移, and 置顶. Favorite flags stay on the stored items and are not shown: no star, no favorites filter, and no favorite action in the menu. Copying a code shows a top pill, 「已复制验证码」, instead of a row caption or a bottom snackbar. It slides and fades in, follows the system animator scale, and is announced to TalkBack.

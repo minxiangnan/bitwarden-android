@@ -279,3 +279,15 @@ MCP 会话接口是 `/api/mcp/status`、`/api/mcp/token`、`/api/mcp/token/enc`�
 | `com.minxiangnan.bitwarden.zh-x86_64.apk` | 45,766,324 | `4bab879ad9857b80bcf076ded9f93e52fbb3bd228dddcdd191d9c349fcd7787b` |
 | `com.minxiangnan.bitwarden.zh-x86.apk` | 46,166,087 | `833fc093f2a3d4d022bbd13448c5fe410b94fa05aca1468a92973a41692f8e23` |
 | `com.minxiangnan.bitwarden.zh.apk`（universal） | 86,067,959 | `8eac0d900d0fc175154c7eaa3b1bd05cbf71a4ee432d1396fcab8ea79124f6a3` |
+
+1.1.4 把验证器行的名称改成 12sp、中等字重、行高 16。备注是 11sp、常规字重、浅色、行高 15。名称不小于备注，颜色也更深。「下一段」和秒数放在同一行，秒数仍贴着验证码列的右缘，这一行不再被多出来的一行撑高。验证码、进度条和秒数仍是同一固定列。色板不变。版本号是 1.1.4（versionCode 17）。签名仍是 1.0.1 起的那把发布密钥。
+
+1.1.4：
+
+| APK | 大小 | SHA-256 |
+| --- | --- | --- |
+| `com.minxiangnan.bitwarden.zh-arm64-v8a.apk` | 46,365,533 | `5702902804db1d3d7f3623b019c2107d55c897826d4ba673913c69bcaa42fecd` |
+| `com.minxiangnan.bitwarden.zh-armeabi-v7a.apk` | 43,244,471 | `7b8f90260dd5c77d7051d469305965f5fd7368fd233aedc18adb5487adcb2dd8` |
+| `com.minxiangnan.bitwarden.zh-x86_64.apk` | 45,766,688 | `c9851e2c195954c04bfa44b1024d378fffd40fa468ecde12d646618b94910075` |
+| `com.minxiangnan.bitwarden.zh-x86.apk` | 46,166,451 | `ae04c20265c0224c5bcc4812cd1efd8c4ce603342ff36cd6965be0a5593aafdf` |
+| `com.minxiangnan.bitwarden.zh.apk`（universal） | 86,068,323 | `fb78185f0ba4a31ddf0fa7b692e17027c8639b5f98fb85ef17f0cc9e4956f8c8` |
