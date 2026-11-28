@@ -10,66 +10,66 @@ val darkBitwardenColorScheme: BitwardenColorScheme = BitwardenColorScheme(
     isDarkTheme = true,
     isDynamicTheme = false,
     text = BitwardenColorScheme.TextColors(
-        primary = PrimitiveColors.gray200,
-        secondary = PrimitiveColors.gray500,
-        interaction = PrimitiveColors.blue400,
-        reversed = PrimitiveColors.gray1200,
+        primary = ZhColor.darkOnSurface,
+        secondary = ZhColor.darkMuted,
+        interaction = ZhColor.darkPrimary,
+        reversed = ZhColor.darkBackground,
         codePink = PrimitiveColors.pink200,
-        codeBlue = PrimitiveColors.blue400,
+        codeBlue = ZhColor.darkPrimary,
     ),
     background = BitwardenColorScheme.BackgroundColors(
-        primary = PrimitiveColors.gray1200,
-        secondary = PrimitiveColors.gray1100,
-        tertiary = PrimitiveColors.gray1000,
-        alert = PrimitiveColors.gray300,
-        scrim = PrimitiveColors.gray1400.copy(alpha = 0.4f),
-        pressed = PrimitiveColors.gray500,
+        primary = ZhColor.darkBackground,
+        secondary = ZhColor.darkSurface,
+        tertiary = ZhColor.darkSurfaceHigh,
+        alert = ZhColor.darkSurfaceHigh,
+        scrim = ZhColor.darkBackground.copy(alpha = 0.55f),
+        pressed = ZhColor.darkDivider,
     ),
     stroke = BitwardenColorScheme.StrokeColors(
-        divider = PrimitiveColors.gray900,
-        border = PrimitiveColors.blue400,
-        segmentedNav = PrimitiveColors.gray900,
+        divider = ZhColor.darkDivider,
+        border = ZhColor.darkPrimary,
+        segmentedNav = ZhColor.darkDivider,
     ),
     icon = BitwardenColorScheme.IconColors(
-        primary = PrimitiveColors.gray500,
-        secondary = PrimitiveColors.blue400,
-        reversed = PrimitiveColors.gray1100,
+        primary = ZhColor.darkMuted,
+        secondary = ZhColor.darkPrimary,
+        reversed = ZhColor.darkBackground,
         badgeBackground = PrimitiveColors.pink200,
         badgeForeground = PrimitiveColors.gray1100,
     ),
     filledButton = BitwardenColorScheme.FilledButtonColors(
-        background = PrimitiveColors.blue400,
-        backgroundDisabled = PrimitiveColors.gray1000,
-        backgroundReversed = PrimitiveColors.gray1100,
-        foreground = PrimitiveColors.gray1100,
-        foregroundDisabled = PrimitiveColors.gray900,
-        foregroundReversed = PrimitiveColors.blue400,
+        background = ZhColor.darkPrimary,
+        backgroundDisabled = ZhColor.darkSurfaceHigh,
+        backgroundReversed = ZhColor.darkSurface,
+        foreground = ZhColor.darkBackground,
+        foregroundDisabled = ZhColor.darkMuted,
+        foregroundReversed = ZhColor.darkPrimary,
     ),
     outlineButton = BitwardenColorScheme.OutlineButtonColors(
-        border = PrimitiveColors.blue400,
-        borderDisabled = PrimitiveColors.gray900,
-        borderReversed = PrimitiveColors.gray1100,
-        foreground = PrimitiveColors.blue400,
-        foregroundDisabled = PrimitiveColors.gray900,
-        foregroundReversed = PrimitiveColors.gray1100,
+        border = ZhColor.darkDivider,
+        borderDisabled = ZhColor.darkDivider,
+        borderReversed = ZhColor.darkSurface,
+        foreground = ZhColor.darkPrimary,
+        foregroundDisabled = ZhColor.darkMuted,
+        foregroundReversed = ZhColor.darkOnSurface,
     ),
     toggleButton = BitwardenColorScheme.ToggleButtonColors(
-        backgroundOn = PrimitiveColors.blue400,
-        backgroundOff = PrimitiveColors.gray900,
-        switch = PrimitiveColors.gray100,
+        backgroundOn = ZhColor.darkPrimary,
+        backgroundOff = ZhColor.darkDivider,
+        switch = ZhColor.darkOnSurface,
     ),
     sliderButton = BitwardenColorScheme.SliderButtonColors(
-        knobBackground = PrimitiveColors.blue400,
-        knobLabel = PrimitiveColors.gray1100,
-        filled = PrimitiveColors.blue400,
-        unfilled = PrimitiveColors.gray900,
+        knobBackground = ZhColor.darkPrimary,
+        knobLabel = ZhColor.darkBackground,
+        filled = ZhColor.darkPrimary,
+        unfilled = ZhColor.darkDivider,
     ),
     status = BitwardenColorScheme.StatusColors(
         strong = PrimitiveColors.green200,
-        good = PrimitiveColors.blue400,
-        weak1 = PrimitiveColors.red200,
+        good = ZhColor.darkPrimary,
+        weak1 = ZhColor.darkError,
         weak2 = PrimitiveColors.yellow200,
-        error = PrimitiveColors.red200,
+        error = ZhColor.darkError,
     ),
     statusBadge = BitwardenColorScheme.StatusBadgeColors(
         success = BitwardenColorScheme.StatusBadgeVariantColors(
@@ -110,66 +110,66 @@ val lightBitwardenColorScheme: BitwardenColorScheme = BitwardenColorScheme(
     isDarkTheme = false,
     isDynamicTheme = false,
     text = BitwardenColorScheme.TextColors(
-        primary = PrimitiveColors.gray1300,
-        secondary = PrimitiveColors.gray700,
-        interaction = PrimitiveColors.blue500,
-        reversed = PrimitiveColors.gray100,
+        primary = ZhColor.onSurface,
+        secondary = ZhColor.muted,
+        interaction = ZhColor.primaryText,
+        reversed = ZhColor.surface,
         codePink = PrimitiveColors.pink100,
-        codeBlue = PrimitiveColors.blue500,
+        codeBlue = ZhColor.primaryText,
     ),
     background = BitwardenColorScheme.BackgroundColors(
-        primary = PrimitiveColors.gray200,
-        secondary = PrimitiveColors.gray100,
-        tertiary = PrimitiveColors.blue100,
-        alert = PrimitiveColors.blue700,
-        scrim = PrimitiveColors.gray1400.copy(alpha = 0.4f),
-        pressed = PrimitiveColors.gray1000,
+        primary = ZhColor.background,
+        secondary = ZhColor.surface,
+        tertiary = ZhColor.track,
+        alert = ZhColor.track,
+        scrim = ZhColor.onSurface.copy(alpha = 0.4f),
+        pressed = ZhColor.divider,
     ),
     stroke = BitwardenColorScheme.StrokeColors(
-        divider = PrimitiveColors.gray400,
-        border = PrimitiveColors.blue500,
-        segmentedNav = PrimitiveColors.blue100,
+        divider = ZhColor.divider,
+        border = ZhColor.outline,
+        segmentedNav = ZhColor.track,
     ),
     icon = BitwardenColorScheme.IconColors(
-        primary = PrimitiveColors.gray700,
-        secondary = PrimitiveColors.blue500,
-        reversed = PrimitiveColors.gray100,
+        primary = ZhColor.muted,
+        secondary = ZhColor.primaryText,
+        reversed = ZhColor.surface,
         badgeBackground = PrimitiveColors.pink100,
         badgeForeground = PrimitiveColors.gray100,
     ),
     filledButton = BitwardenColorScheme.FilledButtonColors(
-        background = PrimitiveColors.blue500,
-        backgroundDisabled = PrimitiveColors.gray400,
-        backgroundReversed = PrimitiveColors.gray100,
-        foreground = PrimitiveColors.gray100,
-        foregroundDisabled = PrimitiveColors.gray500,
-        foregroundReversed = PrimitiveColors.blue500,
+        background = ZhColor.primary,
+        backgroundDisabled = ZhColor.divider,
+        backgroundReversed = ZhColor.surface,
+        foreground = ZhColor.onPrimary,
+        foregroundDisabled = ZhColor.muted,
+        foregroundReversed = ZhColor.primaryText,
     ),
     outlineButton = BitwardenColorScheme.OutlineButtonColors(
-        border = PrimitiveColors.blue500,
-        borderDisabled = PrimitiveColors.gray500,
-        borderReversed = PrimitiveColors.gray100,
-        foreground = PrimitiveColors.blue500,
-        foregroundDisabled = PrimitiveColors.gray500,
-        foregroundReversed = PrimitiveColors.gray100,
+        border = ZhColor.divider,
+        borderDisabled = ZhColor.divider,
+        borderReversed = ZhColor.surface,
+        foreground = ZhColor.primaryText,
+        foregroundDisabled = ZhColor.muted,
+        foregroundReversed = ZhColor.onSurface,
     ),
     toggleButton = BitwardenColorScheme.ToggleButtonColors(
-        backgroundOn = PrimitiveColors.blue500,
-        backgroundOff = PrimitiveColors.gray600,
-        switch = PrimitiveColors.gray100,
+        backgroundOn = ZhColor.primary,
+        backgroundOff = ZhColor.divider,
+        switch = ZhColor.surface,
     ),
     sliderButton = BitwardenColorScheme.SliderButtonColors(
-        knobBackground = PrimitiveColors.blue500,
-        knobLabel = PrimitiveColors.gray100,
-        filled = PrimitiveColors.blue500,
-        unfilled = PrimitiveColors.gray300,
+        knobBackground = ZhColor.primary,
+        knobLabel = ZhColor.onPrimary,
+        filled = ZhColor.primary,
+        unfilled = ZhColor.divider,
     ),
     status = BitwardenColorScheme.StatusColors(
         strong = PrimitiveColors.green300,
-        good = PrimitiveColors.blue500,
-        weak1 = PrimitiveColors.red300,
+        good = ZhColor.primaryText,
+        weak1 = ZhColor.error,
         weak2 = PrimitiveColors.yellow300,
-        error = PrimitiveColors.red300,
+        error = ZhColor.error,
     ),
     statusBadge = BitwardenColorScheme.StatusBadgeColors(
         success = BitwardenColorScheme.StatusBadgeVariantColors(
@@ -310,13 +310,74 @@ internal fun dynamicBitwardenColorScheme(
 internal fun BitwardenColorScheme.toMaterialColorScheme(
     defaultColorScheme: ColorScheme,
 ): ColorScheme = defaultColorScheme.copy(
-    primary = this.stroke.border,
+    primary = this.filledButton.background,
+    onPrimary = this.filledButton.foreground,
+    primaryContainer = this.background.tertiary,
+    onPrimaryContainer = this.text.primary,
+    inversePrimary = this.icon.secondary,
+    secondary = this.icon.secondary,
+    onSecondary = this.filledButton.foreground,
+    secondaryContainer = this.background.tertiary,
+    onSecondaryContainer = this.text.primary,
+    tertiary = this.status.weak2,
+    onTertiary = this.text.primary,
+    tertiaryContainer = this.background.tertiary,
+    onTertiaryContainer = this.text.primary,
+    background = this.background.primary,
+    onBackground = this.text.primary,
+    surface = this.background.secondary,
+    onSurface = this.text.primary,
+    surfaceVariant = this.background.tertiary,
     onSurfaceVariant = this.text.secondary,
+    surfaceTint = this.filledButton.background,
+    inverseSurface = this.text.primary,
+    inverseOnSurface = this.background.primary,
+    error = this.status.error,
+    onError = this.background.secondary,
+    errorContainer = this.statusBadge.error.background,
+    onErrorContainer = this.statusBadge.error.text,
+    outline = this.stroke.border,
+    outlineVariant = this.stroke.divider,
+    scrim = this.background.scrim,
+    surfaceBright = this.background.secondary,
+    surfaceDim = this.background.primary,
+    surfaceContainerLowest = this.background.secondary,
+    surfaceContainerLow = this.background.primary,
+    surfaceContainer = this.background.secondary,
+    surfaceContainerHigh = this.background.tertiary,
+    surfaceContainerHighest = this.background.tertiary,
 )
 
 /**
  * The raw colors that support the [BitwardenColorScheme].
  */
+/**
+ * Tokens from docs/zh-design-system.md. Primary text is one step darker than the brand fill
+ * so small terracotta text clears WCAG AA on cream.
+ */
+private data object ZhColor {
+    val background: Color = Color(color = 0xFFFBF6EF)
+    val surface: Color = Color(color = 0xFFFFFDF9)
+    val primary: Color = Color(color = 0xFFC2552D)
+    val primaryText: Color = Color(color = 0xFFBA4E29)
+    val onPrimary: Color = Color(color = 0xFFFFFFFF)
+    val onSurface: Color = Color(color = 0xFF3B2A22)
+    val muted: Color = Color(color = 0xFF7A675B)
+    val divider: Color = Color(color = 0xFFEADFD3)
+    val outline: Color = Color(color = 0xFF9E8676)
+    val track: Color = Color(color = 0xFFF3E6DC)
+    val error: Color = Color(color = 0xFFC4473A)
+
+    val darkBackground: Color = Color(color = 0xFF241812)
+    val darkSurface: Color = Color(color = 0xFF32241C)
+    val darkSurfaceHigh: Color = Color(color = 0xFF3D2C24)
+    val darkOnSurface: Color = Color(color = 0xFFF6EDE4)
+    val darkMuted: Color = Color(color = 0xFFC4A894)
+    val darkPrimary: Color = Color(color = 0xFFE08A6C)
+    val darkDivider: Color = Color(color = 0xFF4E3B30)
+    val darkError: Color = Color(color = 0xFFF0A8A0)
+}
+
 private data object PrimitiveColors {
     val gray100: Color = Color(color = 0xFFFFFBF6)
     val gray200: Color = Color(color = 0xFFFBF6F0)

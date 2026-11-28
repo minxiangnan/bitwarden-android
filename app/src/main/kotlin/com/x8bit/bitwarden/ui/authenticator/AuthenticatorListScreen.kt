@@ -20,6 +20,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -31,7 +33,9 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.runtime.Composable
@@ -58,11 +62,13 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.bitwarden.ui.platform.base.util.EventsEffect
 import com.bitwarden.ui.platform.base.util.standardHorizontalMargin
@@ -81,6 +87,7 @@ import com.bitwarden.ui.platform.components.scaffold.BitwardenScaffold
 import com.bitwarden.ui.platform.composition.LocalIntentManager
 import com.x8bit.bitwarden.ui.platform.composition.LocalPermissionsManager
 import com.bitwarden.ui.platform.manager.util.startAppSettingsActivity
+import com.bitwarden.ui.platform.resource.BitwardenDrawable
 import com.bitwarden.ui.platform.resource.BitwardenString
 import com.bitwarden.ui.platform.theme.BitwardenTheme
 import com.x8bit.bitwarden.data.authenticator.importing.decodeQrImage
@@ -124,6 +131,7 @@ fun AuthenticatorListScreen(
     val intentManager = LocalIntentManager.current
     val permissionsManager = LocalPermissionsManager.current
     var menu by rememberSaveable { mutableStateOf(false) }
+    var addMenu by rememberSaveable { mutableStateOf(false) }
     var cameraDenied by rememberSaveable { mutableStateOf(false) }
     val cameraLauncher = permissionsManager.getLauncher { granted ->
         if (granted) {
@@ -213,6 +221,41 @@ fun AuthenticatorListScreen(
             isRefreshing = state.refreshing,
             onRefresh = { viewModel.trySendAction(AuthenticatorListAction.Refresh) },
         ),
+        floatingActionButton = {
+            if (!trash && !sorting) {
+                Box {
+                    FloatingActionButton(
+                        onClick = { addMenu = true },
+                        containerColor = BitwardenTheme.colorScheme.filledButton.background,
+                        contentColor = BitwardenTheme.colorScheme.filledButton.foreground,
+                        modifier = Modifier.testTag("AuthenticatorAddFab"),
+                    ) {
+                        Icon(
+                            painter = painterResource(id = BitwardenDrawable.ic_plus_small),
+                            contentDescription = stringResource(
+                                BitwardenString.zh_authenticator_add,
+                            ),
+                        )
+                    }
+                    DropdownMenu(expanded = addMenu, onDismissRequest = { addMenu = false }) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(BitwardenString.zh_authenticator_scan)) },
+                            onClick = {
+                                addMenu = false
+                                requestScan()
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(BitwardenString.zh_authenticator_add)) },
+                            onClick = {
+                                addMenu = false
+                                onAdd()
+                            },
+                        )
+                    }
+                }
+            }
+        },
         topBar = {
             Row(
                 modifier = Modifier
@@ -255,14 +298,6 @@ fun AuthenticatorListScreen(
                     )
                 }
                 if (!trash && !sorting) {
-                    BitwardenTextButton(
-                        label = stringResource(BitwardenString.zh_authenticator_scan),
-                        onClick = requestScan,
-                    )
-                    BitwardenTextButton(
-                        label = stringResource(BitwardenString.zh_authenticator_add),
-                        onClick = onAdd,
-                    )
                     BitwardenTextButton(
                         label = stringResource(BitwardenString.zh_authenticator_more),
                         onClick = { menu = true },
@@ -369,27 +404,49 @@ fun AuthenticatorListScreen(
                 )
                 Row(
                     modifier = Modifier
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(BitwardenTheme.colorScheme.background.tertiary)
+                        .padding(4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    GroupChip(
-                        label = stringResource(BitwardenString.zh_authenticator_sort_custom),
-                        selected = state.sort == AuthenticatorSort.MANUAL,
-                        onClick = {
-                            viewModel.trySendAction(
-                                AuthenticatorListAction.SortSelected(AuthenticatorSort.MANUAL),
-                            )
-                        },
-                    )
-                    GroupChip(
-                        label = stringResource(BitwardenString.zh_authenticator_sort_name_az),
-                        selected = state.sort == AuthenticatorSort.NAME,
-                        onClick = {
-                            viewModel.trySendAction(
-                                AuthenticatorListAction.SortSelected(AuthenticatorSort.NAME),
-                            )
-                        },
-                    )
+                    listOf(
+                        Triple(
+                            stringResource(BitwardenString.zh_authenticator_sort_custom),
+                            state.sort == AuthenticatorSort.MANUAL,
+                            AuthenticatorSort.MANUAL,
+                        ),
+                        Triple(
+                            stringResource(BitwardenString.zh_authenticator_sort_name_az),
+                            state.sort == AuthenticatorSort.NAME,
+                            AuthenticatorSort.NAME,
+                        ),
+                    ).forEach { (label, selected, sort) ->
+                        Text(
+                            text = label,
+                            color = if (selected) {
+                                BitwardenTheme.colorScheme.text.reversed
+                            } else {
+                                BitwardenTheme.colorScheme.text.secondary
+                            },
+                            style = BitwardenTheme.typography.labelLarge,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(
+                                    if (selected) {
+                                        BitwardenTheme.colorScheme.icon.secondary
+                                    } else {
+                                        BitwardenTheme.colorScheme.background.tertiary
+                                    },
+                                )
+                                .clickable {
+                                    viewModel.trySendAction(
+                                        AuthenticatorListAction.SortSelected(sort),
+                                    )
+                                }
+                                .padding(horizontal = 12.dp, vertical = 6.dp),
+                        )
+                    }
                 }
                 state.syncedAtMillis?.let { syncedAt ->
                     val syncedLabel = java.time.Instant.ofEpochMilli(syncedAt)
@@ -491,7 +548,11 @@ fun AuthenticatorListScreen(
                     if (refreshed.size == dragging.size) dragRows = refreshed
                 }
             }
-            LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+            LazyColumn(
+                state = listState,
+                contentPadding = PaddingValues(bottom = 96.dp),
+                modifier = Modifier.fillMaxSize(),
+            ) {
                 itemsIndexed(shownRows, key = { _, row -> row.id }) { index, row ->
                     val lift by animateFloatAsState(
                         targetValue = if (draggingId == row.id) 1f else 0f,
@@ -500,6 +561,15 @@ fun AuthenticatorListScreen(
                     )
                     val scale = 1f + (ROW_LIFT_SCALE - 1f) * lift
                     val tint = BitwardenTheme.colorScheme.icon.secondary
+                    val groupedShape = when {
+                        shownRows.size <= 1 -> RoundedCornerShape(16.dp)
+                        index == 0 -> RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+                        index == shownRows.lastIndex -> RoundedCornerShape(
+                            bottomStart = 16.dp,
+                            bottomEnd = 16.dp,
+                        )
+                        else -> RectangleShape
+                    }
                     AuthenticatorCard(
                         row = row,
                         query = state.query,
@@ -508,7 +578,9 @@ fun AuthenticatorListScreen(
                         canMoveUp = offerSort && index > 0,
                         canMoveDown = offerSort && index < shownRows.lastIndex,
                         allowCopy = !reorderEnabled,
+                        showDivider = index != shownRows.lastIndex,
                         modifier = Modifier
+                            .padding(horizontal = 16.dp)
                             .animateItem(
                                 fadeInSpec = null,
                                 fadeOutSpec = null,
@@ -520,10 +592,12 @@ fun AuthenticatorListScreen(
                             .zIndex(lift)
                             .shadow(
                                 elevation = ROW_LIFT_ELEVATION_DP.dp * lift,
-                                shape = RoundedCornerShape(ROW_LIFT_CORNER_DP.dp),
+                                shape = groupedShape,
                                 ambientColor = tint.copy(alpha = ROW_SHADOW_ALPHA),
                                 spotColor = tint,
                             )
+                            .clip(groupedShape)
+                            .background(BitwardenTheme.colorScheme.background.secondary)
                             .graphicsLayer {
                                 scaleX = scale
                                 scaleY = scale
@@ -639,6 +713,7 @@ internal fun AuthenticatorCard(
     canMoveUp: Boolean = false,
     canMoveDown: Boolean = false,
     allowCopy: Boolean = true,
+    showDivider: Boolean = true,
     onEdit: () -> Unit,
     onMoveUp: () -> Unit = {},
     onMoveDown: () -> Unit = {},
@@ -656,10 +731,10 @@ internal fun AuthenticatorCard(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
+                .heightIn(min = 64.dp)
                 .padding(
-                    start = if (reorder == null) 16.dp else 0.dp,
-                    top = if (reorder == null) 8.dp else 0.dp,
-                    bottom = if (reorder == null) 8.dp else 0.dp,
+                    start = if (reorder == null) 12.dp else 0.dp,
+                    end = 4.dp,
                 ),
         ) {
             if (reorder != null) {
@@ -679,6 +754,7 @@ internal fun AuthenticatorCard(
                         onLongClick = { menu = true },
                     ),
             ) {
+                AuthenticatorMonogram(title = row.title)
                 AuthenticatorIdentity(row = row, query = query, modifier = Modifier.weight(1f))
                 AuthenticatorCode(
                     row = row,
@@ -709,7 +785,13 @@ internal fun AuthenticatorCard(
                 )
             }
         }
-        HorizontalDivider(color = BitwardenTheme.colorScheme.stroke.divider)
+        if (showDivider) {
+            HorizontalDivider(
+                modifier = Modifier.padding(start = 60.dp, end = 16.dp),
+                thickness = 0.5.dp,
+                color = BitwardenTheme.colorScheme.stroke.divider,
+            )
+        }
     }
 }
 

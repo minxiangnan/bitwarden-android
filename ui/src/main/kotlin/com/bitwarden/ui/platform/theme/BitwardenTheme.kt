@@ -1,13 +1,10 @@
 package com.bitwarden.ui.platform.theme
 
 import android.content.Context
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -15,12 +12,10 @@ import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.platform.LocalContext
-import com.bitwarden.core.util.isBuildVersionAtLeast
 import com.bitwarden.ui.platform.components.field.interceptor.IncognitoInput
 import com.bitwarden.ui.platform.feature.settings.appearance.model.AppTheme
 import com.bitwarden.ui.platform.theme.color.BitwardenColorScheme
 import com.bitwarden.ui.platform.theme.color.darkBitwardenColorScheme
-import com.bitwarden.ui.platform.theme.color.dynamicBitwardenColorScheme
 import com.bitwarden.ui.platform.theme.color.lightBitwardenColorScheme
 import com.bitwarden.ui.platform.theme.color.toMaterialColorScheme
 import com.bitwarden.ui.platform.theme.ripple.toRippleConfig
@@ -64,6 +59,7 @@ object BitwardenTheme {
  * The overall application theme. This can be configured to support a [theme] and [dynamicColor].
  */
 @Composable
+@Suppress("UnusedParameter")
 fun BitwardenTheme(
     context: Context = LocalContext.current,
     theme: AppTheme = AppTheme.DEFAULT,
@@ -71,45 +67,22 @@ fun BitwardenTheme(
     content: @Composable () -> Unit,
 ) {
     val isDarkTheme = theme.isDarkMode(isSystemDarkMode = isSystemInDarkTheme())
-    val isDynamicEnabled = dynamicColor && isBuildVersionAtLeast(version = Build.VERSION_CODES.S)
-    // Get the material color schemes from the OS.
-    val darkMaterialColorScheme = if (isDynamicEnabled) {
-        dynamicDarkColorScheme(context = context)
+    val bitwardenColorScheme = if (isDarkTheme) {
+        darkBitwardenColorScheme
     } else {
-        darkColorScheme()
+        lightBitwardenColorScheme
     }
-    val lightMaterialColorScheme = if (isDynamicEnabled) {
-        dynamicLightColorScheme(context = context)
-    } else {
-        lightColorScheme()
-    }
-    val materialColorScheme = if (isDarkTheme) darkMaterialColorScheme else lightMaterialColorScheme
-    // Convert the material color schemes to Bitwarden color schemes.
-    val lightDynamicColorScheme = dynamicBitwardenColorScheme(
-        materialColorScheme = lightMaterialColorScheme,
-        isDarkTheme = false,
-    )
-    val darkDynamicColorScheme = dynamicBitwardenColorScheme(
-        materialColorScheme = darkMaterialColorScheme,
-        isDarkTheme = true,
-    )
-    val bitwardenColorScheme = when {
-        isDynamicEnabled -> if (isDarkTheme) darkDynamicColorScheme else lightDynamicColorScheme
-        isDarkTheme -> darkBitwardenColorScheme
-        else -> lightBitwardenColorScheme
-    }
-    // Provide the selected color scheme as well as the dynamic ones for override support.
     CompositionLocalProvider(
         LocalBitwardenColorScheme provides bitwardenColorScheme,
-        LocalBitwardenDynamicLightColorScheme provides lightDynamicColorScheme,
-        LocalBitwardenDynamicDarkColorScheme provides darkDynamicColorScheme,
+        LocalBitwardenDynamicLightColorScheme provides lightBitwardenColorScheme,
+        LocalBitwardenDynamicDarkColorScheme provides darkBitwardenColorScheme,
         LocalBitwardenShapes provides bitwardenShapes,
         LocalBitwardenTypography provides bitwardenTypography,
         LocalRippleConfiguration provides bitwardenColorScheme.toRippleConfig(),
     ) {
         MaterialTheme(
             colorScheme = bitwardenColorScheme.toMaterialColorScheme(
-                defaultColorScheme = materialColorScheme,
+                defaultColorScheme = if (isDarkTheme) darkColorScheme() else lightColorScheme(),
             ),
             typography = bitwardenTypography.toMaterialTypography(),
         ) { IncognitoInput(content = content) }
