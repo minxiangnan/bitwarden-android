@@ -2,6 +2,9 @@ package com.x8bit.bitwarden.ui.authenticator
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -13,31 +16,39 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.invisibleToUser
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -46,7 +57,8 @@ import com.bitwarden.ui.platform.theme.BitwardenTheme
 import com.x8bit.bitwarden.data.authenticator.match.matchRanges
 
 internal const val AUTHENTICATOR_URGENT_SECONDS = 5
-private const val FULL_CIRCLE_DEGREES = 360f
+private const val COUNTDOWN_MILLIS = 1_000
+private const val COUNTDOWN_BAR_DP = 84
 private const val BUBBLE_ENTER_MILLIS = 220
 private const val BUBBLE_EXIT_MILLIS = 180
 private const val BUBBLE_CORNER_PERCENT = 50
@@ -107,7 +119,7 @@ internal fun AuthenticatorIdentity(
 }
 
 /**
- * Code, a small countdown, and the next code only while the current window is almost over.
+ * Code, a thin countdown under it, and the next code only while the window is almost over.
  */
 @Composable
 internal fun AuthenticatorCode(
@@ -116,29 +128,27 @@ internal fun AuthenticatorCode(
     urgent: Boolean,
 ) {
     Column(horizontalAlignment = Alignment.End) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = row.code.ifBlank { "—" },
-                style = BitwardenTheme.typography.titleLarge.copy(
-                    fontFeatureSettings = "tnum",
-                    fontSize = 22.sp,
-                    lineHeight = 28.sp,
-                ),
-                fontFamily = FontFamily.Monospace,
-                color = if (urgent) {
-                    BitwardenTheme.colorScheme.status.error
-                } else {
-                    BitwardenTheme.colorScheme.icon.secondary
-                },
-                maxLines = 1,
+        Text(
+            text = row.code.ifBlank { "—" },
+            style = BitwardenTheme.typography.titleLarge.copy(
+                fontFeatureSettings = "tnum",
+                fontSize = 22.sp,
+                lineHeight = 28.sp,
+            ),
+            fontFamily = FontFamily.Monospace,
+            color = if (urgent) {
+                BitwardenTheme.colorScheme.status.error
+            } else {
+                BitwardenTheme.colorScheme.icon.secondary
+            },
+            maxLines = 1,
+        )
+        if (!trash && row.seconds > 0) {
+            CountdownBar(
+                seconds = row.seconds,
+                period = row.period,
+                modifier = Modifier.padding(top = 6.dp),
             )
-            if (!trash && row.seconds > 0) {
-                CountdownRing(
-                    seconds = row.seconds,
-                    period = row.period,
-                    modifier = Modifier.padding(start = 8.dp),
-                )
-            }
         }
         if (urgent && row.nextCode != null) {
             Text(
@@ -250,49 +260,68 @@ internal fun AuthenticatorOverflowButton(onClick: () -> Unit) {
     }
 }
 
+/**
+ * Thin remaining-time bar under the code. The track is the divider line and the fill is
+ * terracotta, or the urgent color in the last few seconds. A new time window snaps; otherwise
+ * the fill eases across the second, and reduced motion shortens that to nothing.
+ */
 @Composable
-private fun CountdownRing(
+private fun CountdownBar(
     seconds: Int,
     period: Int,
     modifier: Modifier = Modifier,
 ) {
+    val safePeriod = period.coerceAtLeast(1)
+    val target = (seconds.coerceAtLeast(0).toFloat() / safePeriod).coerceIn(0f, 1f)
+    var previous by remember { mutableFloatStateOf(target) }
+    val fraction by animateFloatAsState(
+        targetValue = target,
+        animationSpec = if (target > previous) {
+            snap()
+        } else {
+            tween(durationMillis = COUNTDOWN_MILLIS, easing = LinearEasing)
+        },
+        label = "authenticatorCountdown",
+    )
+    SideEffect { previous = target }
     val urgent = seconds <= AUTHENTICATOR_URGENT_SECONDS
-    val color = if (urgent) {
+    val fill = if (urgent) {
         BitwardenTheme.colorScheme.status.error
     } else {
         BitwardenTheme.colorScheme.icon.secondary
     }
-    val track = color.copy(alpha = 0.22f)
-    Box(contentAlignment = Alignment.Center, modifier = modifier.size(28.dp)) {
-        Canvas(modifier = Modifier.size(28.dp)) {
-            val stroke = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round)
-            val inset = stroke.width / 2
-            val arcSize = Size(size.width - stroke.width, size.height - stroke.width)
-            val topLeft = Offset(inset, inset)
-            drawArc(
-                color = track,
-                startAngle = -90f,
-                sweepAngle = FULL_CIRCLE_DEGREES,
-                useCenter = false,
-                topLeft = topLeft,
-                size = arcSize,
-                style = stroke,
-            )
-            val sweep = FULL_CIRCLE_DEGREES * seconds / period.coerceAtLeast(1)
-            drawArc(
-                color = color,
-                startAngle = -90f,
-                sweepAngle = sweep,
-                useCenter = false,
-                topLeft = topLeft,
-                size = arcSize,
-                style = stroke,
+    val label = stringResource(BitwardenString.zh_authenticator_remaining, seconds)
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .semantics { contentDescription = label }
+            .testTag("AuthenticatorCountdown"),
+    ) {
+        Box(
+            modifier = Modifier
+                .width(COUNTDOWN_BAR_DP.dp)
+                .height(3.dp)
+                .clip(RoundedCornerShape(percent = BUBBLE_CORNER_PERCENT))
+                .background(BitwardenTheme.colorScheme.stroke.divider)
+                .semantics { invisibleToUser() },
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth(fraction)
+                    .background(fill),
             )
         }
         Text(
             text = seconds.toString(),
-            style = BitwardenTheme.typography.labelSmall,
-            color = color,
+            style = BitwardenTheme.typography.labelSmall.copy(fontFeatureSettings = "tnum"),
+            color = if (urgent) fill else BitwardenTheme.colorScheme.text.secondary,
+            textAlign = TextAlign.End,
+            maxLines = 1,
+            modifier = Modifier
+                .padding(start = 6.dp)
+                .width(18.dp)
+                .semantics { invisibleToUser() },
         )
     }
 }

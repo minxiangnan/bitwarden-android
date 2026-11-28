@@ -68,7 +68,7 @@ No hard drop shadows on resting cards. Grouped surfaces sit on the page by color
 
 ## Icons
 
-One set: the existing `BitwardenDrawable` vector icons. The authenticator add action is `ic_plus_small` on a filled FAB. Overflow is three dots. The countdown is a 28dp ring, 2dp stroke.
+One set: the existing `BitwardenDrawable` vector icons. The authenticator add action is `ic_plus_small` on a filled FAB. Overflow is three dots. The countdown is a 3dp rounded bar under the code: divider track, terracotta fill, urgent color in the last 5 seconds, and a small muted seconds label.
 
 ## Motion
 
@@ -76,6 +76,7 @@ One set: the existing `BitwardenDrawable` vector icons. The authenticator add ac
 | --- | --- | --- |
 | List placement (reorder, pin) | 220ms | FastOutSlowIn |
 | Dragged row lift | 220ms | default tween |
+| Countdown fill | 1000ms, linear, across each second | snaps when the window resets |
 | Reduced motion | system animator scale, including 0 | Compose `MotionDurationScale` |
 
 Haptic: gesture-start when a drag begins, context-click on drop and on copy.
@@ -85,7 +86,7 @@ Haptic: gesture-start when a drag begins, context-click on drop and on copy.
 | State | Treatment |
 | --- | --- |
 | Default row | Surface group, hairline, terracotta code |
-| Last 5 seconds | Code and ring turn error red; next code appears |
+| Last 5 seconds | Code, bar, and seconds label turn urgent; next code appears |
 | Copied | Terracotta pill under the status bar: 「已复制验证码」, slides in from the top, gone after 1.5s |
 | Reorder | Long-press a row, then drag. The row lifts; the others slide. Drop writes `zh.totp.order` |
 | Search or a filter | Dragging is off so order is not computed against a partial list. Tap still copies. Overflow keeps edit and delete |
@@ -95,4 +96,4 @@ Haptic: gesture-start when a drag begins, context-click on drop and on copy.
 
 ## Authenticator
 
-One rounded group (16dp), not a stack of outlined cards. Each row is at least 64dp: name in titleSmall and notes in bodySmall, both wrapping to as many lines as they need, code in tabular monospace terracotta, countdown ring at the end. The list stays in the saved custom order. Header is search. Add is a FAB with 扫码 and 添加. 更多 stays in the top bar for import, export, trash, and the rest. Long-press drags a row; the overflow menu keeps 上移, 下移, and 置顶. Favorite flags stay on the stored items and are not shown: no star, no favorites filter, and no favorite action in the menu. Copying a code shows a top pill, 「已复制验证码」, instead of a row caption or a bottom snackbar. It slides and fades in, follows the system animator scale, and is announced to TalkBack.
+One rounded group (16dp), not a stack of outlined cards. Each row is at least 64dp: name in titleSmall and notes in bodySmall, both wrapping to as many lines as they need, code in tabular monospace terracotta, with a thin countdown bar underneath. The list stays in the saved custom order. Header is search. Add is a FAB with 扫码 and 添加. 更多 stays in the top bar for import, export, trash, and the rest. Long-press drags a row; the overflow menu keeps 上移, 下移, and 置顶. Favorite flags stay on the stored items and are not shown: no star, no favorites filter, and no favorite action in the menu. Copying a code shows a top pill, 「已复制验证码」, instead of a row caption or a bottom snackbar. It slides and fades in, follows the system animator scale, and is announced to TalkBack.

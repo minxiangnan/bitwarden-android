@@ -129,6 +129,12 @@ class AuthenticatorCompactRowTest : BitwardenComposeTest() {
         }
         composeTestRule.onNodeWithText("minxiangnan@vpn.com").assertIsDisplayed()
         composeTestRule.onNodeWithText("833 143").assertIsDisplayed()
+        composeTestRule
+            .onNodeWithTag("AuthenticatorCountdown", useUnmergedTree = true)
+            .assertIsDisplayed()
+        composeTestRule
+            .onNodeWithContentDescription("剩余 20 秒", useUnmergedTree = true)
+            .assertIsDisplayed()
         composeTestRule.onNodeWithText("下一段 316 431").assertDoesNotExist()
         composeTestRule.onNodeWithText("公司 VPN").assertDoesNotExist()
     }
