@@ -1,6 +1,7 @@
 package com.x8bit.bitwarden.ui.authenticator
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,8 +10,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -28,6 +31,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.bitwarden.ui.platform.resource.BitwardenString
 import com.bitwarden.ui.platform.theme.BitwardenTheme
 import com.x8bit.bitwarden.data.authenticator.match.matchRanges
@@ -88,7 +92,7 @@ internal fun AuthenticatorIdentity(
             HighlightedLine(
                 text = row.notes,
                 query = query,
-                style = BitwardenTheme.typography.labelSmall,
+                style = BitwardenTheme.typography.bodySmall,
                 color = BitwardenTheme.colorScheme.text.secondary,
             )
         }
@@ -109,12 +113,16 @@ internal fun AuthenticatorCode(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = row.code.ifBlank { "—" },
-                style = BitwardenTheme.typography.titleLarge,
+                style = BitwardenTheme.typography.titleLarge.copy(
+                    fontFeatureSettings = "tnum",
+                    fontSize = 22.sp,
+                    lineHeight = 28.sp,
+                ),
                 fontFamily = FontFamily.Monospace,
                 color = if (urgent) {
                     BitwardenTheme.colorScheme.status.error
                 } else {
-                    BitwardenTheme.colorScheme.text.primary
+                    BitwardenTheme.colorScheme.icon.secondary
                 },
                 maxLines = 1,
             )
@@ -172,6 +180,25 @@ private fun HighlightedLine(
         overflow = TextOverflow.Ellipsis,
         modifier = modifier,
     )
+}
+
+@Composable
+internal fun AuthenticatorMonogram(title: String, modifier: Modifier = Modifier) {
+    val letter = title.trim().firstOrNull()?.uppercaseChar()?.toString().orEmpty().ifBlank { "•" }
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .padding(end = 12.dp)
+            .size(36.dp)
+            .clip(CircleShape)
+            .background(BitwardenTheme.colorScheme.background.tertiary),
+    ) {
+        Text(
+            text = letter,
+            style = BitwardenTheme.typography.titleSmall,
+            color = BitwardenTheme.colorScheme.text.interaction,
+        )
+    }
 }
 
 @Composable
@@ -266,8 +293,8 @@ private fun CountdownRing(
         BitwardenTheme.colorScheme.icon.secondary
     }
     val track = color.copy(alpha = 0.22f)
-    Box(contentAlignment = Alignment.Center, modifier = modifier.size(26.dp)) {
-        Canvas(modifier = Modifier.size(26.dp)) {
+    Box(contentAlignment = Alignment.Center, modifier = modifier.size(28.dp)) {
+        Canvas(modifier = Modifier.size(28.dp)) {
             val stroke = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round)
             val inset = stroke.width / 2
             val arcSize = Size(size.width - stroke.width, size.height - stroke.width)

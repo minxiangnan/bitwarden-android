@@ -67,7 +67,7 @@ GitHub Actions 在推送 `v-zh-authenticator-android-*` 标签时编发布包。
 - 每条验证码可以打开「允许 MCP 读取」并填写别名。HOTP 不能交给 MCP。设置里有「MCP 访问」：创建令牌、只显示一次、复制、轮换、吊销。令牌明文不落盘，服务器上存的是用户密钥加密后的副本。轮换后会用新密钥重新包装已放行的条目。
 - 自动填充填完密码后，如果登录条目自己有 TOTP，或验证器里有和该主机匹配的条目，会把验证码复制到剪贴板。Android 没有通用的验证码填充字段，所以这里是复制，不是写进输入框。
 - 保存提示：同一主机下的新用户名会新建登录；同一用户名但密码变了，只更新密码，备注和验证码保留；完全相同则不提示。点「此网站永不」会再确认一次。
-- 界面默认简体中文。配色是奶油底、陶土色强调（`#D97757`），深色模式用暖棕色，不用纯黑。
+- 界面默认简体中文。1.1.0 起整套界面用同一套暖色：奶油底 `#FBF6EF`、卡片 `#FFFDF9`、陶土按钮 `#C2552D`、正文 `#3B2A22`。深色模式是深暖棕 `#241812`，不用纯黑。完整色板在 `docs/zh-design-system.md`。
 - 生物识别解锁沿用原客户端的能力。设备支持指纹但还没打开时，锁屏上会提示去「设置 → 账户安全」打开，并说明默认不会自动上锁。要在账户安全里打开之后，才会出现「使用生物识别解锁」。默认不自动锁定。
 - 默认禁止截图和在最近任务里露出验证码（`FLAG_SECURE`）。需要截图时到「设置 → 其他」打开允许截图。
 
@@ -231,3 +231,15 @@ MCP 会话接口是 `/api/mcp/status`、`/api/mcp/token`、`/api/mcp/token/enc`�
 | `com.minxiangnan.bitwarden.zh-x86_64.apk` | 45,775,012 | `aa0049a336032e63bdef62881aacadf8b69a4aeea593feef6e3b3a335e32ae84` |
 | `com.minxiangnan.bitwarden.zh-x86.apk` | 46,174,775 | `516a2f3f6d2e24d5246de0b8902f10e68e7a39f09cfce612b1e5f1dda9318c97` |
 | `com.minxiangnan.bitwarden.zh.apk`（universal） | 86,076,647 | `4adf160dd6caf2cabbc70380fd13961a5c0cba8d81f7ed17239cd171c601cf4e` |
+
+1.1.0 把整套界面收成同一套暖色设计。页面是奶油色 `#FBF6EF`，卡片是 `#FFFDF9`，填充按钮是陶土色 `#C2552D`，链接、图标和验证码用 `#BA4E29`，正文是 `#3B2A22`，次要文字是 `#7A675B`。深色模式用深暖棕 `#241812` 和卡片 `#32241C`，不用纯黑。最后 5 秒的倒计时和危险确认用 `#C2412D`。验证器列表是一组圆角表面：字母头像、名称、一行备注、等宽分组验证码，末尾是细倒计时环。顶部有搜索、自定义 / 名称 A-Z，以及安静的「排序」。添加放到右下角按钮里，可以选择扫码或手动添加。排序时的位移动画还在。色板写在 `docs/zh-design-system.md`。版本号是 1.1.0（versionCode 13）。签名仍是 1.0.1 起的那把发布密钥。
+
+1.1.0：
+
+| APK | 大小 | SHA-256 |
+| --- | --- | --- |
+| `com.minxiangnan.bitwarden.zh-arm64-v8a.apk` | 46,361,625 | `33309d28b095f225df80876ac84036a0288d22ac93aa79f01c0c17192966e7dd` |
+| `com.minxiangnan.bitwarden.zh-armeabi-v7a.apk` | 43,240,563 | `072410efdab9585360e0221c03343c96a190a9711d68c61bacd6debece57d09e` |
+| `com.minxiangnan.bitwarden.zh-x86_64.apk` | 45,762,780 | `1d5fb3fd77f56d14ff58d9135eeea588ed7042ce6e6cd6965ffd8731e5d9c58e` |
+| `com.minxiangnan.bitwarden.zh-x86.apk` | 46,162,543 | `3b6cb5f3322a868122c85695c6f600226238b4681dbe5819bab94a5db2593a44` |
+| `com.minxiangnan.bitwarden.zh.apk`（universal） | 86,064,415 | `d7e1394062b28176089ec5af7e91ea554c20354c74fa930b722cd4385480f8c4` |
