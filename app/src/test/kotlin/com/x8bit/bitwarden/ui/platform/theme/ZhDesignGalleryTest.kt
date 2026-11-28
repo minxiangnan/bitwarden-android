@@ -306,7 +306,6 @@ private fun AuthenticatorGroup() {
                 onEdit = {},
                 onTrash = {},
                 onRestore = {},
-                onFavorite = {},
                 onDelete = {},
             )
         }

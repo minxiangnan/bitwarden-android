@@ -255,3 +255,5 @@ MCP 会话接口是 `/api/mcp/status`、`/api/mcp/token`、`/api/mcp/token/enc`�
 | `com.minxiangnan.bitwarden.zh-x86_64.apk` | 45,761,708 | `528dcb2387000502f3c6e7973901b1a22059a1b8f4acb7b5dd8f21f9f773e85b` |
 | `com.minxiangnan.bitwarden.zh-x86.apk` | 46,161,471 | `5f92fe9a3304faf14730447240a44236bb163eb5b5d6968c499524ea3ef082cb` |
 | `com.minxiangnan.bitwarden.zh.apk`（universal） | 86,063,343 | `e17996d6b994287ee0c7a05c3bf308957278f0b0c62e7be3b06a1fd527e58611` |
+
+1.1.2 从验证器页面拿掉了收藏。行首不再画星标，顶部菜单不再有「只看收藏」，行尾菜单不再有收藏或取消收藏。条目上原来的收藏标记还留在数据里，只是这个页面不显示、也不按它筛选。布局其余部分不变：名称和备注完整换行，长按拖动排序，点一下复制并在顶部显示「已复制验证码」。色板仍是 `docs/zh-design-system.md`。版本号是 1.1.2（versionCode 15）。签名仍是 1.0.1 起的那把发布密钥。

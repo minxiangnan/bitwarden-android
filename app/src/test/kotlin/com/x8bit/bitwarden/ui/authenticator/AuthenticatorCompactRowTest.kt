@@ -19,6 +19,7 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -69,7 +70,6 @@ class AuthenticatorCompactRowTest : BitwardenComposeTest() {
                         onEdit = {},
                         onTrash = {},
                         onRestore = {},
-                        onFavorite = {},
                         onDelete = {},
                     )
                 }
@@ -82,7 +82,6 @@ class AuthenticatorCompactRowTest : BitwardenComposeTest() {
                         onEdit = {},
                         onTrash = {},
                         onRestore = {},
-                        onFavorite = {},
                         onDelete = {},
                     )
                 }
@@ -124,7 +123,6 @@ class AuthenticatorCompactRowTest : BitwardenComposeTest() {
                     onEdit = {},
                     onTrash = {},
                     onRestore = {},
-                    onFavorite = {},
                     onDelete = {},
                 )
             }
@@ -148,7 +146,6 @@ class AuthenticatorCompactRowTest : BitwardenComposeTest() {
                 onEdit = { edited = true },
                 onTrash = {},
                 onRestore = {},
-                onFavorite = {},
                 onDelete = {},
             )
         }
@@ -193,7 +190,6 @@ class AuthenticatorCompactRowTest : BitwardenComposeTest() {
                     onEdit = {},
                     onTrash = {},
                     onRestore = {},
-                    onFavorite = {},
                     onDelete = {},
                 )
             }
@@ -203,9 +199,12 @@ class AuthenticatorCompactRowTest : BitwardenComposeTest() {
         composeTestRule.onNodeWithTag("AuthenticatorDragHandle").assertDoesNotExist()
         composeTestRule.onNodeWithText("833 143").performClick()
         org.junit.Assert.assertEquals(1, copies)
+        composeTestRule.onNodeWithContentDescription("Favorite").assertDoesNotExist()
         composeTestRule.onNodeWithTag("AuthenticatorOverflow").performClick()
         composeTestRule.onNodeWithText("上移").assertIsDisplayed()
         composeTestRule.onNodeWithText("置顶").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Favorite").assertDoesNotExist()
+        composeTestRule.onNodeWithText("Unfavorite").assertDoesNotExist()
         savePng("WrappedList", "authenticator-list-wrapped.png")
     }
 

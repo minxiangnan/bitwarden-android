@@ -26,9 +26,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -46,15 +44,9 @@ import androidx.compose.ui.unit.sp
 import com.bitwarden.ui.platform.resource.BitwardenString
 import com.bitwarden.ui.platform.theme.BitwardenTheme
 import com.x8bit.bitwarden.data.authenticator.match.matchRanges
-import kotlin.math.cos
-import kotlin.math.sin
 
 internal const val AUTHENTICATOR_URGENT_SECONDS = 5
 private const val FULL_CIRCLE_DEGREES = 360f
-private const val STAR_POINTS = 10
-private const val STAR_START_DEGREES = -90.0
-private const val STAR_STEP_DEGREES = 36.0
-private const val STAR_INNER_RATIO = 0.42f
 private const val BUBBLE_ENTER_MILLIS = 220
 private const val BUBBLE_EXIT_MILLIS = 180
 private const val BUBBLE_CORNER_PERCENT = 50
@@ -65,8 +57,8 @@ private const val OVERFLOW_DOT_MIDDLE = 0.5f
 private const val OVERFLOW_DOT_BOTTOM = 0.78f
 
 /**
- * Name, optional notes, and a small favorite mark. Name and notes wrap in full.
- * Blank notes take no space.
+ * Name and optional notes. Both wrap in full. Blank notes take no space.
+ * A stored favorite flag is not shown.
  */
 @Composable
 internal fun AuthenticatorIdentity(
@@ -76,9 +68,6 @@ internal fun AuthenticatorIdentity(
 ) {
     Column(modifier = modifier) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            if (row.favorite) {
-                FavoriteMark()
-            }
             HighlightedLine(
                 text = row.title,
                 query = query,
@@ -238,20 +227,6 @@ private fun HighlightedLine(
 }
 
 @Composable
-private fun FavoriteMark() {
-    val description = stringResource(BitwardenString.favorite)
-    val color = BitwardenTheme.colorScheme.text.interaction
-    Canvas(
-        modifier = Modifier
-            .padding(end = 4.dp)
-            .size(12.dp)
-            .semantics { contentDescription = description },
-    ) {
-        drawStar(color)
-    }
-}
-
-@Composable
 internal fun AuthenticatorOverflowButton(onClick: () -> Unit) {
     val description = stringResource(BitwardenString.zh_authenticator_more)
     val color = BitwardenTheme.colorScheme.icon.secondary
@@ -273,23 +248,6 @@ internal fun AuthenticatorOverflowButton(onClick: () -> Unit) {
             )
         }
     }
-}
-
-private fun DrawScope.drawStar(color: Color) {
-    val path = Path()
-    val centerX = size.width / 2f
-    val centerY = size.height / 2f
-    val outer = size.minDimension / 2f
-    val inner = outer * STAR_INNER_RATIO
-    for (index in 0 until STAR_POINTS) {
-        val radius = if (index % 2 == 0) outer else inner
-        val angle = Math.toRadians(STAR_START_DEGREES + index * STAR_STEP_DEGREES)
-        val x = centerX + (radius * cos(angle)).toFloat()
-        val y = centerY + (radius * sin(angle)).toFloat()
-        if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
-    }
-    path.close()
-    drawPath(path, color)
 }
 
 @Composable
