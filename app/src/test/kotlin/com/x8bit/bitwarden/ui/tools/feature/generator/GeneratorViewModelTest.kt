@@ -323,7 +323,7 @@ class GeneratorViewModelTest : BaseViewModelTest() {
 
             assertEquals(GeneratorEvent.NavigateBack, eventTurbine.awaitItem())
             assertEquals(
-                GeneratorResult.Username(username = "email+abcd1234@address.com"),
+                GeneratorResult.Username(username = "username"),
                 generatorResultTurbine.awaitItem(),
             )
         }
@@ -354,6 +354,7 @@ class GeneratorViewModelTest : BaseViewModelTest() {
                 allowIncludeNumber = false,
                 wordSeparator = "-",
                 numWords = 3,
+                lastPassword = updatedGeneratedPassword,
             )
 
             fakeGeneratorRepository.setMockGeneratePasswordResult(
@@ -431,6 +432,7 @@ class GeneratorViewModelTest : BaseViewModelTest() {
                 allowIncludeNumber = false,
                 wordSeparator = "-",
                 numWords = 3,
+                lastPassphrase = updatedGeneratedPassphrase,
             )
 
             fakeGeneratorRepository.setMockGeneratePassphraseResult(
@@ -562,14 +564,59 @@ class GeneratorViewModelTest : BaseViewModelTest() {
     @Test
     fun `CopyClick should call setText on ClipboardManager and register generator action`() {
         val viewModel = createViewModel()
-        every { clipboardManager.setText(viewModel.stateFlow.value.generatedText) } just runs
+        val text = viewModel.stateFlow.value.generatedText
+        every {
+            clipboardManager.setText(
+                text = text,
+                isSensitive = any(),
+                toastDescriptorOverride = any(),
+                showToast = any(),
+            )
+        } just runs
 
         viewModel.trySendAction(GeneratorAction.CopyClick)
 
         verify(exactly = 1) {
-            clipboardManager.setText(text = viewModel.stateFlow.value.generatedText)
+            clipboardManager.setText(
+                text = text,
+                isSensitive = true,
+                toastDescriptorOverride = "密码",
+                showToast = false,
+            )
             reviewPromptManager.registerGeneratedResultAction()
         }
+        assertEquals(
+            BitwardenString.zh_generator_password_copied,
+            viewModel.stateFlow.value.copiedMessage,
+        )
+    }
+
+    @Test
+    fun `opening with a stored password does not generate another one`() {
+        fakeGeneratorRepository.savePasscodeGenerationOptions(
+            PasscodeGenerationOptions(
+                type = PasscodeGenerationOptions.PasscodeType.PASSWORD,
+                length = 14,
+                allowAmbiguousChar = false,
+                hasNumbers = true,
+                minNumber = 1,
+                hasUppercase = true,
+                hasLowercase = true,
+                allowSpecial = false,
+                minSpecial = 1,
+                allowCapitalize = false,
+                allowIncludeNumber = false,
+                wordSeparator = "-",
+                numWords = 3,
+                lastPassword = "kept-password",
+            ),
+        )
+        val viewModel = createViewModel(state = null)
+        assertEquals("kept-password", viewModel.stateFlow.value.generatedText)
+        assertEquals(null, fakeGeneratorRepository.recordedPasswordRequest())
+        viewModel.trySendAction(GeneratorAction.LifecycleResume)
+        assertEquals("kept-password", viewModel.stateFlow.value.generatedText)
+        assertEquals(null, fakeGeneratorRepository.recordedPasswordRequest())
     }
 
     @Test
@@ -999,13 +1046,14 @@ class GeneratorViewModelTest : BaseViewModelTest() {
             UsernameGenerationOptions(
                 type = UsernameGenerationOptions.UsernameType.RANDOM_WORD,
                 simpleLoginSelfHostServerUrl = "",
+                lastRandomWord = "kept-name",
             ),
         )
         val expectedState = initialState.copy(
             selectedType = GeneratorState.MainType.Username(
                 selectedType = GeneratorState.MainType.Username.UsernameType.RandomWord(),
             ),
-            generatedText = "randomWord",
+            generatedText = "kept-name",
         )
         viewModel.trySendAction(GeneratorAction.LifecycleResume)
         assertEquals(
@@ -1035,6 +1083,7 @@ class GeneratorViewModelTest : BaseViewModelTest() {
                 wordSeparator = "-",
                 allowCapitalize = false,
                 allowIncludeNumber = false,
+                lastPassphrase = "kept-phrase",
             ),
         )
         val expectedState = initialState.copy(
@@ -1048,7 +1097,7 @@ class GeneratorViewModelTest : BaseViewModelTest() {
                 includeNumber = false,
                 includeNumberEnabled = true,
             ),
-            generatedText = "updatedPassphrase",
+            generatedText = "kept-phrase",
         )
         viewModel.trySendAction(GeneratorAction.LifecycleResume)
         assertEquals(
@@ -1071,10 +1120,7 @@ class GeneratorViewModelTest : BaseViewModelTest() {
             val viewModel = createViewModel(initialState)
             // the state is updated via the call to `loadOptions()` in the init block
             viewModel.stateFlow.test {
-                assertEquals(
-                    initialState.copy(generatedText = "email+abcd1234@address.com"),
-                    awaitItem(),
-                )
+                assertEquals(initialState, awaitItem())
                 // Setting the repository options to RANDOM_WORD to show this does NOT get used.
                 fakeGeneratorRepository.saveUsernameGenerationOptions(
                     UsernameGenerationOptions(

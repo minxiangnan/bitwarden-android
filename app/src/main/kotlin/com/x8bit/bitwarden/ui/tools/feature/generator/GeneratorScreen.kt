@@ -2,6 +2,8 @@
 
 package com.x8bit.bitwarden.ui.tools.feature.generator
 
+import android.view.HapticFeedbackConstants
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -28,7 +30,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -104,6 +108,7 @@ import com.x8bit.bitwarden.ui.tools.feature.generator.handlers.rememberRandomWor
 import com.x8bit.bitwarden.ui.tools.feature.generator.handlers.rememberUsernameTypeHandlers
 import com.x8bit.bitwarden.ui.tools.feature.generator.model.ExploreGeneratorCoachMark
 import com.x8bit.bitwarden.ui.tools.feature.generator.model.GeneratorMode
+import com.x8bit.bitwarden.ui.authenticator.AuthenticatorCopyBubble
 import com.x8bit.bitwarden.ui.vault.model.VaultAddEditType
 import com.x8bit.bitwarden.ui.vault.model.VaultItemCipherType
 import kotlinx.collections.immutable.ImmutableList
@@ -222,10 +227,17 @@ fun GeneratorScreen(
     val randomWordHandlers = rememberRandomWordHandlers(viewModel)
 
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
+    val view = LocalView.current
+    LaunchedEffect(state.copiedNonce) {
+        if (state.copiedMessage != null) {
+            view.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
+        }
+    }
     CoachMarkContainer(
         state = coachMarkState,
         modifier = Modifier.fillMaxSize(),
     ) {
+        Box(modifier = Modifier.fillMaxSize()) {
         BitwardenScaffold(
             topBar = {
                 when (val generatorMode = state.generatorMode) {
@@ -295,6 +307,12 @@ fun GeneratorScreen(
                 },
                 lazyListState = lazyListState,
             )
+        }
+        AuthenticatorCopyBubble(
+            visible = state.copiedMessage != null,
+            message = state.copiedMessage?.let { stringResource(it) }.orEmpty(),
+            modifier = Modifier.align(Alignment.TopCenter),
+        )
         }
     }
     // Remove dim nav bar effect when we leave this screen.

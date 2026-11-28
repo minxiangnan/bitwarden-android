@@ -56,6 +56,7 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -66,6 +67,13 @@ import kotlin.math.max
 
 private const val KEY_STATE = "state"
 private const val NO_GENERATED_TEXT: String = "-"
+private const val COPY_NOTICE_MS: Long = 1_500
+
+private enum class GenerationMode {
+    STANDARD,
+    IF_MISSING,
+    KEEP,
+}
 
 /**
  * ViewModel responsible for handling user interactions in the generator screen.
@@ -136,7 +144,7 @@ class GeneratorViewModel @AssistedInject constructor(
 
     init {
         stateFlow.onEach { savedStateHandle[KEY_STATE] = it }.launchIn(viewModelScope)
-        loadOptions()
+        loadOptions(mode = GenerationMode.IF_MISSING)
         policyManager
             .getActivePoliciesFlow<PolicyInformation.PasswordGenerator>()
             .map { GeneratorAction.Internal.PasswordGeneratorPolicyReceive(it) }
@@ -206,9 +214,9 @@ class GeneratorViewModel @AssistedInject constructor(
     }
 
     private fun handleOnResumed() {
-        // when the screen resumes we need to refresh the options for the current option from
-        // disk in the event they were changed while the screen was in the foreground.
-        loadOptions(shouldUseStorageOptions = true)
+        // Refresh options from disk, but keep the last generated value. Opening, rotating,
+        // or switching tabs must not mint a new password or username.
+        loadOptions(shouldUseStorageOptions = true, mode = GenerationMode.KEEP)
     }
 
     @Suppress("MaxLineLength")
@@ -313,6 +321,16 @@ class GeneratorViewModel @AssistedInject constructor(
             is GeneratorAction.Internal.UpgradedToPremiumCardEligibilityReceive -> {
                 handleUpgradedToPremiumCardEligibilityReceive(action)
             }
+
+            is GeneratorAction.Internal.ClearCopied -> {
+                mutableStateFlow.update { current ->
+                    if (current.copiedNonce == action.nonce) {
+                        current.copy(copiedMessage = null)
+                    } else {
+                        current
+                    }
+                }
+            }
         }
     }
 
@@ -359,7 +377,10 @@ class GeneratorViewModel @AssistedInject constructor(
 
     //region Generation Handlers
 
-    private fun loadOptions(shouldUseStorageOptions: Boolean = false) {
+    private fun loadOptions(
+        shouldUseStorageOptions: Boolean = false,
+        mode: GenerationMode = GenerationMode.STANDARD,
+    ) {
         when (val selectedType = state.selectedType) {
             is GeneratorState.MainType.Passphrase,
             is GeneratorState.MainType.Password,
@@ -372,7 +393,7 @@ class GeneratorViewModel @AssistedInject constructor(
                 } else {
                     selectedType
                 }
-                loadPasscodeOptions(selectedType = mainType)
+                loadPasscodeOptions(selectedType = mainType, mode = mode)
             }
 
             is GeneratorState.MainType.Username -> {
@@ -388,13 +409,17 @@ class GeneratorViewModel @AssistedInject constructor(
                 loadUsernameOptions(
                     selectedType = mainType,
                     forceRegeneration = mainType.selectedType !is ForwardedEmailAlias,
+                    mode = mode,
                 )
             }
         }
     }
 
     @Suppress("CyclomaticComplexMethod", "LongMethod")
-    private fun loadPasscodeOptions(selectedType: GeneratorState.MainType) {
+    private fun loadPasscodeOptions(
+        selectedType: GeneratorState.MainType,
+        mode: GenerationMode = GenerationMode.STANDARD,
+    ) {
         if (selectedType is GeneratorState.MainType.Username) {
             // This can only handle passwords and passphrases
             return
@@ -437,7 +462,7 @@ class GeneratorViewModel @AssistedInject constructor(
                 val minNumWords = policy
                     .minNumberWords
                     ?: GeneratorState.MainType.Passphrase.PASSPHRASE_MIN_NUMBER_OF_WORDS
-                updateGeneratorMainType {
+                updateGeneratorMainType(mode = mode) {
                     GeneratorState.MainType.Passphrase(
                         numWords = max(options.numWords, minNumWords),
                         minNumWords = minNumWords,
@@ -454,7 +479,7 @@ class GeneratorViewModel @AssistedInject constructor(
                 val minLength = policy
                     .minLength
                     ?: GeneratorState.MainType.Password.PASSWORD_LENGTH_SLIDER_MIN
-                updateGeneratorMainType {
+                updateGeneratorMainType(mode = mode) {
                     GeneratorState.MainType.Password(
                         length = max(options.length, minLength),
                         minLength = minLength,
@@ -482,6 +507,7 @@ class GeneratorViewModel @AssistedInject constructor(
     private fun loadUsernameOptions(
         selectedType: GeneratorState.MainType.Username,
         forceRegeneration: Boolean = false,
+        mode: GenerationMode = GenerationMode.STANDARD,
     ) {
         val options = generatorRepository.getUsernameGenerationOptions()
         val updatedSelectedType = when (val type = selectedType.selectedType) {
@@ -526,7 +552,10 @@ class GeneratorViewModel @AssistedInject constructor(
             }
         }
 
-        updateGeneratorMainType(forceRegeneration = forceRegeneration) { updatedSelectedType }
+        updateGeneratorMainType(
+            forceRegeneration = forceRegeneration,
+            mode = mode,
+        ) { updatedSelectedType }
     }
 
     private fun savePasswordOptionsToDisk(password: GeneratorState.MainType.Password) {
@@ -733,9 +762,34 @@ class GeneratorViewModel @AssistedInject constructor(
         ) { state.selectedType }
     }
 
+    private var clearCopiedJob: Job? = null
+
     private fun handleCopyClick() {
+        val text = state.generatedText
+        if (text.isBlank() || text == NO_GENERATED_TEXT) return
         reviewPromptManager.registerGeneratedResultAction()
-        clipboardManager.setText(text = state.generatedText)
+        val username = state.selectedType is GeneratorState.MainType.Username
+        clipboardManager.setText(
+            text = text,
+            toastDescriptorOverride = if (username) "用户名" else "密码",
+            showToast = false,
+        )
+        val nonce = state.copiedNonce + 1
+        mutableStateFlow.update {
+            it.copy(
+                copiedMessage = if (username) {
+                    BitwardenString.zh_generator_username_copied
+                } else {
+                    BitwardenString.zh_generator_password_copied
+                },
+                copiedNonce = nonce,
+            )
+        }
+        clearCopiedJob?.cancel()
+        clearCopiedJob = viewModelScope.launch {
+            delay(COPY_NOTICE_MS)
+            sendAction(GeneratorAction.Internal.ClearCopied(nonce))
+        }
     }
 
     private fun handleCreateLoginClick() {
@@ -765,6 +819,7 @@ class GeneratorViewModel @AssistedInject constructor(
     ) {
         when (val result = action.result) {
             is GeneratedPasswordResult.Success -> {
+                rememberPasscode(password = result.generatedString)
                 mutableStateFlow.update {
                     it.copy(generatedText = result.generatedString)
                 }
@@ -785,6 +840,7 @@ class GeneratorViewModel @AssistedInject constructor(
     ) {
         when (val result = action.result) {
             is GeneratedPassphraseResult.Success -> {
+                rememberPasscode(passphrase = result.generatedString)
                 mutableStateFlow.update {
                     it.copy(generatedText = result.generatedString)
                 }
@@ -805,6 +861,7 @@ class GeneratorViewModel @AssistedInject constructor(
     ) {
         when (val result = action.result) {
             is GeneratedPlusAddressedUsernameResult.Success -> {
+                rememberUsername(plusAddressed = result.generatedEmailAddress)
                 mutableStateFlow.update {
                     it.copy(generatedText = result.generatedEmailAddress)
                 }
@@ -825,6 +882,7 @@ class GeneratorViewModel @AssistedInject constructor(
     ) {
         when (val result = action.result) {
             is GeneratedCatchAllUsernameResult.Success -> {
+                rememberUsername(catchAll = result.generatedEmailAddress)
                 mutableStateFlow.update {
                     it.copy(generatedText = result.generatedEmailAddress)
                 }
@@ -845,6 +903,7 @@ class GeneratorViewModel @AssistedInject constructor(
     ) {
         when (val result = action.result) {
             is GeneratedRandomWordUsernameResult.Success -> {
+                rememberUsername(randomWord = result.generatedUsername)
                 mutableStateFlow.update {
                     it.copy(generatedText = result.generatedUsername)
                 }
@@ -863,6 +922,7 @@ class GeneratorViewModel @AssistedInject constructor(
     ) {
         when (val result = action.result) {
             is GeneratedForwardedServiceUsernameResult.Success -> {
+                rememberUsername(forwarded = result.generatedEmailAddress)
                 mutableStateFlow.update {
                     it.copy(generatedText = result.generatedEmailAddress)
                 }
@@ -891,7 +951,7 @@ class GeneratorViewModel @AssistedInject constructor(
         action: GeneratorAction.Internal.PasswordGeneratorPolicyReceive,
     ) {
         mutableStateFlow.update { it.copy(isUnderPolicy = action.policies.any()) }
-        loadOptions()
+        loadOptions(mode = GenerationMode.KEEP)
     }
 
     //endregion Generated Field Handlers
@@ -1544,27 +1604,46 @@ class GeneratorViewModel @AssistedInject constructor(
 
     //region Utility Functions
 
-    @Suppress("LongMethod")
+    @Suppress("LongMethod", "CyclomaticComplexMethod")
     private inline fun updateGeneratorMainType(
         allowErrorsWhenMissingValues: Boolean = false,
         forceRegeneration: Boolean = false,
+        mode: GenerationMode = GenerationMode.STANDARD,
         crossinline block: (GeneratorState.MainType) -> GeneratorState.MainType?,
     ) {
         val currentSelectedType = state.selectedType
         val updatedMainType = block(currentSelectedType) ?: return
+        val typeChanged = !sameGeneratedKind(currentSelectedType, updatedMainType)
+        val shouldGenerate = shouldGenerate(
+            mode = mode,
+            type = updatedMainType,
+            typeChanged = typeChanged,
+            forceRegeneration = forceRegeneration,
+        )
         mutableStateFlow.update { it.copy(selectedType = updatedMainType) }
+        if (!shouldGenerate && !typeChanged && generateTextJob.isActive) {
+            return
+        }
 
         generateTextJob.cancel()
         generateTextJob = viewModelScope.launch {
             when (updatedMainType) {
                 is GeneratorState.MainType.Passphrase -> {
                     savePassphraseOptionsToDisk(passphrase = updatedMainType)
-                    generatePassphrase(passphrase = updatedMainType)
+                    if (shouldGenerate) {
+                        generatePassphrase(passphrase = updatedMainType)
+                    } else {
+                        keepGenerated(storedPasscode(updatedMainType), typeChanged)
+                    }
                 }
 
                 is GeneratorState.MainType.Password -> {
                     savePasswordOptionsToDisk(password = updatedMainType)
-                    generatePassword(password = updatedMainType)
+                    if (shouldGenerate) {
+                        generatePassword(password = updatedMainType)
+                    } else {
+                        keepGenerated(storedPasscode(updatedMainType), typeChanged)
+                    }
                 }
 
                 is GeneratorState.MainType.Username -> {
@@ -1573,51 +1652,167 @@ class GeneratorViewModel @AssistedInject constructor(
                             saveForwardedEmailAliasServiceTypeToDisk(
                                 forwardedEmailAlias = selectedType,
                             )
-                            if (forceRegeneration) {
+                            if (shouldGenerate && forceRegeneration) {
                                 generateForwardedEmailAlias(
                                     allowErrorsWhenMissingValues = allowErrorsWhenMissingValues,
                                     alias = selectedType,
                                 )
                             } else {
-                                mutableStateFlow.update {
-                                    it.copy(generatedText = NO_GENERATED_TEXT)
-                                }
+                                showOrClearUsername(updatedMainType, typeChanged, mode)
                             }
                         }
 
                         is CatchAllEmail -> {
                             saveCatchAllEmailOptionsToDisk(catchAllEmail = selectedType)
-                            if (forceRegeneration) {
+                            if (shouldGenerate && forceRegeneration) {
                                 generateCatchAllEmail(
                                     catchAllEmail = selectedType,
                                     allowErrorsWhenMissingValues = allowErrorsWhenMissingValues,
                                 )
                             } else {
-                                mutableStateFlow.update {
-                                    it.copy(generatedText = NO_GENERATED_TEXT)
-                                }
+                                showOrClearUsername(updatedMainType, typeChanged, mode)
                             }
                         }
 
                         is PlusAddressedEmail -> {
                             savePlusAddressedEmailOptionsToDisk(plusAddressedEmail = selectedType)
-                            if (forceRegeneration) {
+                            if (shouldGenerate && forceRegeneration) {
                                 generatePlusAddressedEmail(plusAddressedEmail = selectedType)
                             } else {
-                                mutableStateFlow.update {
-                                    it.copy(generatedText = NO_GENERATED_TEXT)
-                                }
+                                showOrClearUsername(updatedMainType, typeChanged, mode)
                             }
                         }
 
                         is RandomWord -> {
                             saveRandomWordOptionsToDisk(randomWord = selectedType)
-                            generateRandomWordUsername(randomWord = selectedType)
+                            if (shouldGenerate) {
+                                generateRandomWordUsername(randomWord = selectedType)
+                            } else {
+                                keepGenerated(storedUsername(updatedMainType), typeChanged)
+                            }
                         }
                     }
                 }
             }
         }
+    }
+
+    private fun shouldGenerate(
+        mode: GenerationMode,
+        type: GeneratorState.MainType,
+        typeChanged: Boolean,
+        forceRegeneration: Boolean,
+    ): Boolean {
+        val stored = storedFor(type)
+        val blank = state.generatedText.isBlank() || state.generatedText == NO_GENERATED_TEXT
+        val allowed = when (type) {
+            is GeneratorState.MainType.Password,
+            is GeneratorState.MainType.Passphrase,
+            -> true
+            is GeneratorState.MainType.Username -> when (type.selectedType) {
+                is RandomWord -> true
+                else -> forceRegeneration
+            }
+        }
+        return when (mode) {
+            GenerationMode.KEEP -> false
+            GenerationMode.STANDARD -> allowed
+            GenerationMode.IF_MISSING -> stored == null && (typeChanged || blank) && allowed
+        }
+    }
+
+    private fun showOrClearUsername(
+        type: GeneratorState.MainType.Username,
+        typeChanged: Boolean,
+        mode: GenerationMode,
+    ) {
+        if (mode == GenerationMode.STANDARD) {
+            mutableStateFlow.update { it.copy(generatedText = NO_GENERATED_TEXT) }
+        } else {
+            keepGenerated(storedUsername(type), typeChanged)
+        }
+    }
+
+    private fun keepGenerated(stored: String?, typeChanged: Boolean) {
+        val memory = state.generatedText.takeIf { it.isNotBlank() && it != NO_GENERATED_TEXT }
+        val next = when {
+            !typeChanged && memory != null -> memory
+            stored != null -> stored
+            else -> NO_GENERATED_TEXT
+        }
+        mutableStateFlow.update { it.copy(generatedText = next) }
+    }
+
+    private fun sameGeneratedKind(
+        current: GeneratorState.MainType,
+        updated: GeneratorState.MainType,
+    ): Boolean = when {
+        current is GeneratorState.MainType.Password &&
+            updated is GeneratorState.MainType.Password -> true
+        current is GeneratorState.MainType.Passphrase &&
+            updated is GeneratorState.MainType.Passphrase -> true
+        current is GeneratorState.MainType.Username &&
+            updated is GeneratorState.MainType.Username -> {
+            current.selectedType::class == updated.selectedType::class
+        }
+        else -> false
+    }
+
+    private fun storedFor(type: GeneratorState.MainType): String? = when (type) {
+        is GeneratorState.MainType.Password,
+        is GeneratorState.MainType.Passphrase,
+        -> storedPasscode(type)
+        is GeneratorState.MainType.Username -> storedUsername(type)
+    }
+
+    private fun storedPasscode(type: GeneratorState.MainType): String? {
+        val options = generatorRepository.getPasscodeGenerationOptions() ?: return null
+        val value = when (type) {
+            is GeneratorState.MainType.Password -> options.lastPassword
+            is GeneratorState.MainType.Passphrase -> options.lastPassphrase
+            is GeneratorState.MainType.Username -> null
+        }
+        return value?.takeIf { it.isNotBlank() }
+    }
+
+    private fun storedUsername(type: GeneratorState.MainType.Username): String? {
+        val options = generatorRepository.getUsernameGenerationOptions() ?: return null
+        val value = when (type.selectedType) {
+            is PlusAddressedEmail -> options.lastPlusAddressed
+            is CatchAllEmail -> options.lastCatchAll
+            is RandomWord -> options.lastRandomWord
+            is ForwardedEmailAlias -> options.lastForwarded
+        }
+        return value?.takeIf { it.isNotBlank() }
+    }
+
+    private fun rememberPasscode(password: String? = null, passphrase: String? = null) {
+        val options = generatorRepository.getPasscodeGenerationOptions()
+            ?: generatePasscodeDefaultOptions()
+        generatorRepository.savePasscodeGenerationOptions(
+            options.copy(
+                lastPassword = password ?: options.lastPassword,
+                lastPassphrase = passphrase ?: options.lastPassphrase,
+            ),
+        )
+    }
+
+    private fun rememberUsername(
+        plusAddressed: String? = null,
+        catchAll: String? = null,
+        randomWord: String? = null,
+        forwarded: String? = null,
+    ) {
+        val options = generatorRepository.getUsernameGenerationOptions()
+            ?: generateUsernameDefaultOptions()
+        generatorRepository.saveUsernameGenerationOptions(
+            options.copy(
+                lastPlusAddressed = plusAddressed ?: options.lastPlusAddressed,
+                lastCatchAll = catchAll ?: options.lastCatchAll,
+                lastRandomWord = randomWord ?: options.lastRandomWord,
+                lastForwarded = forwarded ?: options.lastForwarded,
+            ),
+        )
     }
 
     private suspend fun generateForwardedEmailAlias(
@@ -1960,6 +2155,8 @@ data class GeneratorState(
     var passcodePolicyOverride: PasscodePolicyOverride? = null,
     private val shouldShowCoachMarkTour: Boolean,
     val isUpgradedToPremiumCardEligible: Boolean = false,
+    val copiedMessage: Int? = null,
+    val copiedNonce: Int = 0,
 ) : Parcelable {
 
     /**
@@ -2852,6 +3049,11 @@ sealed class GeneratorAction {
         data class UpgradedToPremiumCardEligibilityReceive(
             val isEligible: Boolean,
         ) : Internal()
+
+        /**
+         * Hides the copy bubble when [nonce] is still the latest copy.
+         */
+        data class ClearCopied(val nonce: Int) : Internal()
     }
 }
 
