@@ -10,7 +10,7 @@ Light surfaces are cream and warm white. Text is warm brown. Dark mode is deep w
 | --- | --- | --- | --- |
 | background | `#FBF6EF` | `#241812` | Scaffold and page |
 | surface | `#FFFDF9` | `#32241C` | Cards, sheets, bars |
-| surface high / track | `#F3E6DC` | `#3D2C24` | Segment track, monogram |
+| surface high / track | `#F3E6DC` | `#3D2C24` | Pressed and selected fills |
 | primary | `#C2552D` | `#E08A6C` | Filled buttons, FAB |
 | on primary | `#FFFFFF` | `#241812` | Label on a filled button |
 | primary text | `#BA4E29` | `#E08A6C` | Links, codes, selected icons |
@@ -42,7 +42,7 @@ Inter, already loaded by `bitwardenTypography`.
 | Style | Size / line | Use |
 | --- | --- | --- |
 | titleLarge | 19 / 28 semibold | Screen titles |
-| titleSmall | 14 / 18 semibold | Row names, monogram |
+| titleSmall | 14 / 18 semibold | Row names |
 | bodyLarge | 16 / 24 | Fields |
 | bodySmall | 12 / 16 | Notes, secondary lines |
 | labelLarge | 14 / 20 | Segment labels, buttons |
@@ -68,7 +68,7 @@ No hard drop shadows on resting cards. Grouped surfaces sit on the page by color
 
 ## Icons
 
-One set: the existing `BitwardenDrawable` vector icons. The authenticator add action is `ic_plus_small` on a filled FAB. Monograms are a single character, not a second icon family. Overflow is three dots. The countdown is a 28dp ring, 2dp stroke.
+One set: the existing `BitwardenDrawable` vector icons. The authenticator add action is `ic_plus_small` on a filled FAB. Overflow is three dots. The countdown is a 28dp ring, 2dp stroke.
 
 ## Motion
 
@@ -87,12 +87,12 @@ Haptic: gesture-start when a drag begins, context-click on drop and on copy.
 | Default row | Surface group, hairline, terracotta code |
 | Last 5 seconds | Code and ring turn error red; next code appears |
 | Copied | Small interaction-colored confirmation |
-| Sort mode | Drag handle and pin at the start; copying off; action reads 完成 |
-| Search | Sort action hides; custom order controls hide |
+| Reorder | Long-press a row, then drag. The row lifts; the others slide. Drop writes `zh.totp.order` |
+| Search or a filter | Dragging is off so order is not computed against a partial list. Tap still copies. Overflow keeps edit and delete |
 | Empty | Title, muted body, one filled button |
 | Disabled | Divider fill, muted label |
 | Error dialog | Confirm uses the error color |
 
 ## Authenticator
 
-One rounded group (16dp), not a stack of outlined cards. Each row is at least 64dp: 36dp monogram, name in titleSmall, notes in bodySmall on one line, code in tabular monospace terracotta, countdown ring at the end. Header is search, then a two-part segment (自定义 / 名称 A-Z) and a quiet 排序 text action. Add is a FAB with 扫码 and 添加. 更多 stays in the top bar for import, export, trash, and the rest.
+One rounded group (16dp), not a stack of outlined cards. Each row is at least 64dp: name in titleSmall and notes in bodySmall, both wrapping to as many lines as they need, code in tabular monospace terracotta, countdown ring at the end. The list stays in the saved custom order. Header is search. Add is a FAB with 扫码 and 添加. 更多 stays in the top bar for import, export, trash, and the rest. Long-press drags a row; the overflow menu keeps 上移, 下移, and 置顶.
