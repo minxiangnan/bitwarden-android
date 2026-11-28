@@ -262,8 +262,8 @@ MCP 会话接口是 `/api/mcp/status`、`/api/mcp/token`、`/api/mcp/token/enc`�
 
 | APK | 大小 | SHA-256 |
 | --- | --- | --- |
-| `com.minxiangnan.bitwarden.zh-arm64-v8a.apk` | 46,358,685 | `afd5ea483bfa23241c349f9be12f757f353b6f589255bab435ab1e3a49bd34b1` |
-| `com.minxiangnan.bitwarden.zh-armeabi-v7a.apk` | 43,237,623 | `e74e30cdf40da0c5c90f9670ef2e48c86b2ce1bc77e185ebffdfe4403bcb69f0` |
-| `com.minxiangnan.bitwarden.zh-x86_64.apk` | 45,759,840 | `6202ce0cd4913030b1a4efd381f2830896874dbf91218195a4847fa07e3e3812` |
-| `com.minxiangnan.bitwarden.zh-x86.apk` | 46,159,603 | `5ae4c0bbd15c1c42d790380bde8fff3a7b05a91b4e013696194b87b45a39618e` |
-| `com.minxiangnan.bitwarden.zh.apk`（universal） | 86,061,475 | `ff79e6e4eaa69ca530798c31c4601d308357818e293020924ccca3ec88420ab2` |
+| `com.minxiangnan.bitwarden.zh-arm64-v8a.apk` | 46,363,349 | `19d075d780a8f2cc47d00d5c01ed28e4a408e90eb51df76392a92825c9445fda` |
+| `com.minxiangnan.bitwarden.zh-armeabi-v7a.apk` | 43,242,287 | `75cf182539ecb3f1fb28808dc5dd735b8c35cc48cfb87395eb2e9de5e675c251` |
+| `com.minxiangnan.bitwarden.zh-x86_64.apk` | 45,764,504 | `966cbc78da48d289e97b86d8920158a16c8549e1a53cae4e7ca54618cf78599c` |
+| `com.minxiangnan.bitwarden.zh-x86.apk` | 46,164,267 | `b3767a50c6bb2f328f4f240254b87eb9ee428770ecfb5923c7900407a79c7f56` |
+| `com.minxiangnan.bitwarden.zh.apk`（universal） | 86,066,139 | `414541e8ccd10e7e26530cc5a1b09e55354fa385f45793a5d2c9d57886efec8b` |
