@@ -257,3 +257,13 @@ MCP 会话接口是 `/api/mcp/status`、`/api/mcp/token`、`/api/mcp/token/enc`�
 | `com.minxiangnan.bitwarden.zh.apk`（universal） | 86,063,343 | `e17996d6b994287ee0c7a05c3bf308957278f0b0c62e7be3b06a1fd527e58611` |
 
 1.1.2 从验证器页面拿掉了收藏。行首不再画星标，顶部菜单不再有「只看收藏」，行尾菜单不再有收藏或取消收藏。条目上原来的收藏标记还留在数据里，只是这个页面不显示、也不按它筛选。布局其余部分不变：名称和备注完整换行，长按拖动排序，点一下复制并在顶部显示「已复制验证码」。色板仍是 `docs/zh-design-system.md`。版本号是 1.1.2（versionCode 15）。签名仍是 1.0.1 起的那把发布密钥。
+
+1.1.2：
+
+| APK | 大小 | SHA-256 |
+| --- | --- | --- |
+| `com.minxiangnan.bitwarden.zh-arm64-v8a.apk` | 46,358,685 | `afd5ea483bfa23241c349f9be12f757f353b6f589255bab435ab1e3a49bd34b1` |
+| `com.minxiangnan.bitwarden.zh-armeabi-v7a.apk` | 43,237,623 | `e74e30cdf40da0c5c90f9670ef2e48c86b2ce1bc77e185ebffdfe4403bcb69f0` |
+| `com.minxiangnan.bitwarden.zh-x86_64.apk` | 45,759,840 | `6202ce0cd4913030b1a4efd381f2830896874dbf91218195a4847fa07e3e3812` |
+| `com.minxiangnan.bitwarden.zh-x86.apk` | 46,159,603 | `5ae4c0bbd15c1c42d790380bde8fff3a7b05a91b4e013696194b87b45a39618e` |
+| `com.minxiangnan.bitwarden.zh.apk`（universal） | 86,061,475 | `ff79e6e4eaa69ca530798c31c4601d308357818e293020924ccca3ec88420ab2` |
