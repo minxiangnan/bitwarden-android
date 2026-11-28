@@ -366,7 +366,7 @@ private data object ZhColor {
     val divider: Color = Color(color = 0xFFEADFD3)
     val outline: Color = Color(color = 0xFF9E8676)
     val track: Color = Color(color = 0xFFF3E6DC)
-    val error: Color = Color(color = 0xFFC4473A)
+    val error: Color = Color(color = 0xFFC2412D)
 
     val darkBackground: Color = Color(color = 0xFF241812)
     val darkSurface: Color = Color(color = 0xFF32241C)

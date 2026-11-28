@@ -18,7 +18,7 @@ Light surfaces are cream and warm white. Text is warm brown. Dark mode is deep w
 | muted | `#7A675B` | `#C4A894` | Notes, hints, unselected icons |
 | divider | `#EADFD3` | `#4E3B30` | Hairline, 0.5dp |
 | outline | `#9E8676` | `#4E3B30` | Input borders that must clear 3:1 |
-| error | `#C4473A` | `#F0A8A0` | Last 5 seconds, destructive confirm |
+| error / urgent | `#C2412D` | `#F0A8A0` | Last 5 seconds, destructive confirm |
 | scrim | `#3B2A22` at 40% | `#241812` at 55% | Dialogs and the QR mask |
 
 ### WCAG AA adjustments
@@ -31,7 +31,7 @@ Requested values that failed small-text contrast were shifted. Filled-button ter
 | muted `#8A7568` | 4.05 / 4.28 | `#7A675B` (4.98 / 5.27) |
 | primary `#C2552D` as small text | 4.22 / 4.46 | Buttons stay `#C2552D` with white (4.53). Text, icons, and codes use `#BA4E29` (4.64 / 4.91) |
 | divider `#EADFD3` | 1.22 against the page | Kept. It is a hairline, not text. Input outlines use `#9E8676` (3.37 on surface) |
-| error | — | `#C4473A` is 4.53 on cream |
+| urgent | `#C2412D` | 4.78 on cream, 5.06 on surface. Shared with the extension |
 
 Dark primary `#E08A6C` on `#241812` is 6.61. Dark muted `#C4A894` on the page is 7.72. Button label `#241812` on `#E08A6C` is 6.61.
 
