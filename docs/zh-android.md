@@ -291,3 +291,15 @@ MCP 会话接口是 `/api/mcp/status`、`/api/mcp/token`、`/api/mcp/token/enc`�
 | `com.minxiangnan.bitwarden.zh-x86_64.apk` | 45,766,688 | `c9851e2c195954c04bfa44b1024d378fffd40fa468ecde12d646618b94910075` |
 | `com.minxiangnan.bitwarden.zh-x86.apk` | 46,166,451 | `ae04c20265c0224c5bcc4812cd1efd8c4ce603342ff36cd6965be0a5593aafdf` |
 | `com.minxiangnan.bitwarden.zh.apk`（universal） | 86,068,323 | `fb78185f0ba4a31ddf0fa7b692e17027c8639b5f98fb85ef17f0cc9e4956f8c8` |
+
+1.1.5 给验证器加上可编辑分组，存储和浏览器扩展 1.3.7 相同。条目的分组 id 写在备注尾部 `[[bwmeta:1]]` 的 `zh.totp.group`。分组目录是一条随条目同步的隐藏验证器记录，键是 `zh.totp.catalog`，不会显示成验证码，也不会被导出。未知的 bwmeta 键和 `zh.totp.order` 都会保留。列表按分组折叠，折叠状态只存在这台设备上。「未分组」排在最后；没有命名分组时列表保持平铺。分组管理可以新建、重命名、用上移下移排序，删除要确认两次，条目回到未分组，不会被删掉。行菜单和编辑页可以指定分组。长按在组内拖动排序，拖过分组标题就进入那一组。搜索跨所有分组。顺序计算和扩展一样，步长 1000。色板不变。版本号是 1.1.5（versionCode 18）。签名仍是 1.0.1 起的那把发布密钥。
+
+1.1.5：
+
+| APK | 大小 | SHA-256 |
+| --- | --- | --- |
+| `com.minxiangnan.bitwarden.zh-arm64-v8a.apk` | 46,415,753 | `ea15e9844f836a80dd1f20e3b3a5516f882fc654af8321c66b19b9d9b6dd6f7b` |
+| `com.minxiangnan.bitwarden.zh-armeabi-v7a.apk` | 43,294,691 | `b55cd96d8b4612ad82b9ce39aa2d298f5b2bc1a5f51ac35d3f118eaf053f28a6` |
+| `com.minxiangnan.bitwarden.zh-x86_64.apk` | 45,816,908 | `0611dba0654a4817aa3d1378a3d1ab9d448751b5e8b8c1c681c041f4c3802285` |
+| `com.minxiangnan.bitwarden.zh-x86.apk` | 46,216,671 | `268ed21a79597977676e96554b298380a21d824480b2bf2679a8a55a161dc672` |
+| `com.minxiangnan.bitwarden.zh.apk`（universal） | 86,118,543 | `bcc9301c84cb3ad2bc84b4756953d06c0ebc0297d860fb6a2fdfce3d2a5821a9` |

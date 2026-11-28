@@ -31,6 +31,8 @@ class AuthenticatorListViewModelTest : BaseViewModelTest() {
     private val repository: AuthenticatorRepository = mockk {
         every { entries } returns MutableStateFlow(AuthenticatorSnapshot())
         every { scanNotice } returns MutableStateFlow(null)
+        every { readCollapsed() } returns emptySet()
+        every { writeCollapsed(any()) } just runs
     }
     private val clipboardManager: BitwardenClipboardManager = mockk {
         every {
@@ -134,7 +136,7 @@ class AuthenticatorListViewModelTest : BaseViewModelTest() {
             )
             viewModel.trySendAction(AuthenticatorListAction.MoveTo("c", 0))
             assertEquals(listOf("c", "a", "b"), viewModel.stateFlow.value.rows.map { it.id })
-            coVerify { repository.applyOrders(mapOf("c" to "-1024")) }
+            coVerify { repository.applyOrders(mapOf("c" to "-1000")) }
         } finally {
             viewModel.viewModelScope.cancel()
         }

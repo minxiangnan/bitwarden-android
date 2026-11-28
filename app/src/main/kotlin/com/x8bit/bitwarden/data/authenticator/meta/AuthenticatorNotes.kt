@@ -20,6 +20,15 @@ import kotlinx.serialization.json.put
 
 private const val SENTINEL = "[[bwmeta:1]]"
 
+private val KNOWN_META_KEYS = setOf(
+    "kind",
+    "host",
+    "tags",
+    "counter",
+    "deletedAt",
+    TOTP_ORDER_FIELD,
+)
+
 private val json = Json { ignoreUnknownKeys = true }
 
 /**
@@ -29,6 +38,8 @@ data class SplitNotes(
     val text: String,
     val meta: AuthenticatorMeta,
     val hasTrailer: Boolean,
+    /** Keys other than the form fields and `zh.totp.order`. Never shown as notes. */
+    val extras: JsonObject = JsonObject(emptyMap()),
 )
 
 /**
@@ -73,16 +84,30 @@ fun splitAuthenticatorNotes(notes: String): SplitNotes {
     if (parsed !is JsonObject) {
         return SplitNotes(text = notes, meta = AuthenticatorMeta(), hasTrailer = false)
     }
-    return SplitNotes(text = text, meta = sanitizeMeta(parsed), hasTrailer = true)
+    return SplitNotes(
+        text = text,
+        meta = sanitizeMeta(parsed),
+        hasTrailer = true,
+        extras = extrasFrom(parsed),
+    )
 }
 
 /**
  * Joins visible notes and the trailer. The trailer is omitted when it carries no extra fields.
  */
-fun joinAuthenticatorNotes(text: String, meta: AuthenticatorMeta, digits: Int): String {
+fun joinAuthenticatorNotes(
+    text: String,
+    meta: AuthenticatorMeta,
+    digits: Int,
+    extras: JsonObject = JsonObject(emptyMap()),
+): String {
     val body = text.trim()
-    if (!shouldPersistMeta(meta, digits)) return body
-    val trailer = SENTINEL + compactMeta(meta).toString()
+    val merged = buildJsonObject {
+        extrasFrom(extras).forEach { (key, value) -> put(key, value) }
+        compactMeta(meta).forEach { (key, value) -> put(key, value) }
+    }
+    if (merged.isEmpty() && !shouldPersistMeta(meta, digits)) return body
+    val trailer = SENTINEL + merged.toString()
     return if (body.isEmpty()) trailer else "$body\n$trailer"
 }
 
@@ -130,6 +155,14 @@ private fun sanitizeMeta(record: JsonObject): AuthenticatorMeta {
             parseTotpOrder(raw)?.let(::formatTotpOrder)
         },
     )
+}
+
+private fun extrasFrom(record: JsonObject): JsonObject = buildJsonObject {
+    record.forEach { (key, value) ->
+        if (key !in KNOWN_META_KEYS && key != "__proto__" && key != "constructor") {
+            put(key, value)
+        }
+    }
 }
 
 private fun JsonObject.string(key: String): String? =

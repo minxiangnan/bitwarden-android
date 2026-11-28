@@ -1,5 +1,6 @@
 package com.x8bit.bitwarden.data.authenticator.repository
 
+import com.x8bit.bitwarden.data.authenticator.group.isGroupCatalog
 import com.x8bit.bitwarden.data.authenticator.model.AuthenticatorEntryView
 
 /**
@@ -11,7 +12,8 @@ import com.x8bit.bitwarden.data.authenticator.model.AuthenticatorEntryView
 internal fun duplicateAuthenticatorIds(entries: List<AuthenticatorEntryView>): List<String> {
     val groups = LinkedHashMap<String, MutableList<AuthenticatorEntryView>>()
     for (entry in entries) {
-        if (entry.undecryptable || entry.secret.isBlank() || entry.deletedAt != null) continue
+        val hidden = entry.undecryptable || entry.secret.isBlank() || entry.deletedAt != null
+        if (hidden || isGroupCatalog(entry)) continue
         val key = listOf(
             entry.secret.trim().uppercase(),
             entry.issuer.trim().lowercase(),

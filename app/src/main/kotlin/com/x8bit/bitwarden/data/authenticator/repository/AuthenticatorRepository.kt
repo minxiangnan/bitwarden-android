@@ -23,6 +23,19 @@ import com.x8bit.bitwarden.data.authenticator.model.AuthenticatorMeta
 import com.x8bit.bitwarden.data.authenticator.order.loginOrdersBySecret
 import com.x8bit.bitwarden.data.authenticator.order.withCipherOrders
 import com.x8bit.bitwarden.data.authenticator.order.writeLoginOrders
+import com.x8bit.bitwarden.data.authenticator.group.GROUP_CATALOG_NAME
+import com.x8bit.bitwarden.data.authenticator.group.GROUP_CATALOG_SECRET
+import com.x8bit.bitwarden.data.authenticator.group.AuthenticatorGroupRecord
+import com.x8bit.bitwarden.data.authenticator.group.catalogExtras
+import com.x8bit.bitwarden.data.authenticator.group.groupIdOf
+import com.x8bit.bitwarden.data.authenticator.group.groupNameTaken
+import com.x8bit.bitwarden.data.authenticator.group.isGroupCatalog
+import com.x8bit.bitwarden.data.authenticator.group.nextGroupOrder
+import com.x8bit.bitwarden.data.authenticator.group.normalizeGroupName
+import com.x8bit.bitwarden.data.authenticator.group.notesExtrasWithGroup
+import com.x8bit.bitwarden.data.authenticator.group.readGroupCatalog
+import com.x8bit.bitwarden.data.authenticator.group.reorderGroupRecords
+import kotlinx.serialization.json.JsonObject
 import com.x8bit.bitwarden.data.authenticator.meta.joinAuthenticatorNotes
 import com.x8bit.bitwarden.data.authenticator.meta.kindFromStored
 import com.x8bit.bitwarden.data.authenticator.meta.splitAuthenticatorNotes
@@ -96,7 +109,7 @@ data class McpAccessState(
 /**
  * Syncs authenticator entries with the zh-authenticator server and keeps an encrypted disk cache.
  */
-@Suppress("TooManyFunctions", "LongParameterList")
+@Suppress("TooManyFunctions", "LongParameterList", "LargeClass")
 @Singleton
 class AuthenticatorRepository @Inject constructor(
     private val authRepository: AuthRepository,
@@ -293,6 +306,121 @@ class AuthenticatorRepository @Inject constructor(
             }
         }
         return Result.success(Unit)
+    }
+
+    /**
+     * Collapsed group ids on this device. An empty string is 未分组.
+     */
+    fun readCollapsed(): Set<String> {
+        val userId = activeUnlockedUserId() ?: return emptySet()
+        return diskSource.readCollapsed(userId).toSet()
+    }
+
+    /**
+     * Stores collapsed group ids on this device. Nothing is uploaded.
+     */
+    fun writeCollapsed(ids: Set<String>) {
+        val userId = activeUnlockedUserId() ?: return
+        diskSource.writeCollapsed(userId, ids.toList())
+    }
+
+    /**
+     * Adds a group to the hidden catalog entry.
+     */
+    suspend fun createGroup(name: String): Result<Unit> {
+        val cleaned = normalizeGroupName(name) ?: return groupNameFailure()
+        val (catalog, groups) = readGroupCatalog(mutableEntries.value.entries)
+        if (groupNameTaken(groups, cleaned)) return groupNameFailure()
+        val created = AuthenticatorGroupRecord(
+            id = java.util.UUID.randomUUID().toString(),
+            name = cleaned,
+            order = nextGroupOrder(groups),
+        )
+        return writeCatalog(catalog, groups + created)
+    }
+
+    /**
+     * Renames a group. Unknown keys on that group stay.
+     */
+    suspend fun renameGroup(id: String, name: String): Result<Unit> {
+        val cleaned = normalizeGroupName(name) ?: return groupNameFailure()
+        val (catalog, groups) = readGroupCatalog(mutableEntries.value.entries)
+        if (catalog == null || groups.none { it.id == id }) {
+            return Result.failure(IllegalStateException("找不到这个分组"))
+        }
+        if (groupNameTaken(groups, cleaned, id)) return groupNameFailure()
+        return writeCatalog(
+            catalog,
+            groups.map { group -> if (group.id == id) group.copy(name = cleaned) else group },
+        )
+    }
+
+    /**
+     * Reorders groups with the same midpoint rules as entry order.
+     */
+    suspend fun moveGroup(id: String, destinationIndex: Int): Result<Unit> {
+        val (catalog, groups) = readGroupCatalog(mutableEntries.value.entries)
+        val next = reorderGroupRecords(groups, id, destinationIndex) ?: return Result.success(Unit)
+        if (catalog == null) return Result.success(Unit)
+        return writeCatalog(catalog, next)
+    }
+
+    /**
+     * Removes the group. Its entries stay and show under 未分组.
+     */
+    suspend fun deleteGroup(id: String): Result<Unit> {
+        val probe = listOf(AuthenticatorGroupRecord(id, id, 0.0))
+        val members = mutableEntries.value.entries.filter { entry ->
+            !isGroupCatalog(entry) && groupIdOf(entry, probe) == id
+        }
+        for (member in members) {
+            val cleared = setEntryGroup(member.id, null)
+            if (cleared.isFailure) return cleared
+        }
+        val (catalog, groups) = readGroupCatalog(mutableEntries.value.entries)
+        if (catalog == null) return Result.success(Unit)
+        return writeCatalog(catalog, groups.filter { it.id != id })
+    }
+
+    /**
+     * Sets [groupId], or clears it when null or unknown. Order is left alone.
+     */
+    suspend fun setEntryGroup(entryId: String, groupId: String?): Result<Unit> {
+        val entry = find(entryId) ?: return Result.failure(IllegalStateException("找不到这条验证码"))
+        if (entry.undecryptable || isGroupCatalog(entry)) return Result.success(Unit)
+        val groups = readGroupCatalog(mutableEntries.value.entries).second
+        val next = groupId?.takeIf { id -> groups.any { it.id == id } }
+        if (groupIdOf(entry, groups) == next) return Result.success(Unit)
+        return save(
+            entryId,
+            entry.toDraft().copy(
+                extras = notesExtrasWithGroup(entry.extras, next),
+                extrasProvided = true,
+            ),
+        )
+    }
+
+    /**
+     * Moves one entry into a group and writes the order values from that drop.
+     */
+    suspend fun placeInGroup(
+        entryId: String,
+        groupId: String?,
+        orders: Map<String, String>,
+    ): Result<Unit> {
+        val entry = find(entryId) ?: return Result.failure(IllegalStateException("找不到这条验证码"))
+        val groups = readGroupCatalog(mutableEntries.value.entries).second
+        val next = groupId?.takeIf { id -> groups.any { it.id == id } }
+        val saved = save(
+            entryId,
+            entry.toDraft().copy(
+                order = orders[entryId] ?: entry.order,
+                extras = notesExtrasWithGroup(entry.extras, next),
+                extrasProvided = true,
+            ),
+        )
+        if (saved.isFailure) return saved
+        return applyOrders(orders.filterKeys { it != entryId })
     }
 
     /**
@@ -594,6 +722,11 @@ class AuthenticatorRepository @Inject constructor(
             },
             revisionDate = draft.baseRevision ?: existing?.revisionDate,
             keptOrder = draft.order ?: existing?.order,
+            extras = if (draft.extrasProvided) {
+                draft.extras
+            } else {
+                existing?.extras ?: JsonObject(emptyMap())
+            },
         )
         val result = if (entryId.isNullOrBlank()) {
             service.createEntry(body)
@@ -673,6 +806,7 @@ class AuthenticatorRepository @Inject constructor(
             counter = split.meta.counter,
             deletedAt = split.meta.deletedAt,
             order = split.meta.order,
+            extras = split.extras,
         )
     }
 
@@ -683,6 +817,7 @@ class AuthenticatorRepository @Inject constructor(
         clientId: String?,
         revisionDate: String?,
         keptOrder: String?,
+        extras: JsonObject,
     ): AuthenticatorEntryRequestJson {
         val kind = entryKind(draft.kind, draft.digits)
         val digits = if (kind == AuthenticatorKind.STEAM) STEAM_DIGITS else draft.digits
@@ -694,7 +829,7 @@ class AuthenticatorRepository @Inject constructor(
             deletedAt = draft.deletedAt,
             order = keptOrder,
         )
-        val notes = joinAuthenticatorNotes(draft.notes, meta, digits)
+        val notes = joinAuthenticatorNotes(draft.notes, meta, digits, extras)
         val name = draft.name.ifBlank { draft.issuer.ifBlank { "验证码" } }
         return AuthenticatorEntryRequestJson(
             name = encryptText(userId, name).text,
@@ -711,6 +846,29 @@ class AuthenticatorRepository @Inject constructor(
             revisionDate = revisionDate?.takeIf { it.isNotBlank() },
         )
     }
+
+    private suspend fun writeCatalog(
+        existing: AuthenticatorEntryView?,
+        groups: List<AuthenticatorGroupRecord>,
+    ): Result<Unit> {
+        val extras = catalogExtras(groups, existing?.extras ?: JsonObject(emptyMap()))
+        val draft = if (existing == null) {
+            AuthenticatorDraft(
+                name = GROUP_CATALOG_NAME,
+                issuer = "",
+                secret = GROUP_CATALOG_SECRET,
+                notes = "",
+                extras = extras,
+                extrasProvided = true,
+            )
+        } else {
+            existing.toDraft().copy(notes = "", extras = extras, extrasProvided = true)
+        }
+        return save(existing?.id, draft)
+    }
+
+    private fun groupNameFailure(): Result<Unit> =
+        Result.failure(IllegalArgumentException("分组名称不能重复，并且要在 1 到 40 个字以内"))
 
     private fun isOffline(error: Throwable): Boolean {
         var current: Throwable? = error
@@ -782,6 +940,7 @@ class AuthenticatorRepository @Inject constructor(
             counter = counter,
             deletedAt = deletedAt,
             order = order,
+            extras = extras,
         )
 
     private data class DecryptedText(val text: String, val failed: Boolean)

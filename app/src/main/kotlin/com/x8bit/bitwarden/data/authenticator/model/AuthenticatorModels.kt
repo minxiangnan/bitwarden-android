@@ -1,5 +1,7 @@
 package com.x8bit.bitwarden.data.authenticator.model
 
+import kotlinx.serialization.json.JsonObject
+
 /**
  * Algorithm stored with an authenticator entry. Matches the vaultwarden field values.
  */
@@ -55,6 +57,8 @@ data class AuthenticatorEntryView(
     val deletedAt: String? = null,
     /** Decimal order string, when the entry has one. */
     val order: String? = null,
+    /** Trailer keys this client does not own, including `zh.totp.group`. */
+    val extras: JsonObject = JsonObject(emptyMap()),
 )
 
 /**
@@ -78,6 +82,12 @@ data class AuthenticatorDraft(
     val order: String? = null,
     /** Revision the edit was based on. A newer row on the server is rejected. */
     val baseRevision: String? = null,
+    /**
+     * Trailer keys to store. Used only when [extrasProvided] is true; otherwise the
+     * saved entry keeps the keys it already has.
+     */
+    val extras: JsonObject = JsonObject(emptyMap()),
+    val extrasProvided: Boolean = false,
 )
 
 /**

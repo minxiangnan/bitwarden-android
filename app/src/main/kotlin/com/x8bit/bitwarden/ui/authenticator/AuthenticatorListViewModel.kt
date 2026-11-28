@@ -2,12 +2,18 @@ package com.x8bit.bitwarden.ui.authenticator
 
 import androidx.lifecycle.viewModelScope
 import com.bitwarden.ui.platform.base.BaseViewModel
+import com.x8bit.bitwarden.data.authenticator.group.AuthenticatorSection
+import com.x8bit.bitwarden.data.authenticator.group.authenticatorSections
+import com.x8bit.bitwarden.data.authenticator.group.isGroupCatalog
+import com.x8bit.bitwarden.data.authenticator.group.notesExtrasWithGroup
+import com.x8bit.bitwarden.data.authenticator.group.readGroupCatalog
 import com.x8bit.bitwarden.data.authenticator.match.AuthenticatorSort
 import com.x8bit.bitwarden.data.authenticator.match.filterAuthenticatorEntries
 import com.x8bit.bitwarden.data.authenticator.model.AuthenticatorEntryView
 import com.x8bit.bitwarden.data.authenticator.model.AuthenticatorKind
 import com.x8bit.bitwarden.data.authenticator.order.TotpOrderSlot
 import com.x8bit.bitwarden.data.authenticator.order.ordersAfterMove
+import com.x8bit.bitwarden.data.authenticator.order.ordersForInsert
 import com.x8bit.bitwarden.data.authenticator.otp.currentCode
 import com.x8bit.bitwarden.data.authenticator.otp.formatAuthenticatorCode
 import com.x8bit.bitwarden.data.authenticator.otp.entryKind
@@ -31,6 +37,7 @@ import java.time.Clock
 /**
  * Authenticator list, including trash when [trash] is true.
  */
+@Suppress("TooManyFunctions")
 @HiltViewModel(assistedFactory = AuthenticatorListViewModel.Factory::class)
 class AuthenticatorListViewModel @AssistedInject constructor(
     @Assisted private val trash: Boolean,
@@ -62,6 +69,7 @@ class AuthenticatorListViewModel @AssistedInject constructor(
      */
     fun applySnapshot(incoming: AuthenticatorSnapshot) {
         snapshot = incoming
+        collapsed = repository.readCollapsed()
         rebuild(finishedRefresh = true)
     }
 
@@ -100,40 +108,24 @@ class AuthenticatorListViewModel @AssistedInject constructor(
                     rebuild()
                 }
             }
-            is AuthenticatorListAction.MoveTo -> {
-                val canMove = !trash && state.query.isBlank()
-                val slots = if (canMove) {
-                    state.rows.map { row ->
-                        val entry = snapshot.entries.firstOrNull { it.id == row.id }
-                        TotpOrderSlot(
-                            id = row.id,
-                            order = entry?.order,
-                            name = entry?.name ?: row.title,
-                        )
-                    }
-                } else {
-                    emptyList()
-                }
-                val orders = if (canMove) {
-                    ordersAfterMove(slots, action.id, action.toIndex)
-                } else {
-                    emptyMap()
-                }
-                if (orders.isNotEmpty()) {
-                    snapshot = snapshot.copy(
-                        entries = snapshot.entries.map { entry ->
-                            orders[entry.id]?.let { entry.copy(order = it) } ?: entry
-                        },
+            is AuthenticatorListAction.MoveTo -> moveWithinGroup(action.id, action.toIndex)
+            is AuthenticatorListAction.PlaceInGroup -> {
+                placeInGroup(action.id, action.groupId, action.toIndex)
+            }
+            is AuthenticatorListAction.ToggleCollapsed -> toggleCollapsed(action.sectionId)
+            is AuthenticatorListAction.ShowAssign -> {
+                mutableStateFlow.update {
+                    it.copy(
+                        dialog = AuthenticatorListState.Dialog.AssignGroup(action.id, action.name),
                     )
-                    rebuild()
-                    viewModelScope.launch {
-                        repository.applyOrders(orders).onFailure { error ->
-                            sendAction(
-                                AuthenticatorListAction.ShowMessage(
-                                    error.message ?: "没有保存顺序",
-                                ),
-                            )
-                        }
+                }
+            }
+            is AuthenticatorListAction.AssignGroup -> {
+                viewModelScope.launch {
+                    repository.setEntryGroup(action.id, action.groupId).onFailure { error ->
+                        sendAction(
+                            AuthenticatorListAction.ShowMessage(error.message ?: "没有保存分组"),
+                        )
                     }
                 }
             }
@@ -204,40 +196,159 @@ class AuthenticatorListViewModel @AssistedInject constructor(
 
     private var snapshot: AuthenticatorSnapshot = AuthenticatorSnapshot()
 
+    private var collapsed: Set<String> = emptySet()
+
     private fun rebuild(finishedRefresh: Boolean = false) {
         val now = clock.millis()
+        val named = readGroupCatalog(snapshot.entries).second
         val source = if (trash) {
-            snapshot.entries.filter { it.deletedAt != null }
+            snapshot.entries.filter { it.deletedAt != null && !isGroupCatalog(it) }
         } else {
             filterAuthenticatorEntries(
-                entries = snapshot.entries,
+                entries = snapshot.entries.filter { !isGroupCatalog(it) },
                 query = state.query,
                 favoritesOnly = false,
                 sort = AuthenticatorSort.MANUAL,
                 group = state.group,
             )
         }
-        val rows = source.mapNotNull { entry ->
-            runCatching { entry.toRow(now, snapshot.mcpAliases[entry.id]) }.getOrNull()
+        val sections = if (trash) {
+            authenticatorSections(source, emptyList(), emptySet(), searching = false)
+        } else {
+            authenticatorSections(
+                entries = source,
+                groups = named,
+                collapsedIds = collapsed,
+                searching = state.query.isNotBlank(),
+            )
         }
-        val groups = snapshot.entries
-            .filter { it.deletedAt == null }
-            .flatMap { entry -> listOf(entry.issuer).filter { it.isNotBlank() } + entry.tags }
-            .distinct()
-            .sorted()
+        val rows = sections.flatMap { section ->
+            section.entries.mapNotNull { entry ->
+                runCatching {
+                    entry.toRow(now, snapshot.mcpAliases[entry.id], section.id.ifEmpty { null })
+                }.getOrNull()
+            }
+        }
         mutableStateFlow.update {
             it.copy(
                 status = snapshot.status,
                 message = snapshot.message,
                 editable = snapshot.editable,
-                rows = rows,
-                groups = groups,
+                rows = visibleRows(sections, rows),
+                lines = sectionLines(sections, rows),
+                groupChoices = named.map { group -> group.id to group.name },
                 recentIds = snapshot.recentIds,
                 refreshing = if (finishedRefresh) false else it.refreshing,
                 syncedAtMillis = snapshot.syncedAtMillis ?: it.syncedAtMillis,
                 sort = AuthenticatorSort.MANUAL,
             )
         }
+    }
+
+    private fun sectionLines(
+        sections: List<AuthenticatorSection>,
+        rows: List<AuthenticatorRow>,
+    ): List<AuthenticatorLine> = sections.flatMap { section ->
+        val sectionRows = rows.filter { row -> section.entries.any { it.id == row.id } }
+        val header = if (section.title.isNotEmpty()) {
+            listOf(
+                AuthenticatorLine.Header(
+                    sectionId = section.id,
+                    title = section.title,
+                    count = section.entries.size,
+                    collapsed = section.collapsed,
+                ),
+            )
+        } else {
+            emptyList()
+        }
+        val visible = if (section.collapsed) emptyList() else sectionRows
+        header + visible.map { AuthenticatorLine.Code(it) }
+    }
+
+    private fun visibleRows(
+        sections: List<AuthenticatorSection>,
+        rows: List<AuthenticatorRow>,
+    ): List<AuthenticatorRow> = rows.filter { row ->
+        sections.any { section ->
+            !section.collapsed && section.entries.any { entry -> entry.id == row.id }
+        }
+    }
+
+    private fun moveWithinGroup(id: String, toIndex: Int) {
+        if (trash || state.query.isNotBlank()) return
+        val section = liveSections().firstOrNull { section ->
+            section.entries.any { it.id == id }
+        } ?: return
+        val slots = section.entries.map { TotpOrderSlot(it.id, it.order, it.name) }
+        val orders = ordersAfterMove(slots, id, toIndex)
+        if (orders.isEmpty()) return
+        applyLocalOrders(orders)
+        viewModelScope.launch {
+            repository.applyOrders(orders).onFailure { error ->
+                sendAction(AuthenticatorListAction.ShowMessage(error.message ?: "没有保存顺序"))
+            }
+        }
+    }
+
+    private fun placeInGroup(id: String, groupId: String?, toIndex: Int) {
+        if (trash || state.query.isNotBlank()) return
+        val moved = snapshot.entries.firstOrNull { it.id == id } ?: return
+        val destination = liveSections()
+            .firstOrNull { it.id == groupId.orEmpty() }
+            ?.entries
+            .orEmpty()
+            .filter { it.id != id }
+        val orders = ordersForInsert(
+            destination.map { TotpOrderSlot(it.id, it.order, it.name) },
+            TotpOrderSlot(moved.id, moved.order, moved.name),
+            toIndex,
+        )
+        snapshot = snapshot.copy(
+            entries = snapshot.entries.map { entry ->
+                when (entry.id) {
+                    id -> entry.copy(
+                        order = orders[id] ?: entry.order,
+                        extras = notesExtrasWithGroup(entry.extras, groupId),
+                    )
+                    else -> orders[entry.id]?.let { entry.copy(order = it) } ?: entry
+                }
+            },
+        )
+        rebuild()
+        viewModelScope.launch {
+            repository.placeInGroup(id, groupId, orders).onFailure { error ->
+                sendAction(AuthenticatorListAction.ShowMessage(error.message ?: "没有保存分组"))
+            }
+        }
+    }
+
+    private fun liveSections() = authenticatorSections(
+        entries = filterAuthenticatorEntries(
+            entries = snapshot.entries.filter { !isGroupCatalog(it) },
+            query = "",
+            favoritesOnly = false,
+            sort = AuthenticatorSort.MANUAL,
+            group = null,
+        ),
+        groups = readGroupCatalog(snapshot.entries).second,
+        collapsedIds = emptySet(),
+        searching = false,
+    )
+
+    private fun applyLocalOrders(orders: Map<String, String>) {
+        snapshot = snapshot.copy(
+            entries = snapshot.entries.map { entry ->
+                orders[entry.id]?.let { entry.copy(order = it) } ?: entry
+            },
+        )
+        rebuild()
+    }
+
+    private fun toggleCollapsed(sectionId: String) {
+        collapsed = if (sectionId in collapsed) collapsed - sectionId else collapsed + sectionId
+        repository.writeCollapsed(collapsed)
+        rebuild()
     }
 
     private var clearCopiedJob: Job? = null
@@ -289,7 +400,11 @@ class AuthenticatorListViewModel @AssistedInject constructor(
         }
     }
 
-    private fun AuthenticatorEntryView.toRow(now: Long, alias: String?): AuthenticatorRow {
+    private fun AuthenticatorEntryView.toRow(
+        now: Long,
+        alias: String?,
+        groupId: String?,
+    ): AuthenticatorRow {
         val kind = entryKind(this.kind, digits)
         val code = currentCode(this, now)
         return AuthenticatorRow(
@@ -306,6 +421,7 @@ class AuthenticatorListViewModel @AssistedInject constructor(
             period = period.coerceAtLeast(1),
             favorite = favorite,
             alias = alias,
+            groupId = groupId,
             kindLabel = when (kind) {
                 AuthenticatorKind.STEAM -> "Steam"
                 AuthenticatorKind.HOTP -> "HOTP"
@@ -333,6 +449,7 @@ data class AuthenticatorRow(
     val period: Int,
     val favorite: Boolean,
     val alias: String?,
+    val groupId: String? = null,
     val kindLabel: String,
 )
 
@@ -348,6 +465,8 @@ data class AuthenticatorListState(
     val message: String? = null,
     val editable: Boolean = false,
     val rows: List<AuthenticatorRow> = emptyList(),
+    val lines: List<AuthenticatorLine> = emptyList(),
+    val groupChoices: List<Pair<String, String>> = emptyList(),
     val groups: List<String> = emptyList(),
     val recentIds: List<String> = emptyList(),
     val refreshing: Boolean = false,
@@ -374,7 +493,32 @@ data class AuthenticatorListState(
          * A short result message.
          */
         data class Message(val text: String) : Dialog()
+
+        /**
+         * Pick a group for [name]. Null in the result means 未分组.
+         */
+        data class AssignGroup(val id: String, val name: String) : Dialog()
     }
+}
+
+/**
+ * One row in the authenticator list, either a group header or a code.
+ */
+sealed class AuthenticatorLine {
+    /**
+     * A collapsible group. An empty [sectionId] is 未分组.
+     */
+    data class Header(
+        val sectionId: String,
+        val title: String,
+        val count: Int,
+        val collapsed: Boolean,
+    ) : AuthenticatorLine()
+
+    /**
+     * A verification code.
+     */
+    data class Code(val row: AuthenticatorRow) : AuthenticatorLine()
 }
 
 /**
@@ -405,6 +549,30 @@ sealed class AuthenticatorListAction {
      * Moves [id] to [toIndex] in the custom order. Ignored while searching.
      */
     data class MoveTo(val id: String, val toIndex: Int) : AuthenticatorListAction()
+
+    /**
+     * Moves [id] into [groupId] (null is 未分组) at [toIndex] inside that group.
+     */
+    data class PlaceInGroup(
+        val id: String,
+        val groupId: String?,
+        val toIndex: Int,
+    ) : AuthenticatorListAction()
+
+    /**
+     * Collapses or expands one section on this device.
+     */
+    data class ToggleCollapsed(val sectionId: String) : AuthenticatorListAction()
+
+    /**
+     * Stores [groupId] on the entry. Null clears it.
+     */
+    data class AssignGroup(val id: String, val groupId: String?) : AuthenticatorListAction()
+
+    /**
+     * Opens the group picker for one entry.
+     */
+    data class ShowAssign(val id: String, val name: String) : AuthenticatorListAction()
 
     /**
      * Group filter changed. Null shows every group.

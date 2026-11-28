@@ -19,7 +19,7 @@ class TotpOrderTest {
     @Test
     fun `moving to the top uses one step before the next number`() {
         val slots = listOf(slot("a", "1024", "A"), slot("b", "2048", "B"))
-        assertEquals(mapOf("b" to "0"), ordersAfterMove(slots, "b", 0))
+        assertEquals(mapOf("b" to "24"), ordersAfterMove(slots, "b", 0))
     }
 
     @Test
@@ -30,7 +30,7 @@ class TotpOrderTest {
             slot("c", "3", "C"),
         )
         assertEquals(
-            mapOf("a" to "0", "c" to "1024", "b" to "2048"),
+            mapOf("a" to "1000", "c" to "2000", "b" to "3000"),
             ordersAfterMove(slots, "c", 1),
         )
     }
@@ -39,7 +39,7 @@ class TotpOrderTest {
     fun `neighbors without numbers are numbered together`() {
         val slots = listOf(slot("a", null, "A"), slot("b", null, "B"), slot("c", null, "C"))
         assertEquals(
-            mapOf("c" to "0", "a" to "1024", "b" to "2048"),
+            mapOf("c" to "1000", "a" to "2000", "b" to "3000"),
             ordersAfterMove(slots, "c", 0),
         )
     }

@@ -37,4 +37,10 @@ sealed class AuthenticatorGraph : NavKey {
      */
     @Serializable
     data object McpRoute : AuthenticatorGraph()
+
+    /**
+     * Create, rename, reorder, and delete groups.
+     */
+    @Serializable
+    data object GroupsRoute : AuthenticatorGraph()
 }

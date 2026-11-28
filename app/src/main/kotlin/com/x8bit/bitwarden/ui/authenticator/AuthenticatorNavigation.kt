@@ -19,6 +19,7 @@ fun EntryProviderScope<AuthenticatorGraph>.authenticatorDestinations(
             onEdit = { navigationController.navigate(AuthenticatorGraph.EditRoute(it)) },
             onTrash = { navigationController.navigate(AuthenticatorGraph.TrashRoute) },
             onMcp = { navigationController.navigate(AuthenticatorGraph.McpRoute) },
+            onGroups = { navigationController.navigate(AuthenticatorGraph.GroupsRoute) },
             onBack = {},
         )
     }
@@ -30,6 +31,7 @@ fun EntryProviderScope<AuthenticatorGraph>.authenticatorDestinations(
             onEdit = { navigationController.navigate(AuthenticatorGraph.EditRoute(it)) },
             onTrash = {},
             onMcp = {},
+            onGroups = {},
             onBack = { navigationController.navigateBack() },
         )
     }
@@ -50,5 +52,8 @@ fun EntryProviderScope<AuthenticatorGraph>.authenticatorDestinations(
     }
     slideUpEntry<AuthenticatorGraph.McpRoute> {
         AuthenticatorMcpScreen(onBack = { navigationController.navigateBack() })
+    }
+    slideUpEntry<AuthenticatorGraph.GroupsRoute> {
+        AuthenticatorGroupsScreen(onBack = { navigationController.navigateBack() })
     }
 }

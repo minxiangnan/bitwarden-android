@@ -44,9 +44,26 @@ class AuthenticatorDiskSource @Inject constructor(
         preferences.edit { putString(recentKey(userId), ids.joinToString("\n")) }
     }
 
+    /**
+     * Group ids collapsed on this device. An empty string is 未分组.
+     */
+    fun readCollapsed(userId: String): List<String> =
+        preferences.getString(collapsedKey(userId), null)
+            ?.split('\n')
+            .orEmpty()
+
+    /**
+     * Stores collapsed group ids for this device only.
+     */
+    fun writeCollapsed(userId: String, ids: List<String>) {
+        preferences.edit { putString(collapsedKey(userId), ids.joinToString("\n")) }
+    }
+
     private fun cacheKey(userId: String): String = "cache_$userId"
 
     private fun recentKey(userId: String): String = "recent_$userId"
+
+    private fun collapsedKey(userId: String): String = "collapsed_$userId"
 
     private companion object {
         const val PREFS: String = "zh_authenticator"
