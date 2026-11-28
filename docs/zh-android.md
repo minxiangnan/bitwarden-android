@@ -267,3 +267,5 @@ MCP 会话接口是 `/api/mcp/status`、`/api/mcp/token`、`/api/mcp/token/enc`�
 | `com.minxiangnan.bitwarden.zh-x86_64.apk` | 45,764,504 | `966cbc78da48d289e97b86d8920158a16c8549e1a53cae4e7ca54618cf78599c` |
 | `com.minxiangnan.bitwarden.zh-x86.apk` | 46,164,267 | `b3767a50c6bb2f328f4f240254b87eb9ee428770ecfb5923c7900407a79c7f56` |
 | `com.minxiangnan.bitwarden.zh.apk`（universal） | 86,066,139 | `414541e8ccd10e7e26530cc5a1b09e55354fa385f45793a5d2c9d57886efec8b` |
+
+1.1.3 把验证码、倒计时条和秒数收成同一列。这一列的宽度按六位分组数字「000 000」固定，等宽数字，所以每一行的验证码和进度条左右对齐。进度条和验证码一样宽，两边贴齐。秒数贴在进度条右端，各行基线一致。最后 5 秒出现的「下一段」也和这一列的右缘对齐。名称是原来的三分之二（9.33sp，行高 13），备注不小于 11sp（11sp，行高 15），仍然换行。色板不变。版本号是 1.1.3（versionCode 16）。签名仍是 1.0.1 起的那把发布密钥。
