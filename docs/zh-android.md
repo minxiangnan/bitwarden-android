@@ -219,3 +219,15 @@ MCP 会话接口是 `/api/mcp/status`、`/api/mcp/token`、`/api/mcp/token/enc`�
 | `com.minxiangnan.bitwarden.zh-x86_64.apk` | 45,772,256 | `9749ccd80078545ce67ef816a283bc820fdadf6d49ddc6461f9221935bc3f3d0` |
 | `com.minxiangnan.bitwarden.zh-x86.apk` | 46,172,019 | `dcdceb84cb870398d04a0781fa80d476bd8aaedd90d08b589783c23a6515ac41` |
 | `com.minxiangnan.bitwarden.zh.apk`（universal） | 86,073,891 | `187636e0275af0a3c45f717a6f941a02ae0325cbefa5b668d6f92972538cb151` |
+
+1.0.11 把验证器列表恢复成干净的一行。平时只有名称、名称下的备注、验证码和倒计时，点一行仍然复制。自定义顺序下，顶部有「排序」；搜索时这个按钮不出现。点「排序」进入排序：行首出现细拖动手柄和小置顶箭头，点一行不再复制，按钮变成「完成」。长按菜单仍有「上移」「下移」「置顶」。拖动或置顶时，其它行用大约 220 毫秒滑开让位；被拖动的一行略微浮起、放大到 1.02，并带陶土色，不用纯黑。系统若关闭动画，这些位移会跟着缩短。顺序仍写在 `zh.totp.order` 和验证器备注的 `[[bwmeta:1]]` 里，和扩展同步。签名仍是 1.0.1 起的那把发布密钥。
+
+1.0.11：
+
+| APK | 大小 | SHA-256 |
+| --- | --- | --- |
+| `com.minxiangnan.bitwarden.zh-arm64-v8a.apk` | 46,373,857 | `f867bd27afe8883a810a2f221ab49fdf4fd1a8c2a5f39038483504e1766f45ff` |
+| `com.minxiangnan.bitwarden.zh-armeabi-v7a.apk` | 43,252,795 | `2a0c80919eb2b66b6b8a5d21cd6bb9d3b478d13e3725cf210447c6da60a3c909` |
+| `com.minxiangnan.bitwarden.zh-x86_64.apk` | 45,775,012 | `aa0049a336032e63bdef62881aacadf8b69a4aeea593feef6e3b3a335e32ae84` |
+| `com.minxiangnan.bitwarden.zh-x86.apk` | 46,174,775 | `516a2f3f6d2e24d5246de0b8902f10e68e7a39f09cfce612b1e5f1dda9318c97` |
+| `com.minxiangnan.bitwarden.zh.apk`（universal） | 86,076,647 | `4adf160dd6caf2cabbc70380fd13961a5c0cba8d81f7ed17239cd171c601cf4e` |
