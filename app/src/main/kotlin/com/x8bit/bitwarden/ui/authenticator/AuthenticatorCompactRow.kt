@@ -207,7 +207,7 @@ internal fun AuthenticatorMoveTopButton(enabled: Boolean, onClick: () -> Unit) {
         Text(
             text = "↑",
             color = color,
-            style = BitwardenTheme.typography.titleMedium,
+            style = BitwardenTheme.typography.labelLarge,
         )
     }
 }

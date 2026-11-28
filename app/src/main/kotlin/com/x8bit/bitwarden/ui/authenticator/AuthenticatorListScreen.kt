@@ -5,6 +5,9 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import android.view.HapticFeedbackConstants
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -44,6 +47,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -101,6 +108,13 @@ fun AuthenticatorListScreen(
     ),
 ) {
     val state by viewModel.stateFlow.collectAsState()
+    var sorting by rememberSaveable { mutableStateOf(false) }
+    val offerSort = !trash &&
+        state.sort == AuthenticatorSort.MANUAL &&
+        state.query.isBlank()
+    LaunchedEffect(offerSort) {
+        if (!offerSort) sorting = false
+    }
     val snackbarHostState = rememberBitwardenSnackbarHostState()
     val view = LocalView.current
     LaunchedEffect(viewModel) {
@@ -223,9 +237,24 @@ fun AuthenticatorListScreen(
                     ),
                     style = BitwardenTheme.typography.titleLarge,
                     color = BitwardenTheme.colorScheme.text.primary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f),
                 )
-                if (!trash) {
+                if (!trash && offerSort) {
+                    BitwardenTextButton(
+                        label = stringResource(
+                            if (sorting) {
+                                BitwardenString.zh_authenticator_arrange_done
+                            } else {
+                                BitwardenString.zh_authenticator_arrange
+                            },
+                        ),
+                        onClick = { sorting = !sorting },
+                        modifier = Modifier.testTag("AuthenticatorArrange"),
+                    )
+                }
+                if (!trash && !sorting) {
                     BitwardenTextButton(
                         label = stringResource(BitwardenString.zh_authenticator_scan),
                         onClick = requestScan,
@@ -441,12 +470,17 @@ fun AuthenticatorListScreen(
                     onAdd = onAdd,
                 )
             }
-            val reorderEnabled = !trash &&
-                state.sort == AuthenticatorSort.MANUAL &&
-                state.query.isBlank()
+            val reorderEnabled = offerSort && sorting
             val listState = rememberLazyListState()
             var dragRows by remember { mutableStateOf<List<AuthenticatorRow>?>(null) }
+            var draggingId by remember { mutableStateOf<String?>(null) }
             val shownRows = dragRows ?: state.rows
+            LaunchedEffect(sorting) {
+                if (!sorting) {
+                    dragRows = null
+                    draggingId = null
+                }
+            }
             LaunchedEffect(state.rows) {
                 val dragging = dragRows ?: return@LaunchedEffect
                 if (state.rows.map { it.id } == dragging.map { it.id }) {
@@ -459,11 +493,48 @@ fun AuthenticatorListScreen(
             }
             LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
                 itemsIndexed(shownRows, key = { _, row -> row.id }) { index, row ->
+                    val lift by animateFloatAsState(
+                        targetValue = if (draggingId == row.id) 1f else 0f,
+                        animationSpec = tween(durationMillis = ROW_MOVE_MILLIS),
+                        label = "authenticatorRowLift",
+                    )
+                    val scale = 1f + (ROW_LIFT_SCALE - 1f) * lift
+                    val tint = BitwardenTheme.colorScheme.icon.secondary
                     AuthenticatorCard(
                         row = row,
                         query = state.query,
                         trash = trash,
                         copied = state.copiedId == row.id,
+                        canMoveUp = offerSort && index > 0,
+                        canMoveDown = offerSort && index < shownRows.lastIndex,
+                        allowCopy = !reorderEnabled,
+                        modifier = Modifier
+                            .animateItem(
+                                fadeInSpec = null,
+                                fadeOutSpec = null,
+                                placementSpec = tween(
+                                    durationMillis = ROW_MOVE_MILLIS,
+                                    easing = FastOutSlowInEasing,
+                                ),
+                            )
+                            .zIndex(lift)
+                            .shadow(
+                                elevation = ROW_LIFT_ELEVATION_DP.dp * lift,
+                                shape = RoundedCornerShape(ROW_LIFT_CORNER_DP.dp),
+                                ambientColor = tint.copy(alpha = ROW_SHADOW_ALPHA),
+                                spotColor = tint,
+                            )
+                            .graphicsLayer {
+                                scaleX = scale
+                                scaleY = scale
+                            }
+                            .background(
+                                BitwardenTheme.colorScheme.background.primary.copy(alpha = lift),
+                            )
+                            .background(
+                                color = tint.copy(alpha = ROW_TINT_ALPHA * lift),
+                                shape = RoundedCornerShape(ROW_LIFT_CORNER_DP.dp),
+                            ),
                         reorder = if (!reorderEnabled) {
                             null
                         } else {
@@ -481,6 +552,7 @@ fun AuthenticatorListScreen(
                                         HapticFeedbackConstants.LONG_PRESS
                                     }
                                     view.performHapticFeedback(feedback)
+                                    draggingId = row.id
                                     if (dragRows == null) dragRows = state.rows
                                 },
                                 onShift = { target ->
@@ -491,6 +563,7 @@ fun AuthenticatorListScreen(
                                     }
                                 },
                                 onDrop = { start ->
+                                    draggingId = null
                                     if (start < 0) {
                                         dragRows = null
                                     } else {
@@ -511,7 +584,9 @@ fun AuthenticatorListScreen(
                             )
                         },
                         onCopy = {
-                            viewModel.trySendAction(AuthenticatorListAction.CopyClick(row.id))
+                            if (!reorderEnabled) {
+                                viewModel.trySendAction(AuthenticatorListAction.CopyClick(row.id))
+                            }
                         },
                         onEdit = { onEdit(row.id) },
                         onMoveUp = {
@@ -553,6 +628,7 @@ fun AuthenticatorListScreen(
 }
 
 @Composable
+@Suppress("LongMethod")
 internal fun AuthenticatorCard(
     row: AuthenticatorRow,
     query: String,
@@ -560,6 +636,9 @@ internal fun AuthenticatorCard(
     onCopy: () -> Unit,
     copied: Boolean = false,
     reorder: AuthenticatorReorder? = null,
+    canMoveUp: Boolean = false,
+    canMoveDown: Boolean = false,
+    allowCopy: Boolean = true,
     onEdit: () -> Unit,
     onMoveUp: () -> Unit = {},
     onMoveDown: () -> Unit = {},
@@ -592,7 +671,11 @@ internal fun AuthenticatorCard(
                 modifier = Modifier
                     .weight(1f)
                     .combinedClickable(
-                        onClick = if (trash) onEdit else onCopy,
+                        onClick = when {
+                            trash -> onEdit
+                            allowCopy -> onCopy
+                            else -> ({})
+                        },
                         onLongClick = { menu = true },
                     ),
             ) {
@@ -610,8 +693,9 @@ internal fun AuthenticatorCard(
                     expanded = menu,
                     trash = trash,
                     favorite = row.favorite,
-                    canMoveUp = reorder != null && reorder.index > 0,
-                    canMoveDown = reorder != null && reorder.index < reorder.lastIndex,
+                    canMoveUp = canMoveUp,
+                    canMoveDown = canMoveDown,
+                    allowCopy = allowCopy,
                     onDismiss = { menu = false },
                     onCopy = onCopy,
                     onEdit = onEdit,
@@ -637,6 +721,7 @@ private fun AuthenticatorCardMenu(
     favorite: Boolean,
     canMoveUp: Boolean,
     canMoveDown: Boolean,
+    allowCopy: Boolean,
     onDismiss: () -> Unit,
     onCopy: () -> Unit,
     onEdit: () -> Unit,
@@ -650,13 +735,15 @@ private fun AuthenticatorCardMenu(
 ) {
     DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
         if (!trash) {
-            DropdownMenuItem(
-                text = { Text(stringResource(BitwardenString.copy)) },
-                onClick = {
-                    onDismiss()
-                    onCopy()
-                },
-            )
+            if (allowCopy) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(BitwardenString.copy)) },
+                    onClick = {
+                        onDismiss()
+                        onCopy()
+                    },
+                )
+            }
             DropdownMenuItem(
                 text = { Text(stringResource(BitwardenString.edit)) },
                 onClick = {
@@ -885,6 +972,13 @@ private fun Uri.readText(context: android.content.Context): String? =
 private fun Uri.readBytes(context: android.content.Context): ByteArray? =
     context.contentResolver.openInputStream(this)?.use { it.readBytes() }
 
+private const val ROW_LIFT_SCALE = 1.02f
+private const val ROW_TINT_ALPHA = 0.16f
+private const val ROW_SHADOW_ALPHA = 0.45f
+private const val ROW_MOVE_MILLIS = 220
+private const val ROW_LIFT_ELEVATION_DP = 8
+private const val ROW_LIFT_CORNER_DP = 12
+
 /**
  * Drag state for one authenticator row. Null while search or name order is on.
  */
@@ -901,7 +995,7 @@ internal data class AuthenticatorReorder(
 @Suppress("MagicNumber")
 private fun DragHandle(reorder: AuthenticatorReorder) {
     val latest = rememberUpdatedState(reorder)
-    val color = BitwardenTheme.colorScheme.icon.secondary
+    val color = BitwardenTheme.colorScheme.text.secondary
     val label = stringResource(BitwardenString.zh_authenticator_drag_handle)
     Canvas(
         Modifier
@@ -941,9 +1035,9 @@ private fun DragHandle(reorder: AuthenticatorReorder) {
                 )
             },
     ) {
-        val bar = 2.dp.toPx()
-        val gap = 4.dp.toPx()
-        val width = size.width * 0.55f
+        val bar = 1.5.dp.toPx()
+        val gap = 3.dp.toPx()
+        val width = size.width * 0.32f
         val left = (size.width - width) / 2f
         var top = (size.height - (bar * 3f + gap * 2f)) / 2f
         repeat(3) {

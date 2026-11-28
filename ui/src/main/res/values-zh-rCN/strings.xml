@@ -1453,6 +1453,8 @@
     <string name="zh_authenticator_move_down">下移</string>
     <string name="zh_authenticator_move_top">置顶</string>
     <string name="zh_authenticator_drag_handle">拖动排序</string>
+    <string name="zh_authenticator_arrange">排序</string>
+    <string name="zh_authenticator_arrange_done">完成</string>
     <string name="zh_authenticator_favorites">只看收藏</string>
     <string name="zh_authenticator_all_groups">全部分组</string>
     <string name="zh_authenticator_next">下一段</string>
