@@ -19,6 +19,7 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -29,6 +30,7 @@ import com.bitwarden.ui.platform.components.button.BitwardenTextButton
 import com.bitwarden.ui.platform.resource.BitwardenString
 import com.bitwarden.ui.platform.theme.BitwardenTheme
 import com.x8bit.bitwarden.ui.platform.base.BitwardenComposeTest
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.robolectric.annotation.Config
@@ -137,6 +139,55 @@ class AuthenticatorCompactRowTest : BitwardenComposeTest() {
             .assertIsDisplayed()
         composeTestRule.onNodeWithText("下一段 316 431").assertDoesNotExist()
         composeTestRule.onNodeWithText("公司 VPN").assertDoesNotExist()
+        val code = boundsOf("AuthenticatorCodeText")
+        val bar = boundsOf("AuthenticatorCountdown")
+        val seconds = boundsOf("AuthenticatorSeconds")
+        assertClose(code.left, bar.left)
+        assertClose(code.right, bar.right)
+        assertClose(seconds.right, bar.right)
+    }
+
+    @Test
+    fun `code columns share one width and the next code lines up`() {
+        setContent {
+            Column(modifier = Modifier.width(360.dp)) {
+                AuthenticatorCard(
+                    row = sampleRow(seconds = 22, notes = "甲", code = "123 456", title = "甲"),
+                    query = "",
+                    trash = false,
+                    onCopy = {},
+                    onEdit = {},
+                    onTrash = {},
+                    onRestore = {},
+                    onDelete = {},
+                )
+                AuthenticatorCard(
+                    row = sampleRow(seconds = 4, notes = "乙", code = "654 321", title = "乙"),
+                    query = "",
+                    trash = false,
+                    onCopy = {},
+                    onEdit = {},
+                    onTrash = {},
+                    onRestore = {},
+                    onDelete = {},
+                )
+            }
+        }
+        val codes = composeTestRule
+            .onAllNodesWithTag("AuthenticatorCodeText", useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .map { it.boundsInRoot }
+        val bars = composeTestRule
+            .onAllNodesWithTag("AuthenticatorCountdown", useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .map { it.boundsInRoot }
+        assertEquals(2, codes.size)
+        assertClose(codes[0].left, codes[1].left)
+        assertClose(codes[0].right, codes[1].right)
+        assertClose(codes[0].width, bars[0].width)
+        assertClose(codes[1].left, bars[1].left)
+        val next = boundsOf("AuthenticatorNextCode")
+        assertClose(next.right, codes[1].right)
     }
 
     @Test
@@ -164,6 +215,15 @@ class AuthenticatorCompactRowTest : BitwardenComposeTest() {
 
     private fun heightOf(tag: String): Float =
         composeTestRule.onNodeWithTag(tag).fetchSemanticsNode().boundsInRoot.height
+
+    private fun boundsOf(tag: String) =
+        composeTestRule.onNodeWithTag(tag, useUnmergedTree = true)
+            .fetchSemanticsNode()
+            .boundsInRoot
+
+    private fun assertClose(left: Float, right: Float) {
+        assertTrue("$left vs $right", kotlin.math.abs(left - right) <= 1f)
+    }
 
     private fun savePng(tag: String, name: String) {
         val image = composeTestRule.onNodeWithTag(tag).captureToImage()
