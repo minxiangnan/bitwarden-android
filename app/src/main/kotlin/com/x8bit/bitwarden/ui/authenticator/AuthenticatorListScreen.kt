@@ -8,11 +8,11 @@ import android.view.HapticFeedbackConstants
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -45,6 +45,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -55,9 +56,8 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.zIndex
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerEventTimeoutCancellationException
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
@@ -65,11 +65,14 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import com.bitwarden.ui.platform.base.util.EventsEffect
 import com.bitwarden.ui.platform.base.util.standardHorizontalMargin
 import com.bitwarden.ui.platform.components.button.BitwardenFilledButton
@@ -91,7 +94,6 @@ import com.bitwarden.ui.platform.resource.BitwardenDrawable
 import com.bitwarden.ui.platform.resource.BitwardenString
 import com.bitwarden.ui.platform.theme.BitwardenTheme
 import com.x8bit.bitwarden.data.authenticator.importing.decodeQrImage
-import com.x8bit.bitwarden.data.authenticator.match.AuthenticatorSort
 import com.x8bit.bitwarden.data.authenticator.repository.AuthenticatorSyncStatus
 
 /**
@@ -115,13 +117,10 @@ fun AuthenticatorListScreen(
     ),
 ) {
     val state by viewModel.stateFlow.collectAsState()
-    var sorting by rememberSaveable { mutableStateOf(false) }
-    val offerSort = !trash &&
-        state.sort == AuthenticatorSort.MANUAL &&
-        state.query.isBlank()
-    LaunchedEffect(offerSort) {
-        if (!offerSort) sorting = false
-    }
+    val canReorder = !trash &&
+        state.query.isBlank() &&
+        state.group == null &&
+        !state.favoritesOnly
     val snackbarHostState = rememberBitwardenSnackbarHostState()
     val view = LocalView.current
     LaunchedEffect(viewModel) {
@@ -222,7 +221,7 @@ fun AuthenticatorListScreen(
             onRefresh = { viewModel.trySendAction(AuthenticatorListAction.Refresh) },
         ),
         floatingActionButton = {
-            if (!trash && !sorting) {
+            if (!trash) {
                 Box {
                     FloatingActionButton(
                         onClick = { addMenu = true },
@@ -284,20 +283,7 @@ fun AuthenticatorListScreen(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f),
                 )
-                if (!trash && offerSort) {
-                    BitwardenTextButton(
-                        label = stringResource(
-                            if (sorting) {
-                                BitwardenString.zh_authenticator_arrange_done
-                            } else {
-                                BitwardenString.zh_authenticator_arrange
-                            },
-                        ),
-                        onClick = { sorting = !sorting },
-                        modifier = Modifier.testTag("AuthenticatorArrange"),
-                    )
-                }
-                if (!trash && !sorting) {
+                if (!trash) {
                     BitwardenTextButton(
                         label = stringResource(BitwardenString.zh_authenticator_more),
                         onClick = { menu = true },
@@ -351,28 +337,6 @@ fun AuthenticatorListScreen(
                         )
                         DropdownMenuItem(
                             text = {
-                                Text(stringResource(BitwardenString.zh_authenticator_sort_name))
-                            },
-                            onClick = {
-                                menu = false
-                                viewModel.trySendAction(
-                                    AuthenticatorListAction.SortSelected(AuthenticatorSort.NAME),
-                                )
-                            },
-                        )
-                        DropdownMenuItem(
-                            text = {
-                                Text(stringResource(BitwardenString.zh_authenticator_sort_issuer))
-                            },
-                            onClick = {
-                                menu = false
-                                viewModel.trySendAction(
-                                    AuthenticatorListAction.SortSelected(AuthenticatorSort.ISSUER),
-                                )
-                            },
-                        )
-                        DropdownMenuItem(
-                            text = {
                                 Text(stringResource(BitwardenString.zh_authenticator_favorites))
                             },
                             onClick = {
@@ -402,52 +366,6 @@ fun AuthenticatorListScreen(
                         .standardHorizontalMargin()
                         .fillMaxWidth(),
                 )
-                Row(
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(BitwardenTheme.colorScheme.background.tertiary)
-                        .padding(4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    listOf(
-                        Triple(
-                            stringResource(BitwardenString.zh_authenticator_sort_custom),
-                            state.sort == AuthenticatorSort.MANUAL,
-                            AuthenticatorSort.MANUAL,
-                        ),
-                        Triple(
-                            stringResource(BitwardenString.zh_authenticator_sort_name_az),
-                            state.sort == AuthenticatorSort.NAME,
-                            AuthenticatorSort.NAME,
-                        ),
-                    ).forEach { (label, selected, sort) ->
-                        Text(
-                            text = label,
-                            color = if (selected) {
-                                BitwardenTheme.colorScheme.text.reversed
-                            } else {
-                                BitwardenTheme.colorScheme.text.secondary
-                            },
-                            style = BitwardenTheme.typography.labelLarge,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(
-                                    if (selected) {
-                                        BitwardenTheme.colorScheme.icon.secondary
-                                    } else {
-                                        BitwardenTheme.colorScheme.background.tertiary
-                                    },
-                                )
-                                .clickable {
-                                    viewModel.trySendAction(
-                                        AuthenticatorListAction.SortSelected(sort),
-                                    )
-                                }
-                                .padding(horizontal = 12.dp, vertical = 6.dp),
-                        )
-                    }
-                }
                 state.syncedAtMillis?.let { syncedAt ->
                     val syncedLabel = java.time.Instant.ofEpochMilli(syncedAt)
                         .atZone(java.time.ZoneId.systemDefault())
@@ -527,13 +445,12 @@ fun AuthenticatorListScreen(
                     onAdd = onAdd,
                 )
             }
-            val reorderEnabled = offerSort && sorting
             val listState = rememberLazyListState()
             var dragRows by remember { mutableStateOf<List<AuthenticatorRow>?>(null) }
             var draggingId by remember { mutableStateOf<String?>(null) }
             val shownRows = dragRows ?: state.rows
-            LaunchedEffect(sorting) {
-                if (!sorting) {
+            LaunchedEffect(canReorder) {
+                if (!canReorder) {
                     dragRows = null
                     draggingId = null
                 }
@@ -575,9 +492,9 @@ fun AuthenticatorListScreen(
                         query = state.query,
                         trash = trash,
                         copied = state.copiedId == row.id,
-                        canMoveUp = offerSort && index > 0,
-                        canMoveDown = offerSort && index < shownRows.lastIndex,
-                        allowCopy = !reorderEnabled,
+                        canMoveUp = canReorder && index > 0,
+                        canMoveDown = canReorder && index < shownRows.lastIndex,
+                        allowCopy = true,
                         showDivider = index != shownRows.lastIndex,
                         modifier = Modifier
                             .padding(horizontal = 16.dp)
@@ -609,7 +526,7 @@ fun AuthenticatorListScreen(
                                 color = tint.copy(alpha = ROW_TINT_ALPHA * lift),
                                 shape = RoundedCornerShape(ROW_LIFT_CORNER_DP.dp),
                             ),
-                        reorder = if (!reorderEnabled) {
+                        reorder = if (!canReorder) {
                             null
                         } else {
                             AuthenticatorReorder(
@@ -658,9 +575,7 @@ fun AuthenticatorListScreen(
                             )
                         },
                         onCopy = {
-                            if (!reorderEnabled) {
-                                viewModel.trySendAction(AuthenticatorListAction.CopyClick(row.id))
-                            }
+                            viewModel.trySendAction(AuthenticatorListAction.CopyClick(row.id))
                         },
                         onEdit = { onEdit(row.id) },
                         onMoveUp = {
@@ -726,35 +641,31 @@ internal fun AuthenticatorCard(
 ) {
     var menu by rememberSaveable(row.id) { mutableStateOf(false) }
     val urgent = !trash && row.seconds in 1..AUTHENTICATOR_URGENT_SECONDS
+    val activate = when {
+        trash -> onEdit
+        allowCopy -> onCopy
+        else -> ({})
+    }
     Column(modifier = modifier.fillMaxWidth().testTag("AuthenticatorRow")) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = 64.dp)
-                .padding(
-                    start = if (reorder == null) 12.dp else 0.dp,
-                    end = 4.dp,
-                ),
+                .padding(start = 16.dp, end = 4.dp),
         ) {
-            if (reorder != null) {
-                DragHandle(reorder)
-                AuthenticatorMoveTopButton(enabled = reorder.index > 0, onClick = onMoveTop)
-            }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .weight(1f)
-                    .combinedClickable(
-                        onClick = when {
-                            trash -> onEdit
-                            allowCopy -> onCopy
-                            else -> ({})
+                    .then(
+                        if (reorder == null) {
+                            Modifier.clickable(onClick = activate)
+                        } else {
+                            Modifier.reorderByLongPress(reorder = reorder, onClick = activate)
                         },
-                        onLongClick = { menu = true },
                     ),
             ) {
-                AuthenticatorMonogram(title = row.title)
                 AuthenticatorIdentity(row = row, query = query, modifier = Modifier.weight(1f))
                 AuthenticatorCode(
                     row = row,
@@ -787,7 +698,7 @@ internal fun AuthenticatorCard(
         }
         if (showDivider) {
             HorizontalDivider(
-                modifier = Modifier.padding(start = 60.dp, end = 16.dp),
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp),
                 thickness = 0.5.dp,
                 color = BitwardenTheme.colorScheme.stroke.divider,
             )
@@ -1060,9 +971,11 @@ private const val ROW_SHADOW_ALPHA = 0.45f
 private const val ROW_MOVE_MILLIS = 220
 private const val ROW_LIFT_ELEVATION_DP = 8
 private const val ROW_LIFT_CORNER_DP = 12
+private const val ROW_EDGE_DP = 56
+private const val ROW_SCROLL_FRACTION = 0.35f
 
 /**
- * Drag state for one authenticator row. Null while search or name order is on.
+ * Drag state for one authenticator row. Null while searching or filtering.
  */
 internal data class AuthenticatorReorder(
     val index: Int,
@@ -1074,62 +987,88 @@ internal data class AuthenticatorReorder(
 )
 
 @Composable
-@Suppress("MagicNumber")
-private fun DragHandle(reorder: AuthenticatorReorder) {
+@Suppress("LongMethod", "CyclomaticComplexMethod")
+private fun Modifier.reorderByLongPress(
+    reorder: AuthenticatorReorder,
+    onClick: () -> Unit,
+): Modifier {
     val latest = rememberUpdatedState(reorder)
-    val color = BitwardenTheme.colorScheme.text.secondary
-    val label = stringResource(BitwardenString.zh_authenticator_drag_handle)
-    Canvas(
-        Modifier
-            .size(48.dp)
-            .semantics { contentDescription = label }
-            .testTag("AuthenticatorDragHandle")
-            .pointerInput(Unit) {
-                var startIndex = 0
-                var accumulated = 0f
-                detectDragGestures(
-                    onDragStart = {
-                        startIndex = latest.value.index
-                        accumulated = 0f
-                        latest.value.onDragStart()
-                    },
-                    onDrag = { change, amount ->
-                        change.consume()
-                        val current = latest.value
-                        accumulated += amount.y
-                        val rows = current.listState.layoutInfo.visibleItemsInfo
-                        val item = rows.find { it.index == current.index }
-                        val middle = item?.let { it.offset + it.size / 2f + accumulated }
-                        val target = if (item == null || middle == null) {
-                            null
-                        } else {
-                            rows.minByOrNull { row ->
-                                kotlin.math.abs((row.offset + row.size / 2f) - middle)
+    val click = rememberUpdatedState(onClick)
+    val scope = rememberCoroutineScope()
+    val edge = ROW_EDGE_DP.dp
+    return this
+        .semantics { onClick { click.value(); true } }
+        .pointerInput(Unit) {
+            val edgePx = edge.toPx()
+            val slop = viewConfiguration.touchSlop
+            awaitEachGesture {
+                val down = awaitFirstDown(
+                    requireUnconsumed = false,
+                    pass = PointerEventPass.Initial,
+                )
+                val longPress: Boolean = try {
+                    withTimeout(viewConfiguration.longPressTimeoutMillis) {
+                        var holding = true
+                        while (holding) {
+                            val event = awaitPointerEvent(PointerEventPass.Initial)
+                            val change = event.changes.firstOrNull { it.id == down.id }
+                            val moved = change != null &&
+                                (change.position - down.position).getDistance() > slop
+                            val released = change == null || !change.pressed
+                            if (released || moved) {
+                                if (change != null && !change.pressed && !moved) click.value()
+                                holding = false
                             }
                         }
-                        if (target != null && target.index != current.index) {
-                            current.onShift(target.index)
-                            accumulated = 0f
+                        false
+                    }
+                } catch (_: PointerEventTimeoutCancellationException) {
+                    true
+                }
+                if (!longPress) return@awaitEachGesture
+                val startIndex = latest.value.index
+                var accumulated = 0f
+                var scrollJob: Job? = null
+                latest.value.onDragStart()
+                var finished = false
+                while (true) {
+                    val event = awaitPointerEvent()
+                    val change = event.changes.firstOrNull { it.id == down.id }
+                    if (change == null || !change.pressed) {
+                        finished = change != null
+                        break
+                    }
+                    val current = latest.value
+                    change.consume()
+                    accumulated += (change.position - change.previousPosition).y
+                    val rows = current.listState.layoutInfo.visibleItemsInfo
+                    val item = rows.find { it.index == current.index }
+                    val middle = item?.let { it.offset + it.size / 2f + accumulated }
+                    val target = if (item == null || middle == null) {
+                        null
+                    } else {
+                        rows.minByOrNull { row ->
+                            kotlin.math.abs((row.offset + row.size / 2f) - middle)
                         }
-                    },
-                    onDragEnd = { latest.value.onDrop(startIndex) },
-                    onDragCancel = { latest.value.onDrop(-1) },
-                )
-            },
-    ) {
-        val bar = 1.5.dp.toPx()
-        val gap = 3.dp.toPx()
-        val width = size.width * 0.32f
-        val left = (size.width - width) / 2f
-        var top = (size.height - (bar * 3f + gap * 2f)) / 2f
-        repeat(3) {
-            drawRoundRect(
-                color = color,
-                topLeft = Offset(left, top),
-                size = Size(width, bar),
-                cornerRadius = CornerRadius(bar, bar),
-            )
-            top += bar + gap
+                    }
+                    if (target != null && target.index != current.index) {
+                        current.onShift(target.index)
+                        accumulated = 0f
+                    }
+                    if (item != null && scrollJob?.isActive != true) {
+                        val viewportEnd = current.listState.layoutInfo.viewportEndOffset
+                        val delta = when {
+                            item.offset < edgePx -> -item.size * ROW_SCROLL_FRACTION
+                            item.offset + item.size > viewportEnd - edgePx ->
+                                item.size * ROW_SCROLL_FRACTION
+                            else -> 0f
+                        }
+                        if (delta != 0f) {
+                            scrollJob = scope.launch { current.listState.scrollBy(delta) }
+                        }
+                    }
+                }
+                latest.value.onDrop(if (finished) startIndex else -1)
+            }
         }
-    }
 }

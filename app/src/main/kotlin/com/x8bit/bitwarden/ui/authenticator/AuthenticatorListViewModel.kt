@@ -95,13 +95,13 @@ class AuthenticatorListViewModel @AssistedInject constructor(
                 rebuild()
             }
             is AuthenticatorListAction.SortSelected -> {
-                mutableStateFlow.update { it.copy(sort = action.sort) }
-                rebuild()
+                if (state.sort != AuthenticatorSort.MANUAL) {
+                    mutableStateFlow.update { it.copy(sort = AuthenticatorSort.MANUAL) }
+                    rebuild()
+                }
             }
             is AuthenticatorListAction.MoveTo -> {
-                val canMove = !trash &&
-                    state.query.isBlank() &&
-                    state.sort == AuthenticatorSort.MANUAL
+                val canMove = !trash && state.query.isBlank()
                 val slots = if (canMove) {
                     state.rows.map { row ->
                         val entry = snapshot.entries.firstOrNull { it.id == row.id }
@@ -226,7 +226,7 @@ class AuthenticatorListViewModel @AssistedInject constructor(
                 entries = snapshot.entries,
                 query = state.query,
                 favoritesOnly = state.favoritesOnly,
-                sort = state.sort,
+                sort = AuthenticatorSort.MANUAL,
                 group = state.group,
             )
         }
@@ -248,6 +248,7 @@ class AuthenticatorListViewModel @AssistedInject constructor(
                 recentIds = snapshot.recentIds,
                 refreshing = if (finishedRefresh) false else it.refreshing,
                 syncedAtMillis = snapshot.syncedAtMillis ?: it.syncedAtMillis,
+                sort = AuthenticatorSort.MANUAL,
             )
         }
     }

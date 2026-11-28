@@ -4,7 +4,6 @@ package com.x8bit.bitwarden.ui.platform.theme
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -256,10 +255,6 @@ private fun AuthenticatorGallery() {
                 color = BitwardenTheme.colorScheme.text.primary,
                 modifier = Modifier.weight(1f),
             )
-            BitwardenTextButton(
-                label = stringResource(BitwardenString.zh_authenticator_arrange),
-                onClick = {},
-            )
         }
         BitwardenTextField(
             value = "",
@@ -270,36 +265,6 @@ private fun AuthenticatorGallery() {
                 .padding(horizontal = 16.dp)
                 .fillMaxWidth(),
         )
-        Row(
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(BitwardenTheme.colorScheme.background.tertiary)
-                .padding(4.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            listOf("自定义" to true, "名称 A-Z" to false).forEach { (label, selected) ->
-                Text(
-                    text = label,
-                    color = if (selected) {
-                        BitwardenTheme.colorScheme.text.reversed
-                    } else {
-                        BitwardenTheme.colorScheme.text.secondary
-                    },
-                    style = BitwardenTheme.typography.labelLarge,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(
-                            if (selected) {
-                                BitwardenTheme.colorScheme.icon.secondary
-                            } else {
-                                BitwardenTheme.colorScheme.background.tertiary
-                            },
-                        )
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
-                )
-            }
-        }
         AuthenticatorGroup()
     }
 }
@@ -307,7 +272,12 @@ private fun AuthenticatorGallery() {
 @androidx.compose.runtime.Composable
 private fun AuthenticatorGroup() {
     val rows = listOf(
-        galleryRow("示例邮箱", "工作", "123 456", 22),
+        galleryRow(
+            "示例邮箱 · 这是一个很长的账户名称，需要完整换行",
+            "这是完整备注，不会被省略，可以排到第二行。",
+            "123 456",
+            22,
+        ),
         galleryRow("示例 VPN", "公司", "654 321", 4),
         galleryRow("示例银行", "", "111 222", 18),
     )

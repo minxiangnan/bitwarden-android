@@ -1,7 +1,6 @@
 package com.x8bit.bitwarden.ui.authenticator
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,10 +9,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -50,7 +47,8 @@ private const val OVERFLOW_DOT_MIDDLE = 0.5f
 private const val OVERFLOW_DOT_BOTTOM = 0.78f
 
 /**
- * Name, optional one-line notes, and a small favorite mark. Blank notes take no space.
+ * Name, optional notes, and a small favorite mark. Name and notes wrap in full.
+ * Blank notes take no space.
  */
 @Composable
 internal fun AuthenticatorIdentity(
@@ -68,6 +66,7 @@ internal fun AuthenticatorIdentity(
                 query = query,
                 style = BitwardenTheme.typography.titleSmall,
                 color = BitwardenTheme.colorScheme.text.primary,
+                singleLine = false,
                 modifier = Modifier.weight(1f),
             )
             if (row.kindLabel.isNotBlank()) {
@@ -94,6 +93,7 @@ internal fun AuthenticatorIdentity(
                 query = query,
                 style = BitwardenTheme.typography.bodySmall,
                 color = BitwardenTheme.colorScheme.text.secondary,
+                singleLine = false,
             )
         }
     }
@@ -160,6 +160,7 @@ private fun HighlightedLine(
     query: String,
     style: TextStyle,
     color: Color,
+    singleLine: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val highlight = SpanStyle(
@@ -176,29 +177,10 @@ private fun HighlightedLine(
         text = annotated,
         style = style,
         color = color,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
+        maxLines = if (singleLine) 1 else Int.MAX_VALUE,
+        overflow = if (singleLine) TextOverflow.Ellipsis else TextOverflow.Clip,
         modifier = modifier,
     )
-}
-
-@Composable
-internal fun AuthenticatorMonogram(title: String, modifier: Modifier = Modifier) {
-    val letter = title.trim().firstOrNull()?.uppercaseChar()?.toString().orEmpty().ifBlank { "•" }
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = modifier
-            .padding(end = 12.dp)
-            .size(36.dp)
-            .clip(CircleShape)
-            .background(BitwardenTheme.colorScheme.background.tertiary),
-    ) {
-        Text(
-            text = letter,
-            style = BitwardenTheme.typography.titleSmall,
-            color = BitwardenTheme.colorScheme.text.interaction,
-        )
-    }
 }
 
 @Composable
@@ -212,30 +194,6 @@ private fun FavoriteMark() {
             .semantics { contentDescription = description },
     ) {
         drawStar(color)
-    }
-}
-
-@Composable
-internal fun AuthenticatorMoveTopButton(enabled: Boolean, onClick: () -> Unit) {
-    val label = stringResource(BitwardenString.zh_authenticator_move_top)
-    val color = if (enabled) {
-        BitwardenTheme.colorScheme.icon.secondary
-    } else {
-        BitwardenTheme.colorScheme.text.secondary
-    }
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = Modifier
-            .size(48.dp)
-            .semantics { contentDescription = label }
-            .testTag("AuthenticatorMoveTop")
-            .clickable(enabled = enabled, onClick = onClick),
-    ) {
-        Text(
-            text = "↑",
-            color = color,
-            style = BitwardenTheme.typography.labelLarge,
-        )
     }
 }
 

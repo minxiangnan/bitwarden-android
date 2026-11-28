@@ -2,6 +2,7 @@ package com.x8bit.bitwarden.ui.authenticator
 
 import androidx.lifecycle.viewModelScope
 import com.bitwarden.ui.platform.base.BaseViewModelTest
+import com.x8bit.bitwarden.data.authenticator.match.AuthenticatorSort
 import com.x8bit.bitwarden.data.authenticator.model.AuthenticatorAlgorithm
 import com.x8bit.bitwarden.data.authenticator.model.AuthenticatorEntryView
 import com.x8bit.bitwarden.data.authenticator.repository.AuthenticatorRepository
@@ -134,6 +135,30 @@ class AuthenticatorListViewModelTest : BaseViewModelTest() {
             viewModel.trySendAction(AuthenticatorListAction.MoveTo("c", 0))
             assertEquals(listOf("c", "a", "b"), viewModel.stateFlow.value.rows.map { it.id })
             coVerify { repository.applyOrders(mapOf("c" to "-1024")) }
+        } finally {
+            viewModel.viewModelScope.cancel()
+        }
+    }
+
+    @Test
+    fun `a name sort request keeps the custom order`() = runTest {
+        val viewModel = viewModel()
+        try {
+            viewModel.applySnapshot(
+                AuthenticatorSnapshot(
+                    status = AuthenticatorSyncStatus.READY,
+                    editable = true,
+                    entries = listOf(
+                        entry("a", "0", "Zeta"),
+                        entry("b", "1024", "Alpha"),
+                    ),
+                ),
+            )
+            viewModel.trySendAction(
+                AuthenticatorListAction.SortSelected(AuthenticatorSort.NAME),
+            )
+            assertEquals(listOf("a", "b"), viewModel.stateFlow.value.rows.map { it.id })
+            assertEquals(AuthenticatorSort.MANUAL, viewModel.stateFlow.value.sort)
         } finally {
             viewModel.viewModelScope.cancel()
         }
