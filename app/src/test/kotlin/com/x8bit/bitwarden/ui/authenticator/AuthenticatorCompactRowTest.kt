@@ -13,6 +13,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onNodeWithTag
@@ -206,21 +210,29 @@ class AuthenticatorCompactRowTest : BitwardenComposeTest() {
     }
 
     @Test
-    fun `copied row shows one short inline confirmation`() {
+    fun `copy bubble sits at the top and is announced`() {
         setContent {
-            AuthenticatorCode(
-                row = sampleRow(seconds = 20, notes = ""),
-                trash = false,
-                urgent = true,
-                copied = true,
-            )
+            Box(
+                modifier = Modifier
+                    .width(360.dp)
+                    .background(BitwardenTheme.colorScheme.background.primary)
+                    .testTag("CopyBubbleHost"),
+            ) {
+                AuthenticatorCopyBubble(
+                    visible = true,
+                    modifier = Modifier.align(Alignment.TopCenter),
+                )
+            }
         }
-        composeTestRule
-            .onNodeWithText("已复制 ✓")
-            .assertIsDisplayed()
-        composeTestRule
-            .onNodeWithTag("AuthenticatorNextCode")
-            .assertDoesNotExist()
+        composeTestRule.mainClock.advanceTimeBy(300)
+        composeTestRule.onNodeWithText("已复制验证码").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("AuthenticatorCopyBubble").assert(
+            SemanticsMatcher.expectValue(
+                SemanticsProperties.LiveRegion,
+                LiveRegionMode.Polite,
+            ),
+        )
+        savePng("CopyBubbleHost", "authenticator-copy-bubble.png")
     }
 }
 

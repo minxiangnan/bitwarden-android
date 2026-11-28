@@ -1,16 +1,28 @@
 package com.x8bit.bitwarden.ui.authenticator
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -20,7 +32,9 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
@@ -41,6 +55,10 @@ private const val STAR_POINTS = 10
 private const val STAR_START_DEGREES = -90.0
 private const val STAR_STEP_DEGREES = 36.0
 private const val STAR_INNER_RATIO = 0.42f
+private const val BUBBLE_ENTER_MILLIS = 220
+private const val BUBBLE_EXIT_MILLIS = 180
+private const val BUBBLE_CORNER_PERCENT = 50
+private const val BUBBLE_SHADOW_ALPHA = 0.45f
 private const val OVERFLOW_DOT_RADIUS_DP = 1.6f
 private const val OVERFLOW_DOT_TOP = 0.22f
 private const val OVERFLOW_DOT_MIDDLE = 0.5f
@@ -107,7 +125,6 @@ internal fun AuthenticatorCode(
     row: AuthenticatorRow,
     trash: Boolean,
     urgent: Boolean,
-    copied: Boolean = false,
 ) {
     Column(horizontalAlignment = Alignment.End) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -134,15 +151,7 @@ internal fun AuthenticatorCode(
                 )
             }
         }
-        if (copied) {
-            Text(
-                text = stringResource(BitwardenString.zh_authenticator_copied),
-                style = BitwardenTheme.typography.labelSmall,
-                color = BitwardenTheme.colorScheme.text.interaction,
-                maxLines = 1,
-                modifier = Modifier.testTag("AuthenticatorCopied"),
-            )
-        } else if (urgent && row.nextCode != null) {
+        if (urgent && row.nextCode != null) {
             Text(
                 text = stringResource(BitwardenString.zh_authenticator_next) + " " + row.nextCode,
                 style = BitwardenTheme.typography.labelSmall,
@@ -153,6 +162,51 @@ internal fun AuthenticatorCode(
         }
     }
 }
+
+/**
+ * Pill shown under the status bar after a code is copied. Enter and exit follow the
+ * system animator scale, so reduced motion snaps instead of sliding.
+ */
+@Composable
+internal fun AuthenticatorCopyBubble(
+    visible: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn(bubbleTween(BUBBLE_ENTER_MILLIS)) +
+            slideInVertically(bubbleTween(BUBBLE_ENTER_MILLIS)) { fullHeight -> -fullHeight },
+        exit = fadeOut(bubbleTween(BUBBLE_EXIT_MILLIS)) +
+            slideOutVertically(bubbleTween(BUBBLE_EXIT_MILLIS)) { fullHeight -> -fullHeight },
+        modifier = modifier,
+    ) {
+        val shadow = BitwardenTheme.colorScheme.icon.secondary
+        Text(
+            text = stringResource(BitwardenString.zh_authenticator_copied),
+            style = BitwardenTheme.typography.labelLarge,
+            color = BitwardenTheme.colorScheme.filledButton.foreground,
+            modifier = Modifier
+                .statusBarsPadding()
+                .padding(top = 8.dp)
+                .shadow(
+                    elevation = 8.dp,
+                    shape = RoundedCornerShape(percent = BUBBLE_CORNER_PERCENT),
+                    ambientColor = shadow.copy(alpha = BUBBLE_SHADOW_ALPHA),
+                    spotColor = shadow,
+                )
+                .clip(RoundedCornerShape(percent = BUBBLE_CORNER_PERCENT))
+                .background(BitwardenTheme.colorScheme.filledButton.background)
+                .padding(horizontal = 16.dp, vertical = 10.dp)
+                .semantics { liveRegion = LiveRegionMode.Polite }
+                .testTag("AuthenticatorCopyBubble"),
+        )
+    }
+}
+
+private fun <T> bubbleTween(durationMillis: Int) = tween<T>(
+    durationMillis = durationMillis,
+    easing = FastOutSlowInEasing,
+)
 
 @Composable
 private fun HighlightedLine(

@@ -86,7 +86,7 @@ Haptic: gesture-start when a drag begins, context-click on drop and on copy.
 | --- | --- |
 | Default row | Surface group, hairline, terracotta code |
 | Last 5 seconds | Code and ring turn error red; next code appears |
-| Copied | Small interaction-colored confirmation |
+| Copied | Terracotta pill under the status bar: 「已复制验证码」, slides in from the top, gone after 1.5s |
 | Reorder | Long-press a row, then drag. The row lifts; the others slide. Drop writes `zh.totp.order` |
 | Search or a filter | Dragging is off so order is not computed against a partial list. Tap still copies. Overflow keeps edit and delete |
 | Empty | Title, muted body, one filled button |
@@ -95,4 +95,4 @@ Haptic: gesture-start when a drag begins, context-click on drop and on copy.
 
 ## Authenticator
 
-One rounded group (16dp), not a stack of outlined cards. Each row is at least 64dp: name in titleSmall and notes in bodySmall, both wrapping to as many lines as they need, code in tabular monospace terracotta, countdown ring at the end. The list stays in the saved custom order. Header is search. Add is a FAB with 扫码 and 添加. 更多 stays in the top bar for import, export, trash, and the rest. Long-press drags a row; the overflow menu keeps 上移, 下移, and 置顶.
+One rounded group (16dp), not a stack of outlined cards. Each row is at least 64dp: name in titleSmall and notes in bodySmall, both wrapping to as many lines as they need, code in tabular monospace terracotta, countdown ring at the end. The list stays in the saved custom order. Header is search. Add is a FAB with 扫码 and 添加. 更多 stays in the top bar for import, export, trash, and the rest. Long-press drags a row; the overflow menu keeps 上移, 下移, and 置顶. Copying a code shows a top pill, 「已复制验证码」, instead of a row caption or a bottom snackbar. It slides and fades in, follows the system animator scale, and is announced to TalkBack.

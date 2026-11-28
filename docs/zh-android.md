@@ -244,14 +244,14 @@ MCP 会话接口是 `/api/mcp/status`、`/api/mcp/token`、`/api/mcp/token/enc`�
 | `com.minxiangnan.bitwarden.zh-x86.apk` | 46,162,543 | `3b6cb5f3322a868122c85695c6f600226238b4681dbe5819bab94a5db2593a44` |
 | `com.minxiangnan.bitwarden.zh.apk`（universal） | 86,064,415 | `d7e1394062b28176089ec5af7e91ea554c20354c74fa930b722cd4385480f8c4` |
 
-1.1.1 按 1.1.0 的使用反馈改了验证器列表。每一行不再显示左侧圆头像。名称和备注都完整换行，不再省略。列表始终按用户自己的顺序排列：登录条目用隐藏字段 `zh.totp.order`，独立验证器仍把顺序放在加密备注末尾的 `[[bwmeta:1]]` 里，中值和必要时的重新编号都没变。「自定义 / 名称 A-Z」和「排序 / 完成」都去掉了。长按一行再拖动即可改顺序：拾起时震动，被拖的一行浮起，其它行用大约 220 毫秒滑开让位，靠近列表边缘会自动滚动。系统若关闭动画，这些位移会跟着缩短。点名称或验证码仍然复制。松手后才写入顺序。原来长按打开的菜单改到行尾的溢出菜单，里面仍有复制、编辑、上移、置顶、下移、收藏和删除。搜索或筛选时不能拖动，避免只对看得见的几条重算顺序。色板仍是 `docs/zh-design-system.md`。版本号是 1.1.1（versionCode 14）。签名仍是 1.0.1 起的那把发布密钥。
+1.1.1 按 1.1.0 的使用反馈改了验证器列表。每一行不再显示左侧圆头像。名称和备注都完整换行，不再省略。列表始终按用户自己的顺序排列：登录条目用隐藏字段 `zh.totp.order`，独立验证器仍把顺序放在加密备注末尾的 `[[bwmeta:1]]` 里，中值和必要时的重新编号都没变。「自定义 / 名称 A-Z」和「排序 / 完成」都去掉了。长按一行再拖动即可改顺序：拾起时震动，被拖的一行浮起，其它行用大约 220 毫秒滑开让位，靠近列表边缘会自动滚动。系统若关闭动画，这些位移会跟着缩短。点名称或验证码仍然复制，屏幕顶部滑出一枚陶土色胶囊「已复制验证码」，大约 1.5 秒后消失，并有轻微震动。系统关闭动画时它直接出现。读屏会读出这句话。行内不再写「已复制」，底部也不再用提示条确认复制。松手后才写入顺序。原来长按打开的菜单改到行尾的溢出菜单，里面仍有复制、编辑、上移、置顶、下移、收藏和删除。搜索或筛选时不能拖动，避免只对看得见的几条重算顺序。色板仍是 `docs/zh-design-system.md`。版本号是 1.1.1（versionCode 14）。签名仍是 1.0.1 起的那把发布密钥。
 
 1.1.1：
 
 | APK | 大小 | SHA-256 |
 | --- | --- | --- |
-| `com.minxiangnan.bitwarden.zh-arm64-v8a.apk` | 46,355,601 | `c4d50f71b76296a380c68b3c743594fee25cfec167da49c25344ac6b7e3dc171` |
-| `com.minxiangnan.bitwarden.zh-armeabi-v7a.apk` | 43,234,539 | `c31c3fd762c0b263dbfd082dd8c9dc1ca023a2ae6fc893febb0816453705dba3` |
-| `com.minxiangnan.bitwarden.zh-x86_64.apk` | 45,756,756 | `1aa1be4e4dbbde4c77b8ea1488fc49d2dcd7a37b3bf35951b1a27e59d9a0515e` |
-| `com.minxiangnan.bitwarden.zh-x86.apk` | 46,156,519 | `b94232e341d15bb5e0ad5f14c4647f4a19d713377b9fcbd626c409818e9c0374` |
-| `com.minxiangnan.bitwarden.zh.apk`（universal） | 86,058,391 | `0ebda7b830e680f3de728a9f82de0e0754a139f794e223a4da14b902716c9b80` |
+| `com.minxiangnan.bitwarden.zh-arm64-v8a.apk` | 46,360,553 | `3d86a030330e0fb74b39f22aa0b6be9f8bd1afb1cd58eed7e26976947f651212` |
+| `com.minxiangnan.bitwarden.zh-armeabi-v7a.apk` | 43,239,491 | `d9e38e532377eddde01f326417974541c88e709920f7b2bf18ae18dca4dc9de6` |
+| `com.minxiangnan.bitwarden.zh-x86_64.apk` | 45,761,708 | `528dcb2387000502f3c6e7973901b1a22059a1b8f4acb7b5dd8f21f9f773e85b` |
+| `com.minxiangnan.bitwarden.zh-x86.apk` | 46,161,471 | `5f92fe9a3304faf14730447240a44236bb163eb5b5d6968c499524ea3ef082cb` |
+| `com.minxiangnan.bitwarden.zh.apk`（universal） | 86,063,343 | `e17996d6b994287ee0c7a05c3bf308957278f0b0c62e7be3b06a1fd527e58611` |
