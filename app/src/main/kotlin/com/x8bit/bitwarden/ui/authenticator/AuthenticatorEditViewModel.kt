@@ -2,6 +2,8 @@ package com.x8bit.bitwarden.ui.authenticator
 
 import androidx.lifecycle.viewModelScope
 import com.bitwarden.ui.platform.base.BaseViewModel
+import com.x8bit.bitwarden.data.authenticator.group.groupIdOf
+import com.x8bit.bitwarden.data.authenticator.group.readGroupCatalog
 import com.x8bit.bitwarden.data.authenticator.meta.parseTagList
 import com.x8bit.bitwarden.data.authenticator.model.AuthenticatorAlgorithm
 import com.x8bit.bitwarden.data.authenticator.model.AuthenticatorDraft
@@ -65,6 +67,7 @@ class AuthenticatorEditViewModel @AssistedInject constructor(
             is AuthenticatorEditAction.HostChanged -> update { it.copy(host = action.value) }
             is AuthenticatorEditAction.TagsChanged -> update { it.copy(tags = action.value) }
             is AuthenticatorEditAction.NotesChanged -> update { it.copy(notes = action.value) }
+            is AuthenticatorEditAction.GroupChanged -> update { it.copy(groupId = action.groupId) }
             is AuthenticatorEditAction.DigitsChanged -> update { it.copy(digits = action.value) }
             is AuthenticatorEditAction.PeriodChanged -> update { it.copy(period = action.value) }
             is AuthenticatorEditAction.AlgorithmChanged -> {
@@ -92,10 +95,15 @@ class AuthenticatorEditViewModel @AssistedInject constructor(
     private var loaded = false
 
     private fun applyEntries(action: AuthenticatorEditAction.Internal.Entries) {
+        val choices = readGroupCatalog(action.entries).second.map { it.id to it.name }
         if (entryId.isBlank() || loaded) {
             val alias = action.aliases[entryId]
-            if (alias != null) {
-                update { it.copy(alias = it.alias.ifBlank { alias }, mcpEnabled = true) }
+            update {
+                it.copy(
+                    groupChoices = choices,
+                    alias = if (alias != null) it.alias.ifBlank { alias } else it.alias,
+                    mcpEnabled = if (alias != null) true else it.mcpEnabled,
+                )
             }
             return
         }
@@ -103,6 +111,8 @@ class AuthenticatorEditViewModel @AssistedInject constructor(
         loaded = true
         update {
             it.copy(
+                groupId = groupIdOf(entry, readGroupCatalog(action.entries).second),
+                groupChoices = choices,
                 secret = entry.secret,
                 name = entry.name,
                 issuer = entry.issuer,
@@ -168,28 +178,37 @@ class AuthenticatorEditViewModel @AssistedInject constructor(
             tags = parseTagList(state.tags),
             baseRevision = state.baseRevision.takeIf { it.isNotBlank() },
         )
-        viewModelScope.launch {
-            val saved = repository.save(entryId.takeIf { it.isNotBlank() }, draft)
-            saved.onFailure { error ->
-                sendAction(AuthenticatorEditAction.ShowMessage(error.message ?: "没有保存"))
-                return@launch
-            }
-            val id = entryId.takeIf { it.isNotBlank() }
-                ?: repository.entries.value.entries.maxByOrNull { it.creationDate }?.id
-            if (id != null && (state.mcpEnabled || state.alias.isNotBlank())) {
-                repository.setMcp(id, state.mcpEnabled, state.alias).onFailure { error ->
-                    sendAction(AuthenticatorEditAction.ShowMessage(error.message ?: "MCP 没有更新"))
-                    return@launch
-                }
-                // The create notification can arrive before the alias is stored. Touch the entry
-                // afterwards so other devices reload and see the alias.
-                repository.save(id, draft.copy(baseRevision = null)).onFailure { error ->
-                    sendAction(AuthenticatorEditAction.ShowMessage(error.message ?: "没有保存"))
-                    return@launch
-                }
-            }
-            sendEvent(AuthenticatorEditEvent.Saved)
+        viewModelScope.launch { finishSave(draft) }
+    }
+
+    private suspend fun finishSave(draft: AuthenticatorDraft) {
+        val saved = repository.save(entryId.takeIf { it.isNotBlank() }, draft)
+        saved.onFailure { error ->
+            sendAction(AuthenticatorEditAction.ShowMessage(error.message ?: "没有保存"))
+            return
         }
+        val id = entryId.takeIf { it.isNotBlank() }
+            ?: repository.entries.value.entries.maxByOrNull { it.creationDate }?.id
+        if (id != null && (state.mcpEnabled || state.alias.isNotBlank())) {
+            repository.setMcp(id, state.mcpEnabled, state.alias).onFailure { error ->
+                sendAction(AuthenticatorEditAction.ShowMessage(error.message ?: "MCP 没有更新"))
+                return
+            }
+            // The create notification can arrive before the alias is stored. Touch the entry
+            // afterwards so other devices reload and see the alias.
+            repository.save(id, draft.copy(baseRevision = null)).onFailure { error ->
+                sendAction(AuthenticatorEditAction.ShowMessage(error.message ?: "没有保存"))
+                return
+            }
+        }
+        if (id != null) {
+            val stored = repository.setEntryGroup(id, state.groupId)
+            stored.onFailure { error ->
+                sendAction(AuthenticatorEditAction.ShowMessage(error.message ?: "没有保存分组"))
+                return
+            }
+        }
+        sendEvent(AuthenticatorEditEvent.Saved)
     }
 
     private fun confirmDelete() {
@@ -237,6 +256,8 @@ data class AuthenticatorEditState(
     val host: String = "",
     val tags: String = "",
     val notes: String = "",
+    val groupId: String? = null,
+    val groupChoices: List<Pair<String, String>> = emptyList(),
     val digits: String = "6",
     val period: String = "30",
     val algorithm: AuthenticatorAlgorithm = AuthenticatorAlgorithm.SHA1,
@@ -282,6 +303,8 @@ sealed class AuthenticatorEditAction {
     data class TagsChanged(val value: String) : AuthenticatorEditAction()
     /** Notes field. */
     data class NotesChanged(val value: String) : AuthenticatorEditAction()
+    /** Group picker. Null is 未分组. */
+    data class GroupChanged(val groupId: String?) : AuthenticatorEditAction()
     /** Digits field. */
     data class DigitsChanged(val value: String) : AuthenticatorEditAction()
     /** Period field. */

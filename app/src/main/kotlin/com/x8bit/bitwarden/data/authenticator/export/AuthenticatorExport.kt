@@ -1,5 +1,6 @@
 package com.x8bit.bitwarden.data.authenticator.export
 
+import com.x8bit.bitwarden.data.authenticator.group.isGroupCatalog
 import com.x8bit.bitwarden.data.authenticator.model.AuthenticatorEntryView
 import com.x8bit.bitwarden.data.authenticator.otp.entryKind
 import com.x8bit.bitwarden.data.authenticator.otp.toOtpAuthUri
@@ -48,7 +49,10 @@ private val exportJson = Json { encodeDefaults = true }
 fun buildAuthenticatorExport(entries: List<AuthenticatorEntryView>): String {
     val document = AuthenticatorExportDocument(
         items = entries
-            .filter { !it.undecryptable && it.secret.isNotBlank() && it.deletedAt == null }
+            .filter { entry ->
+                val live = !entry.undecryptable && entry.secret.isNotBlank()
+                live && entry.deletedAt == null && !isGroupCatalog(entry)
+            }
             .map { entry ->
                 AuthenticatorExportItem(
                     otpauth = toOtpAuthUri(entry),

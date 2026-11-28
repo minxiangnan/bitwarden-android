@@ -1,14 +1,20 @@
 package com.x8bit.bitwarden.ui.authenticator
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -104,6 +110,13 @@ fun AuthenticatorEditScreen(
             ) {
                 viewModel.trySendAction(AuthenticatorEditAction.NotesChanged(it))
             }
+            GroupField(
+                groupId = state.groupId,
+                choices = state.groupChoices,
+                onSelect = {
+                    viewModel.trySendAction(AuthenticatorEditAction.GroupChanged(it))
+                },
+            )
             Field(state.issuer, BitwardenString.zh_authenticator_issuer) {
                 viewModel.trySendAction(AuthenticatorEditAction.IssuerChanged(it))
             }
@@ -222,6 +235,41 @@ private fun AlgorithmRow(
             )
             if (algorithm == selected) {
                 Text(text = "·", color = BitwardenTheme.colorScheme.text.interaction)
+            }
+        }
+    }
+}
+
+@Composable
+private fun GroupField(
+    groupId: String?,
+    choices: List<Pair<String, String>>,
+    onSelect: (String?) -> Unit,
+) {
+    var open by remember { mutableStateOf(false) }
+    val label = choices.firstOrNull { it.first == groupId }?.second
+        ?: stringResource(BitwardenString.zh_authenticator_ungrouped)
+    Box(modifier = Modifier.standardHorizontalMargin().padding(top = 8.dp)) {
+        BitwardenTextButton(
+            label = stringResource(BitwardenString.zh_authenticator_assign_group) + " · " + label,
+            onClick = { open = true },
+        )
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(BitwardenString.zh_authenticator_ungrouped)) },
+                onClick = {
+                    open = false
+                    onSelect(null)
+                },
+            )
+            choices.forEach { (id, name) ->
+                DropdownMenuItem(
+                    text = { Text(name) },
+                    onClick = {
+                        open = false
+                        onSelect(id)
+                    },
+                )
             }
         }
     }

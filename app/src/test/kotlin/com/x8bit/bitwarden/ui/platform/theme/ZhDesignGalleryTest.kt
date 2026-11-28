@@ -41,6 +41,7 @@ import com.bitwarden.ui.platform.resource.BitwardenString
 import com.bitwarden.ui.platform.theme.BitwardenTheme
 import com.bitwarden.ui.util.asText
 import com.x8bit.bitwarden.ui.authenticator.AuthenticatorCard
+import com.x8bit.bitwarden.ui.authenticator.AuthenticatorGroupHeader
 import com.x8bit.bitwarden.ui.authenticator.AuthenticatorCopyBubble
 import com.x8bit.bitwarden.ui.authenticator.AuthenticatorRow
 import com.x8bit.bitwarden.ui.platform.base.BitwardenComposeTest
@@ -269,7 +270,37 @@ private fun AuthenticatorGallery() {
                 .padding(horizontal = 16.dp)
                 .fillMaxWidth(),
         )
+        AuthenticatorGroupHeader(
+            title = "工作",
+            count = 2,
+            collapsed = false,
+            onClick = {},
+        )
         AuthenticatorGroup()
+        AuthenticatorGroupHeader(
+            title = "未分组",
+            count = 1,
+            collapsed = false,
+            onClick = {},
+        )
+        Column(
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(BitwardenTheme.colorScheme.background.secondary),
+        ) {
+            AuthenticatorCard(
+                row = galleryRow("示例银行", "", "111 222", 18),
+                query = "",
+                trash = false,
+                showDivider = false,
+                onCopy = {},
+                onEdit = {},
+                onTrash = {},
+                onRestore = {},
+                onDelete = {},
+            )
+        }
     }
         AuthenticatorCopyBubble(
             visible = true,
@@ -288,7 +319,6 @@ private fun AuthenticatorGroup() {
             22,
         ),
         galleryRow("示例 VPN", "公司", "654 321", 4),
-        galleryRow("示例银行", "", "111 222", 18),
     )
     Column(
         modifier = Modifier

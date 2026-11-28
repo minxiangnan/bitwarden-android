@@ -108,6 +108,7 @@ fun AuthenticatorListScreen(
     onEdit: (String) -> Unit,
     onTrash: () -> Unit,
     onMcp: () -> Unit,
+    onGroups: () -> Unit,
     onBack: () -> Unit,
     viewModel: AuthenticatorListViewModel = hiltViewModel<
         AuthenticatorListViewModel,
@@ -195,9 +196,13 @@ fun AuthenticatorListScreen(
     }
     AuthenticatorListDialogs(
         dialog = state.dialog,
+        groups = state.groupChoices,
         onDismiss = { viewModel.trySendAction(AuthenticatorListAction.DismissDialog) },
         onConfirmTrash = { viewModel.trySendAction(AuthenticatorListAction.ConfirmTrash(it)) },
         onConfirmDelete = { viewModel.trySendAction(AuthenticatorListAction.ConfirmDelete(it)) },
+        onAssign = { id, groupId ->
+            viewModel.trySendAction(AuthenticatorListAction.AssignGroup(id, groupId))
+        },
     )
     if (paste) {
         PasteDialog(
@@ -322,6 +327,15 @@ fun AuthenticatorListScreen(
                             },
                         )
                         DropdownMenuItem(
+                            text = {
+                                Text(stringResource(BitwardenString.zh_authenticator_groups))
+                            },
+                            onClick = {
+                                menu = false
+                                onGroups()
+                            },
+                        )
+                        DropdownMenuItem(
                             text = { Text(stringResource(BitwardenString.zh_authenticator_trash)) },
                             onClick = {
                                 menu = false
@@ -429,7 +443,7 @@ fun AuthenticatorListScreen(
                     )
                 }
             }
-            if (state.rows.isEmpty() && state.status != AuthenticatorSyncStatus.LOADING) {
+            if (state.lines.isEmpty() && state.status != AuthenticatorSyncStatus.LOADING) {
                 AuthenticatorEmpty(
                     trash = trash,
                     onScan = requestScan,
@@ -437,23 +451,19 @@ fun AuthenticatorListScreen(
                 )
             }
             val listState = rememberLazyListState()
-            var dragRows by remember { mutableStateOf<List<AuthenticatorRow>?>(null) }
+            var dragLines by remember { mutableStateOf<List<AuthenticatorLine>?>(null) }
             var draggingId by remember { mutableStateOf<String?>(null) }
-            val shownRows = dragRows ?: state.rows
+            val shownLines = dragLines ?: state.lines
             LaunchedEffect(canReorder) {
                 if (!canReorder) {
-                    dragRows = null
+                    dragLines = null
                     draggingId = null
                 }
             }
-            LaunchedEffect(state.rows) {
-                val dragging = dragRows ?: return@LaunchedEffect
-                if (state.rows.map { it.id } == dragging.map { it.id }) {
-                    dragRows = null
-                } else {
-                    val byId = state.rows.associateBy { it.id }
-                    val refreshed = dragging.mapNotNull { byId[it.id] }
-                    if (refreshed.size == dragging.size) dragRows = refreshed
+            LaunchedEffect(state.lines) {
+                val dragging = dragLines ?: return@LaunchedEffect
+                if (state.lines == dragging) {
+                    dragLines = null
                 }
             }
             LazyColumn(
@@ -461,7 +471,31 @@ fun AuthenticatorListScreen(
                 contentPadding = PaddingValues(bottom = 96.dp),
                 modifier = Modifier.fillMaxSize(),
             ) {
-                itemsIndexed(shownRows, key = { _, row -> row.id }) { index, row ->
+                itemsIndexed(shownLines, key = { _, line ->
+                    when (line) {
+                        is AuthenticatorLine.Header -> "header-${line.sectionId}"
+                        is AuthenticatorLine.Code -> line.row.id
+                    }
+                }) { index, line ->
+                    if (line is AuthenticatorLine.Header) {
+                        AuthenticatorGroupHeader(
+                            title = line.title,
+                            count = line.count,
+                            collapsed = line.collapsed,
+                            onClick = {
+                                viewModel.trySendAction(
+                                    AuthenticatorListAction.ToggleCollapsed(line.sectionId),
+                                )
+                            },
+                        )
+                        return@itemsIndexed
+                    }
+                    val row = (line as AuthenticatorLine.Code).row
+                    val sectionRows = shownLines.mapNotNull { item ->
+                        (item as? AuthenticatorLine.Code)?.row
+                    }.filter { it.groupId == row.groupId }
+                    val sectionIndex = sectionRows.indexOfFirst { it.id == row.id }
+                    val sectionLast = sectionRows.lastIndex
                     val lift by animateFloatAsState(
                         targetValue = if (draggingId == row.id) 1f else 0f,
                         animationSpec = tween(durationMillis = ROW_MOVE_MILLIS),
@@ -470,9 +504,9 @@ fun AuthenticatorListScreen(
                     val scale = 1f + (ROW_LIFT_SCALE - 1f) * lift
                     val tint = BitwardenTheme.colorScheme.icon.secondary
                     val groupedShape = when {
-                        shownRows.size <= 1 -> RoundedCornerShape(16.dp)
-                        index == 0 -> RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
-                        index == shownRows.lastIndex -> RoundedCornerShape(
+                        sectionRows.size <= 1 -> RoundedCornerShape(16.dp)
+                        sectionIndex == 0 -> RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+                        sectionIndex == sectionLast -> RoundedCornerShape(
                             bottomStart = 16.dp,
                             bottomEnd = 16.dp,
                         )
@@ -482,10 +516,10 @@ fun AuthenticatorListScreen(
                         row = row,
                         query = state.query,
                         trash = trash,
-                        canMoveUp = canReorder && index > 0,
-                        canMoveDown = canReorder && index < shownRows.lastIndex,
+                        canMoveUp = canReorder && sectionIndex > 0,
+                        canMoveDown = canReorder && sectionIndex < sectionLast,
                         allowCopy = true,
-                        showDivider = index != shownRows.lastIndex,
+                        showDivider = sectionIndex != sectionLast,
                         modifier = Modifier
                             .padding(horizontal = 16.dp)
                             .animateItem(
@@ -521,7 +555,7 @@ fun AuthenticatorListScreen(
                         } else {
                             AuthenticatorReorder(
                                 index = index,
-                                lastIndex = shownRows.lastIndex,
+                                lastIndex = shownLines.lastIndex,
                                 listState = listState,
                                 onDragStart = {
                                     val feedback = if (
@@ -534,29 +568,47 @@ fun AuthenticatorListScreen(
                                     }
                                     view.performHapticFeedback(feedback)
                                     draggingId = row.id
-                                    if (dragRows == null) dragRows = state.rows
+                                    if (dragLines == null) dragLines = state.lines
                                 },
                                 onShift = { target ->
-                                    val current = (dragRows ?: state.rows).toMutableList()
-                                    val from = current.indexOfFirst { it.id == row.id }
-                                    if (from >= 0 && target in current.indices && target != from) {
-                                        dragRows = current.apply { add(target, removeAt(from)) }
-                                    }
+                                    dragLines = shiftAuthenticatorLine(
+                                        dragLines ?: state.lines,
+                                        row.id,
+                                        target,
+                                    )
                                 },
                                 onDrop = { start ->
                                     draggingId = null
-                                    if (start < 0) {
-                                        dragRows = null
+                                    val lines = dragLines ?: shownLines
+                                    val drop = if (start < 0) {
+                                        null
                                     } else {
-                                        val finalIndex = (dragRows ?: shownRows)
-                                            .indexOfFirst { it.id == row.id }
-                                        if (finalIndex >= 0 && finalIndex != start) {
-                                            viewModel.trySendAction(
-                                                AuthenticatorListAction.MoveTo(row.id, finalIndex),
-                                            )
-                                        } else {
-                                            dragRows = null
+                                        groupDrop(lines, row.id, row.groupId)
+                                    }
+                                    val origin = groupDrop(state.lines, row.id, row.groupId)
+                                    dragLines = null
+                                    when (drop) {
+                                        is GroupDrop.Reorder -> {
+                                            val from = (origin as? GroupDrop.Reorder)?.toIndex
+                                            if (from != null && drop.toIndex != from) {
+                                                viewModel.trySendAction(
+                                                    AuthenticatorListAction.MoveTo(
+                                                        row.id,
+                                                        drop.toIndex,
+                                                    ),
+                                                )
+                                            }
                                         }
+                                        is GroupDrop.Move -> viewModel.trySendAction(
+                                            AuthenticatorListAction.PlaceInGroup(
+                                                row.id,
+                                                drop.groupId,
+                                                drop.toIndex,
+                                            ),
+                                        )
+                                        null -> Unit
+                                    }
+                                    if (start >= 0) {
                                         view.performHapticFeedback(
                                             HapticFeedbackConstants.CONTEXT_CLICK,
                                         )
@@ -570,16 +622,21 @@ fun AuthenticatorListScreen(
                         onEdit = { onEdit(row.id) },
                         onMoveUp = {
                             viewModel.trySendAction(
-                                AuthenticatorListAction.MoveTo(row.id, index - 1),
+                                AuthenticatorListAction.MoveTo(row.id, sectionIndex - 1),
                             )
                         },
                         onMoveDown = {
                             viewModel.trySendAction(
-                                AuthenticatorListAction.MoveTo(row.id, index + 1),
+                                AuthenticatorListAction.MoveTo(row.id, sectionIndex + 1),
                             )
                         },
                         onMoveTop = {
                             viewModel.trySendAction(AuthenticatorListAction.MoveTo(row.id, 0))
+                        },
+                        onAssign = {
+                            viewModel.trySendAction(
+                                AuthenticatorListAction.ShowAssign(row.id, row.title),
+                            )
                         },
                         onTrash = {
                             viewModel.trySendAction(
@@ -625,6 +682,7 @@ internal fun AuthenticatorCard(
     onTrash: () -> Unit,
     onRestore: () -> Unit,
     onDelete: () -> Unit,
+    onAssign: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var menu by rememberSaveable(row.id) { mutableStateOf(false) }
@@ -675,6 +733,7 @@ internal fun AuthenticatorCard(
                     onMoveUp = onMoveUp,
                     onMoveDown = onMoveDown,
                     onMoveTop = onMoveTop,
+                    onAssign = onAssign,
                     onTrash = onTrash,
                     onRestore = onRestore,
                     onDelete = onDelete,
@@ -705,6 +764,7 @@ private fun AuthenticatorCardMenu(
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
     onMoveTop: () -> Unit,
+    onAssign: () -> Unit,
     onTrash: () -> Unit,
     onRestore: () -> Unit,
     onDelete: () -> Unit,
@@ -752,6 +812,13 @@ private fun AuthenticatorCardMenu(
                     },
                 )
             }
+            DropdownMenuItem(
+                text = { Text(stringResource(BitwardenString.zh_authenticator_assign_group)) },
+                onClick = {
+                    onDismiss()
+                    onAssign()
+                },
+            )
             DropdownMenuItem(
                 text = { Text(stringResource(BitwardenString.delete)) },
                 onClick = {
@@ -831,9 +898,11 @@ private fun AuthenticatorEmpty(
 @Composable
 private fun AuthenticatorListDialogs(
     dialog: AuthenticatorListState.Dialog?,
+    groups: List<Pair<String, String>>,
     onDismiss: () -> Unit,
     onConfirmTrash: (String) -> Unit,
     onConfirmDelete: (String) -> Unit,
+    onAssign: (String, String?) -> Unit,
 ) {
     when (dialog) {
         is AuthenticatorListState.Dialog.ConfirmTrash -> {
@@ -858,6 +927,14 @@ private fun AuthenticatorListDialogs(
                 onConfirmClick = { onConfirmDelete(dialog.id) },
                 onDismissClick = onDismiss,
                 onDismissRequest = onDismiss,
+            )
+        }
+        is AuthenticatorListState.Dialog.AssignGroup -> {
+            AssignGroupDialog(
+                name = dialog.name,
+                groups = groups,
+                onDismiss = onDismiss,
+                onAssign = { groupId -> onAssign(dialog.id, groupId) },
             )
         }
         is AuthenticatorListState.Dialog.Message -> {
